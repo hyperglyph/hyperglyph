@@ -11,6 +11,9 @@ import hate
         when you get an object, you get a page back with data, links and forms
         generated from the methods and state of the object.
 
+    the machine readable page
+        language neutral, json-like objects, based on bencode 
+
 
     by using links and forms, the actual api can be loosely coupled
     you can redirect to other objects/services and grow the api without having to
@@ -23,6 +26,12 @@ import hate
         an example is url /message?id=blah
         we do not need to keep an object around for every message,
         but we can construct one on the request that knows how to retrieve the contents
+
+        this is a short step towards stateless gateway services-
+            e.g a stateless wrapper around a direct database connection
+
+        I haven't done this in this example. I am bad.
+    
         
 
 """
