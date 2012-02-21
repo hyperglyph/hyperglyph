@@ -1,16 +1,39 @@
+""" hate-rpc - websites for robots """
+"""
+Copyright (c) 2011-2012 Hanzo Archives Ltd
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included 
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER 
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION 
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""
+
 import collections
 import cgi
 import re
 import threading
 import socket
+
 from urllib import urlencode
 from urlparse import urljoin
 from StringIO import StringIO
 from datetime import datetime
 from pytz import utc
-from logging import debug as DEBUG, info as INFO, error as ERROR
 
 import requests
+
 from werkzeug.wrappers import Request, Response
 from werkzeug.serving import make_server
 
@@ -178,7 +201,6 @@ class Mapper(object):
         except CustomResponse as r:
             response = r.response()
         except BaseException as e:
-            ERROR(e)
             import traceback;
             traceback.print_exc()
             response = Response(traceback.format_exc(), status='500 not ok')
@@ -241,7 +263,6 @@ class Server(threading.Thread):
         return 'http://%s:%d/'%(self.server.server_name, self.server.server_port)
 
     def start(self):
-        DEBUG('starting')
         threading.Thread.start(self)
         while self.is_alive() and not self._started.isSet():
             self._started.wait(2)
@@ -249,7 +270,6 @@ class Server(threading.Thread):
             raise StandardError('could not start')
 
     def run(self):
-        DEBUG('make server')
         self.server = make_server(self.host, self.port, self.app)
         self._started.set()
         self.server.serve_forever()
@@ -292,7 +312,6 @@ def fetch(method, url, args=None,data="", headers=None):
         return get(join(result.headers['Location']))
     elif result.status_code in [ requests.codes.created]:
         # never called
-        DEBUG(result.status_code)
         return link(join(result.headers['Location']))
     data = result.content
     if result.headers['Content-Type'].startswith(CONTENT_TYPE):
@@ -597,7 +616,6 @@ def read(fh, resolver=identity):
     except StandardError as e:
         raise 
         import traceback; traceback.print_exc() 
-        ERROR('Can\'t decode "%s"'%(fh.getvalue()), e)
         raise StandardError('decoding %s'%(fh.getvalue()))
 
 

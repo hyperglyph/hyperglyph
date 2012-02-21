@@ -14,11 +14,13 @@ def server():
 
     m = hate.map()
 
+    # these are created on each request
     @m.default()
     class Broker(hate.r):
         def queue(self, name):
             raise hate.Redirect(Queue(name))
 
+    # the url parameters are used to construct them
     @m.add()
     class Queue(hate.r):
         def __init__(self, name):
