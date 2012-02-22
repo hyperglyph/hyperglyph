@@ -48,7 +48,7 @@ class GetTest(ServerTest):
     def mapper(self):
         m = hate.Mapper()
         @m.default()
-        class Testr(hate.r):
+        class Test(hate.r):
             def get(self_):
                 return self.value
         return m
@@ -65,13 +65,13 @@ class LinkTest(ServerTest):
     def mapper(self):
         m = hate.Mapper()
         @m.add()
-        class Testr(hate.r):
+        class Test(hate.r):
             def __init__(self, value):
                 self.value = int(value)
             def get(self):
                 return self.value
         @m.default()
-        class Rootr(hate.r):
+        class Root(hate.r):
             def get(self_):
                 return hate.link(Testr(self.value))
         return m
@@ -89,7 +89,7 @@ class MethodTest(ServerTest):
     def mapper(self):
         m = hate.Mapper()
         @m.default()
-        class Testr(hate.r):
+        class Test(hate.r):
             def __init__(self, value=0):
                 self.value = int(value)
             def inc(self, n):

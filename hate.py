@@ -35,7 +35,7 @@ from pytz import utc
 import requests
 
 from werkzeug.wrappers import Request, Response
-from werkzeug.serving import make_server
+from werkzeug.serving import make_server, WSGIRequestHandler
 
 __all__ = [
     'CONTENT_TYPE','Server',
@@ -248,9 +248,13 @@ class Mapper(object):
         raise StandardError('cant encode')
 
 
+class RequestHandler(WSGIRequestHandler):
+    def log_request(self, code='-', size='-'):
+        pass
+
 class Server(threading.Thread):
     def __init__(self, app, host="", port=0, threaded=True, processes=1,
-                request_handler=None, passthrough_errors=False, ssl_context=None):
+                request_handler=RequestHandler, passthrough_errors=False, ssl_context=None):
         """ Use ssl_context='adhoc' for an ad-hoc cert, a tuple for a (cerk, pkey) files
             
         
@@ -262,12 +266,10 @@ class Server(threading.Thread):
 
     @property
     def url(self):
-        return 'http%s://%s:%d/'%(('s' if self.ssl_context else ''), self.server.server_name, self.server.server_port)
-
+        return 'http%s://%s:%d/'%(('s' if self.server.ssl_context else ''), self.server.server_name, self.server.server_port)
 
     def run(self):
         self.server.serve_forever()
-
 
     def stop(self):
         self.server.shutdown_signal = True
