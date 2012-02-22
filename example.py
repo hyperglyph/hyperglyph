@@ -41,7 +41,8 @@ def client(endpoint):
     # broker is a page, with a single element, 'queue' which is a form
     queue = broker.queue(name='help')
     # submitting this form takes us to the page for the queue
-    queue.push(msg='help')
+    print queue.push
+    queue.push('help')
     # queue has two forms, 'push', 'pop'
     print queue.pop()
 

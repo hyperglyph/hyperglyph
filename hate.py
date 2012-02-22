@@ -378,7 +378,7 @@ class Form(Extension):
         names = self._content[:]
 
             
-        for n,v in zip(args, names):
+        for n,v in zip(names, args):
             data[n] = v
 
         for k,v in kwargs.items():
