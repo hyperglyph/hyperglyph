@@ -1,0 +1,3 @@
+hate-rpc
+requests
+werzkeug
