@@ -2,9 +2,18 @@ done:
     mapper
     transient objects
 
+    make_server
+        carry over args to werzkeug
 todo:
+    documentation:
+        write an overview
+        serialization format 
+        more examples 
+            changing resources/adding methods/versioning
+
     better form handling:
         map arguments in order
+
 
     decorators?
         @GET? @POST?

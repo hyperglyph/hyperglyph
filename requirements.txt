@@ -1,3 +1,2 @@
-hate-rpc
 requests
 werzkeug

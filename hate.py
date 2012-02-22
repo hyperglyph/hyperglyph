@@ -249,29 +249,23 @@ class Mapper(object):
 
 
 class Server(threading.Thread):
-    def __init__(self, app, host="", port=0):
+    def __init__(self, app, host="", port=0, threaded=True, processes=1,
+                request_handler=None, passthrough_errors=False, ssl_context=None):
+        """ Use ssl_context='adhoc' for an ad-hoc cert, a tuple for a (cerk, pkey) files
+            
+        
+        """
         threading.Thread.__init__(self)
-        self.host = host
-        self.port = port
-        self.app=app
-        self._started = threading.Event()
-        self.server = None
         self.daemon=True
+        self.server = make_server(host, port, app, threaded=threaded, processes=processes,
+            request_handler=request_handler, passthrough_errors=passthrough_errors, ssl_context=ssl_context)
 
     @property
     def url(self):
-        return 'http://%s:%d/'%(self.server.server_name, self.server.server_port)
+        return 'http%s://%s:%d/'%(('s' if self.ssl_context else ''), self.server.server_name, self.server.server_port)
 
-    def start(self):
-        threading.Thread.start(self)
-        while self.is_alive() and not self._started.isSet():
-            self._started.wait(2)
-        if not self.is_alive():
-            raise StandardError('could not start')
 
     def run(self):
-        self.server = make_server(self.host, self.port, self.app)
-        self._started.set()
         self.server.serve_forever()
 
 
