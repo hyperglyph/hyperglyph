@@ -73,7 +73,7 @@ class LinkTest(ServerTest):
         @m.default()
         class Root(hate.r):
             def get(self_):
-                return hate.link(Testr(self.value))
+                return hate.link(Test(self.value))
         return m
 
     def testCase(self):
@@ -93,7 +93,7 @@ class MethodTest(ServerTest):
             def __init__(self, value=0):
                 self.value = int(value)
             def inc(self, n):
-                raise hate.Redirect(Testr(self.value+n))
+                raise hate.Redirect(Test(self.value+n))
         return m
 
     def testCase(self):

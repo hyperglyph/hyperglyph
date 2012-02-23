@@ -77,3 +77,6 @@ hate is an http object mapper:
         - some pages have relations to other pages, in a series.
         - inlining? - treat them as methods (like forms) but no underlying call ?
 
+
+add links to hypermedia design and actions vs entities.
+
