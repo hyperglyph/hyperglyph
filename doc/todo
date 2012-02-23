@@ -38,6 +38,8 @@ todo:
     overrides:
         method, content type
         url mapping, query arguments
+        @resource <-> @property, allow ovveriding bits of methods?
+
     embeds: 
         look at hypermedia afforance list:
             safety, idempotence, mutability, nav/embed
@@ -67,3 +69,20 @@ todo:
         in the url? in a form?
 
     browser - needs content negociation, can use werkzeug templates to make html5/bootstrap interface.
+
+
+
+usecases/testcases
+    atom pub 
+    mail server?
+    mail store?
+    queue (herp?)
+    snmp?
+    scraper pool ?
+        sharding, load balancing, caching, extending
+
+    rest talk?
+        
+
+ideas:
+    jquery plugin?
