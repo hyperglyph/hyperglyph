@@ -62,7 +62,6 @@ class Redirect(BaseException):
 class Resource(object):
     def handle(self,request, resolver):
         method = request.method
-        print request.path
         path = request.path[1:].split('/')[1:]
         data = request.data
         headers = request.headers
@@ -75,7 +74,6 @@ class Resource(object):
         if path:
             path = path[0]
 
-        print 'using path', path
 
         try:
             if path:

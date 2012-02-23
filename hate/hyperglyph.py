@@ -176,9 +176,7 @@ class Form(Extension):
         return fetch(self._attributes.get('method','GET'),url, data=data)
 
     def resolve(self, resolver):
-        print self._attributes['url'],
         self._attributes['url'] = resolver(self._attributes['url'])
-        print self._attributes['url']
 
 @Extension.register('link')
 class Link(Extension):
