@@ -2,7 +2,7 @@ done:
     mapper
     transient objects
     silent server
-    make_server
+    make_server ssl args
     carry over args to werzkeug
     form bug
     documentation
@@ -17,6 +17,9 @@ todo:
 
     persistent objects:
         extend mapper with pool
+        some expire, some don't ?
+
+    session handling in client
 
     mapper:
         _ is private?
@@ -30,8 +33,11 @@ todo:
         @safe? @expires @idempotent
         @content_type
         @accept
+        @ssl_only
 
-
+    overrides:
+        method, content type
+        url mapping, query arguments
     embeds: 
         look at hypermedia afforance list:
             safety, idempotence, mutability, nav/embed
@@ -49,7 +55,7 @@ todo:
                 returning an element within a collection page
         
     caching?
-
+        session handling....
 
     collections:
         like an embed/property, but behaves with the __getitem__ calls ?
@@ -59,3 +65,5 @@ todo:
 
     versioning?
         in the url? in a form?
+
+    browser - needs content negociation, can use werkzeug templates to make html5/bootstrap interface.
