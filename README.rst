@@ -11,6 +11,7 @@ example
 -------
 
 on the server::
+
     class Root(hate.r):
         def login(self, username, password):
             ...
@@ -27,6 +28,7 @@ on the server::
             ...
 
 on the client::
+
     mailbox = hate.get('http://...').login(user, pass)
 
     mailbox.send('hjalp@cyberdog',subject, message)
