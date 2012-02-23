@@ -2,14 +2,34 @@ from urlparse import urljoin
 from StringIO import StringIO
 import requests
 
+CONTENT_TYPE='application/vnd.hanzo.hyperglyph'
 
-"""a serialization format roughly based around bencoding
+"""
+hyperglyph is a serialization format roughly based around bencoding
 
-    byte str -> s<len>:<string>
-    unicode -> u<len>:<utf-8 string>
-    dict -> d<key><value><key><value>....e
-    list -> d<item><item><item><item>....e
-    num -> i<number>e
+    json like vocabulary
+        unicode -> u<len>:<utf-8 string>
+        dict -> d<key><value><key><value>....e
+        list -> l<item><item><item><item>....e
+        float -> f<len>:<float in hex>
+    additonal datatypes:
+        num -> i<number>e
+        byte str -> s<len>:<string>
+        true -> T
+        false -> F
+        none -> N
+        datetime -> D%Y-%m-%dT%H:%M:%S.%f
+
+
+    xml like vocabulary
+        node -> N<name item><attr item><children item>
+            an object with a name, attributes and children
+                attributes is nominally a dict.
+                children nominally list
+        ext -> X<item><item><item>
+            like a node, but contains hyperlinks.
+
+    todo: timezones, periods?
 
     >>> dump([ 1, "2", {3:4}] )
     'li1es1:2di3ei4eee'
@@ -19,9 +39,30 @@ import requests
     [1, '2', {3: 4}]
     >>> parse('lD2001-02-03T04:05:06.070000e')
     [datetime.datetime(2001, 2, 3, 4, 5, 6, 70000, tzinfo=<UTC>)]
+
 """
 
-CONTENT_TYPE='application/vnd.hate.hyperglyph'
+UNICODE_CHARSET="utf-8"
+
+STR='s'
+UNI='u'
+BLOB_SEP=':'
+
+FLT='f'
+NUM='i'
+DICT='d'
+LIST='l'
+DTM='D'
+END='e'
+
+TRUE='T'
+FALSE='F'
+NONE='N'
+
+NODE='x'
+EXT='X'
+
+
 
 HEADERS={'Accept': CONTENT_TYPE, 'Content-Type': CONTENT_TYPE}
 
@@ -151,26 +192,6 @@ class Link(Extension):
     def resolve(self, resolver):
         self._attributes['url'] = resolver(self._attributes['url'])
 
-
-UNICODE_CHARSET="utf-8"
-
-STR='s'
-UNI='u'
-BLOB_SEP=':'
-
-FLT='f'
-NUM='i'
-DICT='d'
-LIST='l'
-DTM='D'
-END='e'
-
-TRUE='T'
-FALSE='F'
-NONE='N'
-
-NODE='x'
-EXT='X'
 
 
 def _dump(obj, buf, resolver):
