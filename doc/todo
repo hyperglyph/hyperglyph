@@ -9,50 +9,58 @@ done:
     documentation
     removed prints
     split out into parts
+    price checker skeleton
+
+remember:
+    should handle http mapping by default, verbs, urls and content_type
+    should be possible to use objects outside of mapper.
 
 todo:
+    properties:
+        handle @properties and produce getters and setters (GET/PUT/DELETE)
+        dont expose form, expose an embed attribute with put, get, delete methods?
+        
     documentation:
         cookbook more examples 
             changing resources/adding methods/versioning
             doing it by hand 
 
-    tests/cookbook
-    make examples/pricechecker/
-        client.py - fetch prices from server
-        server.py - serve prices
-            add caching
-            add sharding
-        test.py
-            add loadbalancers, test caching, sharding version too
-
-    refactoring?
-        @hate.r as wrapper that creates objects and handler
+        make examples/pricechecker/
+            client.py - fetch prices from server
+            server.py - serve prices
+                add caching
+                add sharding
+            test.py
+                add loadbalancers, test caching, sharding version too
 
     persistent objects:
         extend mapper with pool
         some expire, some don't ?
         split out object to page from Resource.get()
         
-    session handling in client
 
-    mapper:
-        _ is private?
-        hate.crawl() - return links ?
+    snapshot?
 
-    properties:
-        handle @properties and produce getters and setters (GET/PUT/DELETE)
+    versioning?
+        map default to /v0/ , default takes a version arg
+        mapper should only take named resources - unnamed ones can be mapped ad-hoc
+        in the url? in a form?
 
-    decorators?
-        @GET? @POST?
-        @safe? @expires @idempotent
-        @content_type
-        @accept
-        @ssl_only
 
-    overrides:
-        method, content type
-        url mapping, query arguments
-        @resource <-> @property, allow ovveriding bits of methods?
+
+    extending behavior:
+        decorators?
+            @GET? @POST?  @safe? @expires @idempotent @content_type @accept @ssl_only
+            knowing when to link and to form...
+
+        overrides:
+            method, content type
+            url mapping, query arguments
+            @resource <-> @property, allow ovveriding bits of methods?
+
+    http client:
+        requests should be optional
+        handling different content-types?
 
     embeds: 
         look at hypermedia afforance list:
@@ -70,17 +78,9 @@ todo:
             inlining:
                 returning an element within a collection page
         
-    caching?
-        session handling....
-
     collections:
         like an embed/property, but behaves with the __getitem__ calls ?
         inlining - behaves like a link, isn't.
-
-    snapshot?
-
-    versioning?
-        in the url? in a form?
 
     browser - needs content negociation, can use werkzeug templates to make html5/bootstrap interface.
 
@@ -97,7 +97,7 @@ usecases/testcases
     twitter api
         last-modified embedding hack
             use embedded for all new items, links for all client is expected to have already
-    rest talk?
+    examples for tmu talk?
         
 
 ideas:

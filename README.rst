@@ -1,11 +1,11 @@
 hate
 ----
 
-hate is an client/server library, that behaves nicely with http,
-it aims to let you grow your api without breaking clients.
+hate is a python client/server library.
+that behaves nicely over http.  
+use it to glue things together.
 
-caveat emptor: it is a work in progress, based on some earlier experiments at work.
-
+not all of it is ready yet. check the examples to see what works.
 
 example
 -------
@@ -15,7 +15,7 @@ on the server::
     class Root(hate.r):
         def login(self, username, password):
             ...
-            raise Redirect(Mailbox(user))
+            return Mailbox(user)
             
     class Mailbox(hate.r):
         def __init__(self, user):
@@ -38,90 +38,84 @@ on the client::
 
 how it works
 ------------
-the server is a web server, Mailbox is mapped to a url.
-When the client GETs the mailbox, it gets serialized
-the object contains the instance __dict__ values
-and the methods are transformed into forms.
+the server is like a web server, and the client is like a screen scraper.
 
-the client is a screen-scraper, it reads a page and transforms 
-it back into an object. forms can be invoked on the page, like
-a method call: page.name(args)
+the initial hate.get() gets the Root resource from the server,
+and turns it into an object. this object has some attributes and some 
+methods, and invoking these methods calls back to the server.
 
-when the client POSTs a form, the url is mapped back 
-to the object and method and invoked with the POST data.
-methods can return data, or redirect to other objects.
-data can be lists, dicts, str, unicode, 
-and can also include links and forms.
+resources are transient: for each request, the server constructs a
+new resource to handle it, and deletes it afterwards.
 
-the key idea
-------------
+in order to keep the state between requests, the client is given a representation of
+the resource's attributes, which it passes back in on method calls.
 
-instead of sharing lists of method names, service description
-languages, or urls ahead of time, links and forms drive the 
-interaction.
+under the covers, the serialization of a resource is much like a webpage.
+it has some data fields, but also contains forms. these forms point back to a 
+particular method on the resource, along with the arguments needed.
 
-the server is free to change where links point to, and to add new methods,
-without changing client code. 
+the url is like a constructor of a resource. the path maps to the class 
+(and possibly method to invoke), and the query arguments map to the
+constructor arguments. 
 
 
 why hate?
 ---------
-it's often easier to scrape a website than use the api
-    - they often change links more than form names and link names
-    - slicing through html is often not much more work than detangling xml
-    - using it in a browser is *self documenting* - very easy to discover bits of the api
-    - all requests look the same - you only need one library for all websites
-        
-apis are harder to grow than websites
-    - load balancing can be hard (the request/responses are stateful)
-    - caching can be hard to add, and must be done ad-hoc in client
-    - versioning is hard
-        
-rpc systems require too much hard coding
-    - url construction, request formatting, often ad-hoc. 
-    - often requires service-specific client libs, or they must be generated.
+unlike other rpc systems where compiling service descriptions, or custom code 
+is necessary for making requests, the server describes the object to the client,
+using forms explain how to make requests.
 
-existing serialization formats don't cover links, forms and 8-bit data.
-    - json is nice but fucked up unicode support. no binary support. no date support.
-      can't do web like thinks - hyperlinks - no form support. no link support 
-    - xml can't handle binary data nicely.and html5 is clunky for dicts, lists, times, booleans.
-    - if you know of one please tell me, yet another ad-hoc format is a constant embarassment.
-    
-snapshotting/archiving information is hard
-    - can't explore api, don't know what is safe to crawl
-    
+instead of the api being defined in terms of urls, it is defined in terms 
+of form names.  the server is now free to change where forms point to. 
+
+this allows hate to provide duck-typing: clients do not care *what* 
+kind of object is returned, as long as it has the right methods.
+
+as a result, hate allows you to grow your api like you grow a website.
+
+- hate services can redirect/link to other services on other hosts
+- new methods and resources can be added without breaking clients
+- take advantage of http tools like caches and load-balancers
 
 
 history
 -------
-hate evolved from experiments at work with connecting the various components together. we'd had
-some bad experiences with message queues exploding, so we avoided brokers. we knew and loved 
-http, so we embraced it. 
+hate evolved from trying to connect processes together, after some bad experiences
+with message queues exploding. http was known and loved throughout the company, 
+and yet another ad-hoc rpc system was born.  
 
-in the beginning, we used json and POST, and it mostly worked, except for UnicodeDecodeErrors.
-we wanted to send 8-bit data, but the json only supports unicode. so I took bencoding as inspiration
-and hacked up an implementation, and it worked.
+in the beginning, there was JSON and POST, and it mostly worked with the notable exception of UnicodeDecodeError.
+it didn't last very long. 8-bit data was a hard requirement, and so bencoding was used instead, with
+a small change to handle utf-8 data as well as bytes.
 
-we had a simple server stub that bound methods to urls, client code would call POST(url, {args})
+we had a simple server stub that bound methods to urls and client code would call POST(url, {args}).
 and we passed a bunch of urls around to sub-processes in order for them to report things. 
-
-we found that although we had not hard coded urls into the system, the api was still rigid. adding a new method
+although we had not hard coded urls into the system, the api was still rigid. adding a new method
 required passing in yet another url, or crafting urls per-request with client side logic. 
 
 instead of passing around urls and writing stubs to use them each time, we figured we could pass around links and forms,
 which would *know* how to call the api, and it would fetch these *from* the api server itself.
-the urls contain enough information to make the call on the server end and they are opaque to the client.
+the urls contain enough information to make the call on the server end and are opaque to the client.
 
-it worked out. we've needed to change the api numerous times since then. adding new methods doesn't break old clients.
+we've needed to change the api numerous times since then. adding new methods doesn't break old clients.
 adding new state to the server doesn't break clients. using links and forms to interact with services is pleasant to
 use for the client, and flexible for the server.
+
+of all the terrible code i've written, this worked out pretty well so far.
 
 hyperglyph
 ----------
 the serialization format, hyperglyph, is an extension of bittorrent's bencoding. it is not language specific
 and contains a simple vocabulary of data - json with a few more convieniences.
 
-i'm embarrased by needing my own serialization format, but the implementation is relatively simple
+unfortunately; existing serialization formats don't cover links, forms and 8-bit data.
+    - json is nice but fucked up unicode support. no binary support. no date support.
+      can't do web like thinks - hyperlinks - no form support. no link support 
+    - xml can't handle binary data nicely.and html5 is clunky for dicts, lists, times, booleans.
+
+if you know of one please tell me, yet another ad-hoc format is a constant embarassment.
+
+to mitigate the shame of writing my own serialization format, at least the implementation is relatively simple
 
 json like vocabulary
     - unicode -> u<len>:<utf-8 string>
@@ -148,46 +142,10 @@ todo: timezones, periods?
 status
 ------
 
-hate is an http object mapper:
-    - mapper (done):
-        - maps classes & objects to pages at urls, GETing them returns state & forms which POST
-        to methods on that class
-        - some objects are per-request, some are persistent
-        - urls and hyperlinks are handled for you
-                
-    - transient pages- instance per request (done)
-        - urls are constructors - the path says which object, and the query string are the parameters.
-        - GETting a url returns the object contents, and forms for each method
-        - forms are built from the method signature, and they can be annotated with decorators
-        - objects are constructed for each request, and disposed afterwards.
-        
-    - persistent pages:
-        - some objects need to persist between requests, and can expire eventually
-        - the mapper keeps a reference to it, and maps a *unique* url to this object.
-        - have an expiry date
-        
-        
-    - serialization: hencoding (partially done)
-        - data serialized using bencode/netstrings alike formatting.
-        - basic: boolean, numbers, lists, dicts, unicode (utf-8), isodatetimes, bytestrings
-        - generic 'object type' - has attributes and children objects
-        - hypermedia objects/affordances: i.e a/link/form/embed - 
-        
-    - opt-in/opt-out (partially)
-        - decorators work on classes & methods ?
-        - can use decorators to *describe* methods on objects as safe/cacheable
-        - can override GET behaviour
-        - can customise inputs/responses with specific content-types
-        - can return custom urls          
-
-    -browser-debugger
-        
-    -collections:
-        - some pages have relations to other pages, in a series.
-        - inlining? - treat them as methods (like forms) but no underlying call ?
-
-
-add links to hypermedia design and actions vs entities.
+notable omissions:
+    html/json/xml output
+    content type overriding
+    authentication handling
 
 
 
