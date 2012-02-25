@@ -99,7 +99,6 @@ class MethodTest(ServerTest):
     def testCase(self):
         result = hate.get(self.endpoint.url)
         self.assertEqual(result.value, 0)
-        print result
         result = result.inc(n=5)
         self.assertEqual(result.value, 5)
 if __name__ == '__main__':

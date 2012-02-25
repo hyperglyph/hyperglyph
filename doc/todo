@@ -1,4 +1,5 @@
 done:
+    move to wsgi, requests. move to params as constructor
     mapper
     transient objects
     silent server
@@ -15,10 +16,28 @@ todo:
             changing resources/adding methods/versioning
             doing it by hand 
 
+    tests/cookbook
+    make examples/pricechecker/
+        client.py - fetch prices from server
+        server.py - serve prices
+            add caching
+            add sharding
+        test.py
+            add loadbalancers, test caching, sharding version too
+
+
     persistent objects:
         extend mapper with pool
         some expire, some don't ?
 
+        split out object to page from Resource.get()
+            
+        no: make @hate.r a wrapper around a normal object ?
+        wrapping functions as resources?
+
+    form values handled in serializer ?
+
+        
     session handling in client
 
     mapper:
@@ -75,14 +94,18 @@ todo:
 usecases/testcases
     atom pub 
     mail server?
-    mail store?
+    mail store? forum
     queue (herp?)
     snmp?
     scraper pool ?
         sharding, load balancing, caching, extending
-
+    twitter api
+        last-modified embedding hack
+            use embedded for all new items, links for all client is expected to have already
     rest talk?
         
 
 ideas:
     jquery plugin?
+
+    db cursors alike for collections ? pagination
