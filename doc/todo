@@ -8,7 +8,7 @@ done:
     form bug
     documentation
     removed prints
-    split out
+    split out into parts
 
 todo:
     documentation:
@@ -31,12 +31,6 @@ todo:
         some expire, some don't ?
 
         split out object to page from Resource.get()
-            
-        no: make @hate.r a wrapper around a normal object ?
-        wrapping functions as resources?
-
-    form values handled in serializer ?
-
         
     session handling in client
 

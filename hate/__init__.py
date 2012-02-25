@@ -21,8 +21,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
 
-from hate.resource import Resource, Mapper, GET, PUT, POST, DELETE
-from hate.hyperglyph import CONTENT_TYPE, dump, parse, get, 
+from hate.resource import *
+from hate.hyperglyph import CONTENT_TYPE, dump, parse, get
 from hate.wsgi import Server
 
 __all__ = [
@@ -30,6 +30,7 @@ __all__ = [
     'get', 'Mapper','map','Resource','r',
     'GET','PUT', 'POST', 'DELETE',
     'parse','dump','node','form','link',
+    'Redirect',
 ]
 
 
