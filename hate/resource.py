@@ -81,6 +81,9 @@ class Resource(object):
         except Redirect as r:
             raise SeeOther(resolver(r.url))
         
+        if isinstance(result, Resource):
+            raise SeeOther(resolver(result))
+
         result = dump(result, resolver)
         return Response(result, content_type=CONTENT_TYPE)
 
@@ -89,7 +92,6 @@ class Resource(object):
 
     def post(self, data):
         pass
-
 
     def put(self, data):
         pass
@@ -147,9 +149,11 @@ class Mapper(object):
         request = Request(environ)
         try:
             response = self.find_resource(request).handle(request, self.url)
+        except StopIteration:
+            raise
         except CustomResponse as r:
             response = r.response()
-        except BaseException as e:
+        except Exception as e:
             import traceback;
             traceback.print_exc()
             response = Response(traceback.format_exc(), status='500 not ok')

@@ -25,11 +25,12 @@ todo:
         test.py
             add loadbalancers, test caching, sharding version too
 
+    refactoring?
+        @hate.r as wrapper that creates objects and handler
 
     persistent objects:
         extend mapper with pool
         some expire, some don't ?
-
         split out object to page from Resource.get()
         
     session handling in client

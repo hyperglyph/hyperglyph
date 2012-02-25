@@ -93,7 +93,7 @@ class MethodTest(ServerTest):
             def __init__(self, value=0):
                 self.value = int(value)
             def inc(self, n):
-                raise hate.Redirect(Test(self.value+n))
+                return Test(self.value+n)
         return m
 
     def testCase(self):
