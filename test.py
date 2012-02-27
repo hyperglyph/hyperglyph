@@ -34,7 +34,7 @@ class NodeTest(unittest2.TestCase):
 
 class ServerTest(unittest2.TestCase):
     def setUp(self):
-        self.endpoint=hate.Server(self.mapper())
+        self.endpoint=hate.Server(self.router())
         self.endpoint.start()
 
     def tearDown(self):
@@ -45,8 +45,8 @@ class GetTest(ServerTest):
         self.value = 0
         ServerTest.setUp(self)
 
-    def mapper(self):
-        m = hate.Mapper()
+    def router(self):
+        m = hate.Router()
         @m.default()
         class Test(hate.r):
             def get(self_):
@@ -55,39 +55,40 @@ class GetTest(ServerTest):
 
     def testCase(self):
         result = hate.get(self.endpoint.url)
-        self.assertEqual(result, self.value)
+
+        self.assertEqual(result.get(), self.value)
 
 class LinkTest(ServerTest):
     def setUp(self):
         self.value = 0
         ServerTest.setUp(self)
 
-    def mapper(self):
-        m = hate.Mapper()
+    def router(self):
+        m = hate.Router()
         @m.add()
         class Test(hate.r):
             def __init__(self, value):
                 self.value = int(value)
-            def get(self):
-                return self.value
+            def double(self):
+                return self.value*2
         @m.default()
         class Root(hate.r):
             def get(self_):
-                return hate.link(Test(self.value))
+                return Test(self.value)
         return m
 
     def testCase(self):
         result = hate.get(self.endpoint.url)
-        result = result()
-        self.assertEqual(result, self.value)
+        result = result.get()
+        self.assertEqual(result.double(), self.value)
 
 
 class MethodTest(ServerTest):
     def setUp(self):
         ServerTest.setUp(self)
 
-    def mapper(self):
-        m = hate.Mapper()
+    def router(self):
+        m = hate.Router()
         @m.default()
         class Test(hate.r):
             def __init__(self, value=0):
@@ -104,8 +105,8 @@ class MethodTest(ServerTest):
         self.assertEqual(result.value, 5)
 class PropertyTest(ServerTest):
 
-    def mapper(self):
-        m = hate.Mapper()
+    def router(self):
+        m = hate.Router()
         @m.default()
         class Test(hate.r):
             def __init__(self, value=0):
@@ -117,7 +118,7 @@ class PropertyTest(ServerTest):
                 return self._value * 2
         return m
 
-    def testCase(self):
+    def _testCase(self):
         result = hate.get(self.endpoint.url)
         self.assertEqual(result.value, 0)
         result.value = 1

@@ -46,11 +46,13 @@ def page(resource):
     return node(resource.__class__.__name__, attributes=page)
 
 
-class Redirect(BaseException):
-    def __init__(self, url):
-        self.url = url
 
-class Resource(object):
+
+class TransientMapper(object):
+    def __init__(self, prefix, cls):
+        self.prefix = prefix
+        self.cls = cls
+
     def handle(self,request, resolver):
         method = request.method
         path = request.path[1:].split('/')[1:]
@@ -64,85 +66,33 @@ class Resource(object):
 
         if path:
             path = path[0]
+        print self.cls
 
+        query = dict([(k,v[0]) for k,v in request.args.items()])
+        obj = self.cls(**query)
 
-        try:
-            if path:
-                r = getattr(self, path)
-                if method == 'GET' or method == 'HEAD' and hasattr(r,'GET'):
-                    result=r()
-                elif method == 'DELETE' and hasattr(r,'DELETE'):
-                    result=r()
-                elif method =='POST': # post is always ok!
-                    result =r(**data)
-                elif method =='PUT' and hasattr(r, 'PUT'):
-                    result=r(data)
-                else:
-                    raise CustomResponse('missing method '+repr(method))
+        if path:
+            r = getattr(obj, path)
+            if method == 'GET' or method == 'HEAD' and hasattr(r,'GET'):
+                result=r()
+            elif method =='POST': # post is always ok!
+                result =r(**data)
+        else:
+            if method == 'GET' or method == 'HEAD':
+                result = page(obj)
             else:
-                if method == 'GET' or method == 'HEAD':
-                    result = self.get()
-                elif method == 'DELETE':
-                    result = self.delete()
-                elif method =='POST':
-                    result = self.post(**data)
-                elif method =='PUT':
-                    result = self.put(data)
-                else:
-                    raise CustomResponse('missing method '+repr(method))
-        except Redirect as r:
-            raise SeeOther(resolver(r.url))
-        
+                raise HTTPException('missing method '+repr(method))
+
         if isinstance(result, Resource):
             raise SeeOther(resolver(result))
 
         result = dump(result, resolver)
         return Response(result, content_type=CONTENT_TYPE)
 
-    def get(self):
-        return page(self)
 
-    def post(self, data):
-        pass
-
-    def put(self, data):
-        pass
-
-    def delete(self):
-        pass
+class Resource(object):
+    __hate__ = TransientMapper
     
-def GET():
-    def _decorate(fn):
-        fn.GET=True
-        return fn
-    return _decorate
-
-def POST():
-    def _decorate(fn):
-        fn.POST=True
-        return fn
-    return _decorate
-
-def PUT():
-    def _decorate(fn):
-        fn.PUT=True
-        return fn
-    return _decorate
-
-def DELETE():
-    def _decorate(fn):
-        fn.DELETE=True
-        return fn
-    return _decorate
-
-class CustomResponse(BaseException):
-    def __init__(self, status, text='', headers=()):
-        self.text=text
-        self.status=status
-        self.headers=headers
-    def response(self):
-        return Response(self.text, status=self.status, headers=self.headers)
-
 
 class SeeOther(HTTPException):
     code = 303
@@ -153,17 +103,17 @@ class SeeOther(HTTPException):
     def get_headers(self, environ):
         return [('Location', self.url)]
 
-class Mapper(object):
+class Router(object):
     def __init__(self):
         self.paths = {}
-        self.resources = {}
+        self.mappers = {}
         self.default_path=''
 
     def __call__(self, environ, start_response):
         request = Request(environ)
         try:
-            response = self.find_resource(request).handle(request, self.url)
-        except StopIteration:
+            response = self.find_mapper(request).handle(request, self.url)
+        except (StopIteration, GeneratorExit, SystemExit, KeyboardInterrupt):
             raise
         except HTTPException as r:
             response = r
@@ -174,29 +124,28 @@ class Mapper(object):
         return response(environ, start_response)
 
 
-    def find_resource(self, request):
+    def find_mapper(self, request):
         if request.path == '/':
             raise SeeOther(self.default_path)
         path=request.path[1:].split('/')
-        resource_class = self.resources[path[0]]
-        query = dict([(k,v[0]) for k,v in request.args.items()])
-        resource = resource_class(**query)
-        return resource
+        mapper = self.mappers[path[0]]
+        return mapper
 
-    def register(self, resource, path=None, default=False):
+    def register(self, obj, path=None, default=False):
         if path is None: 
-            path = resource.__name__
-        self.resources[path] = resource
-        self.paths[resource] = path
+            path = obj.__name__
+        mapper = obj.__hate__(path, obj)
+        self.mappers[path] = mapper
+        self.paths[obj] = path
         if default:
             self.default_path=path
-        return resource
+        return obj
 
     def add(self):
         return self.register
 
     def default(self):
-        return lambda resource: self.register(resource, default=True)
+        return lambda obj: self.register(obj, default=True)
 
     def url(self, r):
         try:

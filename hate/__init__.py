@@ -27,12 +27,9 @@ from hate.wsgi import Server
 
 __all__ = [
     'CONTENT_TYPE','Server',
-    'get', 'Mapper','map','Resource','r',
-    'GET','PUT', 'POST', 'DELETE',
+    'get', 'Router','Resource','r',
     'parse','dump','node','form','link',
-    'Redirect',
 ]
 
 
 r = Resource
-map = Mapper
