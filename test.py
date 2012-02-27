@@ -100,6 +100,27 @@ class MethodTest(ServerTest):
         result = hate.get(self.endpoint.url)
         self.assertEqual(result.value, 0)
         result = result.inc(n=5)
+
         self.assertEqual(result.value, 5)
+class PropertyTest(ServerTest):
+
+    def mapper(self):
+        m = hate.Mapper()
+        @m.default()
+        class Test(hate.r):
+            def __init__(self, value=0):
+                self._value = int(value)
+            @property
+            def value(self):
+                return self._value
+            def double(self):   
+                return self._value * 2
+        return m
+
+    def testCase(self):
+        result = hate.get(self.endpoint.url)
+        self.assertEqual(result.value, 0)
+        result.value = 1
+        self.assertEqual(result.double(), 2)
 if __name__ == '__main__':
     unittest2.main()

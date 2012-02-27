@@ -14,11 +14,16 @@ from hate.hyperglyph import CONTENT_TYPE, dump, parse, get, Node, Extension
 def node(name, attributes, children=None):
     return Node(name, attributes, children)
 
-def form(url, method='POST',values=()):
+def form(url, method='POST',values=None):
+    if callable(url) and hasattr(url, 'func_code'):
+        values=url.func_code.co_varnames[1:]
     return Extension.make('form', {'method':method, 'url':url}, values)
 
 def link(url, method='GET'):
     return Extension.make('link', {'method':method, 'url':url}, [])
+
+def prop(url):
+    return Extension.make('property', {'url':url}, [])
 
 def page(resource):
     page = {}
@@ -26,11 +31,17 @@ def page(resource):
         if not k.startswith('_'):
             page[k] = v
     
-    for m in resource.__class__.__dict__:
+    for m in dir(resource.__class__):
         if not m.startswith('_'):
-            attr = getattr(resource,m)
-            if hasattr(attr, 'func_code'):
-                page[m] = form(attr, values=attr.func_code.co_varnames[1:])
+            cls_attr = getattr(resource.__class__ ,m)
+            if isinstance(cls_attr, property):
+                raise StandardError()
+                page[m] = prop((resource,m))
+
+            elif callable:
+                ins_attr = getattr(resource,m)
+                if hasattr(ins_attr, 'func_code'):
+                    page[m] = form(ins_attr)
     return node(resource.__class__.__name__, attributes=page)
 
 

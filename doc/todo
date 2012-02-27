@@ -15,7 +15,43 @@ remember:
     should handle http mapping by default, verbs, urls and content_type
     should be possible to use objects outside of mapper.
 
+refactor:
+    change from Mapper <-> Resources
+    to Mapper <-> Handler <-> User Objects
+
+    instead of extending resources, you provide a handler to the mapper for that class:
+
+        m = Mapper()
+
+        @m.add(....)
+        class Root(object):
+            ....
+
+    mapper becomes router
+        find handler for path prefix, offload request to it, expect stuff back
+    resource becomes handler:
+        an instance of the handler is stored in the mapper, 
+
+    werkzeug overlap:
+        http://werkzeug.pocoo.org/docs/exceptions/
+        remove custom response
+
+
+    requests dependency
+        make requests.py :v
+
+    handler 
 todo:
+    serialization:
+        handling return self    return [self, self]
+        turn resources into links or forms automatically?
+        turn resolver into a visitor ?
+
+    mapper:
+        mapper should only take named resources - unnamed ones can be mapped ad-hoc
+        mapper should ask resources to urlify themselves?
+
+
     properties:
         handle @properties and produce getters and setters (GET/PUT/DELETE)
         dont expose form, expose an embed attribute with put, get, delete methods?
@@ -24,6 +60,8 @@ todo:
         cookbook more examples 
             changing resources/adding methods/versioning
             doing it by hand 
+                using urllib to access a server
+                using flask to build a service?
 
         make examples/pricechecker/
             client.py - fetch prices from server
@@ -39,12 +77,10 @@ todo:
         split out object to page from Resource.get()
         
 
-    snapshot?
 
     versioning?
         map default to /v0/ , default takes a version arg
-        mapper should only take named resources - unnamed ones can be mapped ad-hoc
-        in the url? in a form?
+            / rreturns 300 if multiple versions
 
 
 
@@ -84,13 +120,16 @@ todo:
 
     browser - needs content negociation, can use werkzeug templates to make html5/bootstrap interface.
 
-
+    snapshoting:
+        crawling an api
 
 usecases/testcases
     atom pub 
     mail server?
     mail store? forum
-    queue (herp?)
+    queue/broker(herp?)
+        use preconditions to do transactional semantics?
+
     snmp?
     scraper pool ?
         sharding, load balancing, caching, extending
@@ -104,3 +143,10 @@ ideas:
     jquery plugin?
 
     db cursors alike for collections ? pagination
+
+
+ports:
+    ruby, js - object style
+
+    php:
+        create foo.php for each resource, use links.
