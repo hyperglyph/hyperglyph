@@ -2,8 +2,8 @@ hate
 ----
 
 hate is a python client/server library.
-that behaves nicely over http.  
-use it to glue things together.
+
+it is like json with callbacks. use it to glue things together.
 
 not all of it is ready yet. check the examples to see what works.
 

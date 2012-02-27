@@ -11,31 +11,17 @@ done:
     split out into parts
     price checker skeleton
 
+    refactor:
+        moved to werkzeug exceptions
+        change from Mapper <-> Resources
+        to Router <-> Mapper <-> User Objects
+
+    nope: mapper should only take named resources - unnamed ones can be mapped ad-hoc
+        rationale: hard to do properly with linking, embedding, etc. 
+    mapper should ask resources to urlify themselves?
 remember:
     should handle http mapping by default, verbs, urls and content_type
     should be possible to use objects outside of mapper.
-
-refactor:
-    change from Mapper <-> Resources
-    to Router <-> Mapper <-> User Objects
-
-    instead of extending resources, you provide a handler to the mapper for that class:
-
-        m = Mapper()
-
-        @m.add(....)
-        class Root(object):
-            ....
-
-    mapper becomes router
-        find handler for path prefix, offload request to it, expect stuff back
-    resource becomes handler:
-        an instance of the handler is stored in the mapper, 
-
-    werkzeug overlap:
-        http://werkzeug.pocoo.org/docs/exceptions/
-        remove custom response
-
 
     requests dependency
         make requests.py :v
@@ -48,13 +34,12 @@ todo:
         turn resolver into a visitor ?
 
     mapper:
-        mapper should only take named resources - unnamed ones can be mapped ad-hoc
-        mapper should ask resources to urlify themselves?
 
 
     properties:
         handle @properties and produce getters and setters (GET/PUT/DELETE)
         dont expose form, expose an embed attribute with put, get, delete methods?
+        hard to do properly, what do you to do embed a link, etc ? self.foo calls __get__ ....
         
     documentation:
         cookbook more examples 

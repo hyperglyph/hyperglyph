@@ -79,7 +79,7 @@ class TransientMapper(object):
         if path:
             path = path[0]
 
-        query = dict([(k,v[0]) for k,v in request.args.items()])
+        query = dict(request.args.items())
         obj = self.cls(**query)
 
         if path:
