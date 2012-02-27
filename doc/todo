@@ -26,17 +26,17 @@ remember:
     should be possible to use objects outside of mapper.
 
 
-    handler 
 todo:
+    transient resources:
+        better mapping to urls
+        don't use query arguments to serialize dict? urlencoded glyph :v
+        caching decorator?
+
     refactoring:
-        make links, forms, embeds explicit again
-
-        make location header absolute ?
-
-    serialization:
-        handling return self    return [self, self]
-        turn resources into links or forms automatically?
-        turn resolver into a visitor ?
+        possible: make links, forms, embeds explicit again
+        possible: handle return self, self (what to do? embeds, links?)
+                  glyph handles resources?
+                  turn resolver into a visitor ?
 
     properties:
         handle @properties and produce getters and setters (GET/PUT/DELETE)
@@ -51,9 +51,7 @@ todo:
     documentation:
         cookbook more examples 
             changing resources/adding methods/versioning
-            doing it by hand 
-                using urllib to access a server
-                using flask to build a service?
+            doing it by hand client/server.
 
         examples/pricechecker/
                 add loadbalancers, test caching, sharding version too
@@ -76,6 +74,8 @@ todo:
     http client:
         requests should be optional
         handling different content-types returned?
+            return binary for non text mimetypes, text otherwise.
+            hate.get(url/link, options) etc?
 
     embeds: 
         look at hypermedia afforance list:
@@ -103,29 +103,18 @@ todo:
         crawling an api
 
 usecases/testcases
-    atom pub 
-    mail server?
-    mail store? forum
-    queue/broker(herp?)
+    atom pub mail server?  mail store? forum queue/broker(herp?)
         use preconditions to do transactional semantics?
-
-    snmp?
+    snmp? crawling
     scraper pool ?
         sharding, load balancing, caching, extending
-    twitter api
-        last-modified embedding hack
+    twitter api - last-modified embedding hack
             use embedded for all new items, links for all client is expected to have already
     examples for a talk?
-        
-
-ideas:
-    jquery plugin?
-
     db cursors alike for collections ? pagination
 
 
 ports:
+    jquery plugin?
     ruby, js - object style
-
-    php:
-        create foo.php for each resource, use links.
+    cgi/php: create foo.php for each resource, use links.
