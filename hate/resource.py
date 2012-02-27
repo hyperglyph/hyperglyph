@@ -15,9 +15,11 @@ from hate.hyperglyph import CONTENT_TYPE, dump, parse, get, Node, Extension
 def node(name, attributes, children=None):
     return Node(name, attributes, children)
 
+
+
 def form(url, method='POST',values=None):
-    if callable(url) and hasattr(url, 'func_code'):
-        values=url.func_code.co_varnames[1:]
+    if values is None:
+        values=methodargs(url)
     return Extension.make('form', {'method':method, 'url':url}, values)
 
 def link(url, method='GET'):
@@ -25,6 +27,15 @@ def link(url, method='GET'):
 
 def prop(url):
     return Extension.make('property', {'url':url}, [])
+
+
+def ismethod(m, cls=None):
+    return callable(m) and hasattr(m,'im_self') and (cls is None or isinstance(m.im_self, cls))
+
+def methodargs(m):
+    if ismethod(m):
+        return m.func_code.co_varnames[1:]
+
 
 def page(resource):
     page = {}
@@ -43,6 +54,7 @@ def page(resource):
                 ins_attr = getattr(resource,m)
                 if hasattr(ins_attr, 'func_code'):
                     page[m] = form(ins_attr)
+
     return node(resource.__class__.__name__, attributes=page)
 
 
@@ -66,7 +78,6 @@ class TransientMapper(object):
 
         if path:
             path = path[0]
-        print self.cls
 
         query = dict([(k,v[0]) for k,v in request.args.items()])
         obj = self.cls(**query)
@@ -89,6 +100,15 @@ class TransientMapper(object):
         result = dump(result, resolver)
         return Response(result, content_type=CONTENT_TYPE)
 
+    def url(self, r):
+        if isinstance(r, self.cls):
+            return "/%s/?%s"%(self.prefix, urlencode(r.__dict__))
+        elif isinstance(r, type) and issubclass(r, self.cls):
+                return '/%s/'%self.prefix
+        elif ismethod(r, self.cls):
+                return "/%s/%s/?%s"%(self.prefix, r.im_func.__name__, urlencode(r.im_self.__dict__))
+
+
 
 class Resource(object):
     __hate__ = TransientMapper
@@ -105,14 +125,14 @@ class SeeOther(HTTPException):
 
 class Router(object):
     def __init__(self):
-        self.paths = {}
         self.mappers = {}
+        self.routes = {}
         self.default_path=''
 
     def __call__(self, environ, start_response):
         request = Request(environ)
         try:
-            response = self.find_mapper(request).handle(request, self.url)
+            response = self.find_mapper(request.path).handle(request, self.url)
         except (StopIteration, GeneratorExit, SystemExit, KeyboardInterrupt):
             raise
         except HTTPException as r:
@@ -124,41 +144,37 @@ class Router(object):
         return response(environ, start_response)
 
 
-    def find_mapper(self, request):
-        if request.path == '/':
+    def find_mapper(self, path):
+        if path == '/':
             raise SeeOther(self.default_path)
-        path=request.path[1:].split('/')
-        mapper = self.mappers[path[0]]
-        return mapper
+        path= path[1:].split('/')
+        return  self.routes[path[0]]
 
     def register(self, obj, path=None, default=False):
         if path is None: 
             path = obj.__name__
         mapper = obj.__hate__(path, obj)
-        self.mappers[path] = mapper
-        self.paths[obj] = path
+        self.routes[path] = mapper
+        self.mappers[obj] = mapper
         if default:
             self.default_path=path
         return obj
+
+
+    def url(self, r):
+        if isinstance(r, basestring):
+            return r
+        elif isinstance(r, Resource):
+            return self.mappers[r.__class__].url(r)
+        elif (isinstance(r, type) and issubclass(r, Resource)):
+            return self.mappers[r].url(r)
+        elif ismethod(r, Resource):
+            return self.mappers[r.im_class].url(r)
+
+        raise StandardError('cant encode',r )
 
     def add(self):
         return self.register
 
     def default(self):
         return lambda obj: self.register(obj, default=True)
-
-    def url(self, r):
-        try:
-            if isinstance(r, basestring):
-                return r
-            elif isinstance(r, Resource):
-                return "/%s/?%s"%(self.paths[r.__class__], urlencode(r.__dict__))
-            elif isinstance(r, type) and issubclass(r, Resource):
-                return self.paths[r]
-            elif callable(r) and hasattr(r,'im_self'):
-                return "/%s/%s/?%s"%(self.paths[r.im_self.__class__], r.im_func.__name__, urlencode(r.im_self.__dict__))
-        except:
-            import traceback;
-            traceback.print_exc()
-            
-        raise StandardError('cant encode')
