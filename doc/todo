@@ -18,7 +18,9 @@ done:
 
     nope: mapper should only take named resources - unnamed ones can be mapped ad-hoc
         rationale: hard to do properly with linking, embedding, etc. 
-    mapper should ask resources to urlify themselves?
+    done: router should ask resources to urlify themselves?
+        mapper now handles this outside router
+
 remember:
     should handle http mapping by default, verbs, urls and content_type
     should be possible to use objects outside of mapper.
@@ -28,18 +30,25 @@ remember:
 
     handler 
 todo:
+    refactoring:
+        make links, forms, embeds explicit again
+
+        make location header absolute ?
+
     serialization:
         handling return self    return [self, self]
         turn resources into links or forms automatically?
         turn resolver into a visitor ?
 
-    mapper:
-
-
     properties:
         handle @properties and produce getters and setters (GET/PUT/DELETE)
         dont expose form, expose an embed attribute with put, get, delete methods?
         hard to do properly, what do you to do embed a link, etc ? self.foo calls __get__ ....
+
+    persistent objects:
+        extend mapper with pool
+        some expire, some don't ?
+
         
     documentation:
         cookbook more examples 
@@ -48,26 +57,13 @@ todo:
                 using urllib to access a server
                 using flask to build a service?
 
-        make examples/pricechecker/
-            client.py - fetch prices from server
-            server.py - serve prices
-                add caching
-                add sharding
-            test.py
+        examples/pricechecker/
                 add loadbalancers, test caching, sharding version too
-
-    persistent objects:
-        extend mapper with pool
-        some expire, some don't ?
-        split out object to page from Resource.get()
-        
 
 
     versioning?
         map default to /v0/ , default takes a version arg
             / rreturns 300 if multiple versions
-
-
 
     extending behavior:
         decorators?

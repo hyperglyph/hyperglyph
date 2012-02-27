@@ -10,23 +10,7 @@ from pytz import utc
 from werkzeug.wrappers import Request, Response
 from werkzeug.exceptions import HTTPException
 
-from hate.hyperglyph import CONTENT_TYPE, dump, parse, get, Node, Extension
-
-def node(name, attributes, children=None):
-    return Node(name, attributes, children)
-
-
-
-def form(url, method='POST',values=None):
-    if values is None:
-        values=methodargs(url)
-    return Extension.make('form', {'method':method, 'url':url}, values)
-
-def link(url, method='GET'):
-    return Extension.make('link', {'method':method, 'url':url}, [])
-
-def prop(url):
-    return Extension.make('property', {'url':url}, [])
+from hate.hyperglyph import CONTENT_TYPE, dump, parse, get, form, link, node
 
 
 def ismethod(m, cls=None):
@@ -50,10 +34,10 @@ def page(resource):
                 raise StandardError()
                 page[m] = prop((resource,m))
 
-            elif callable:
+            elif callable(cls_attr):
                 ins_attr = getattr(resource,m)
                 if hasattr(ins_attr, 'func_code'):
-                    page[m] = form(ins_attr)
+                    page[m] = form(ins_attr, values=methodargs(ins_attr))
 
     return node(resource.__class__.__name__, attributes=page)
 
@@ -65,7 +49,7 @@ class TransientMapper(object):
         self.prefix = prefix
         self.cls = cls
 
-    def handle(self,request, resolver):
+    def handle(self,request, router):
         method = request.method
         path = request.path[1:].split('/')[1:]
         data = request.data
@@ -95,9 +79,9 @@ class TransientMapper(object):
                 raise HTTPException('missing method '+repr(method))
 
         if isinstance(result, Resource):
-            raise SeeOther(resolver(result))
+            raise SeeOther(router.url(result))
 
-        result = dump(result, resolver)
+        result = dump(result, router.url)
         return Response(result, content_type=CONTENT_TYPE)
 
     def url(self, r):
@@ -132,7 +116,7 @@ class Router(object):
     def __call__(self, environ, start_response):
         request = Request(environ)
         try:
-            response = self.find_mapper(request.path).handle(request, self.url)
+            response = self.find_mapper(request.path).handle(request, self)
         except (StopIteration, GeneratorExit, SystemExit, KeyboardInterrupt):
             raise
         except HTTPException as r:

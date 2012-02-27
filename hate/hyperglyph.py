@@ -41,6 +41,18 @@ hyperglyph is a serialization format roughly based around bencoding
     [datetime.datetime(2001, 2, 3, 4, 5, 6, 70000, tzinfo=<UTC>)]
 
 """
+def node(name, attributes, children=None):
+    return Node(name, attributes, children)
+
+def form(url, method='POST',values=None):
+    return Extension.make('form', {'method':method, 'url':url}, values)
+
+def link(url, method='GET'):
+    return Extension.make('link', {'method':method, 'url':url}, [])
+
+def prop(url):
+    return Extension.make('property', {'url':url}, [])
+
 
 UNICODE_CHARSET="utf-8"
 
