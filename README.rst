@@ -1,14 +1,26 @@
 hate
 ----
 
-hate is a python client/server library.
+hate is a python client/server library.  use it to glue things together.
 
-it is like json with callbacks. use it to glue things together.
+the server turns objects into something like json with callbacks. 
+
+the client uses the callbacks from the server, as opposed to hardcoding the api.
 
 not all of it is ready yet. check the examples to see what works.
 
 example
 -------
+on the client::
+
+    mailbox = hate.get('http://...')
+    
+    mailbox = mailbox.login(user, pass)
+
+    mailbox.send('hjalp@cyberdog',subject, message)
+
+    print mailbox.length(), mailbox.user
+
 
 on the server::
 
@@ -27,32 +39,25 @@ on the server::
         def send(self, to, subject, message):
             ...
 
-on the client::
-
-    mailbox = hate.get('http://...').login(user, pass)
-
-    mailbox.send('hjalp@cyberdog',subject, message)
-
-    print mailbox.length(), mailbox.user
-
 
 how it works
 ------------
-the server is like a web server, and the client is like a screen scraper.
 
-the initial hate.get() gets the Root resource from the server,
-and turns it into an object. this object has some attributes and some 
-methods, and invoking these methods calls back to the server.
+the initial hate.get() gets a json-like serialization of Root. 
+it has callbacks and attributes. these callbacks map to methods,
+and they can return other resources or json-like data.
 
-resources are transient: for each request, the server constructs a
-new resource to handle it, and deletes it afterwards.
+at the server side,  Root, Mailbox are transient. For each request the
+server constructs a new instance to handle it, and deletes it afterwards. 
 
-in order to keep the state between requests, the client is given a representation of
-the resource's attributes, which it passes back in on method calls.
+however, the callbacks know enough to reconstruct the object 
+or subsequent requests 
 
 under the covers, the serialization of a resource is much like a webpage.
-it has some data fields, but also contains forms. these forms point back to a 
+it has some data fields, but also contains forms. these forms are a callback to a 
 particular method on the resource, along with the arguments needed.
+
+in effect: the server is like a web server, and the client is like a screen scraper.
 
 the url is like a constructor of a resource. the path maps to the class 
 (and possibly method to invoke), and the query arguments map to the
