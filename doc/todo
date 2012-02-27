@@ -17,7 +17,7 @@ remember:
 
 refactor:
     change from Mapper <-> Resources
-    to Mapper <-> Handler <-> User Objects
+    to Router <-> Mapper <-> User Objects
 
     instead of extending resources, you provide a handler to the mapper for that class:
 
