@@ -8,6 +8,7 @@ from datetime import datetime
 from pytz import utc
 
 from werkzeug.wrappers import Request, Response
+from werkzeug.exceptions import HTTPException
 
 from hate.hyperglyph import CONTENT_TYPE, dump, parse, get, Node, Extension
 
@@ -142,13 +143,15 @@ class CustomResponse(BaseException):
     def response(self):
         return Response(self.text, status=self.status, headers=self.headers)
 
-class ServerError(CustomResponse):
-    def __init__(self, reason):
-        CustomResponse.__init__(self, status='500 error', text=reason)
 
-class SeeOther(CustomResponse):
+class SeeOther(HTTPException):
+    code = 303
+    description = ''
     def __init__(self, url):
-        CustomResponse.__init__(self, status = '303 See Other', headers = [('Location', url)])
+        self.url = url
+        HTTPException.__init__(self)
+    def get_headers(self, environ):
+        return [('Location', self.url)]
 
 class Mapper(object):
     def __init__(self):
@@ -162,8 +165,8 @@ class Mapper(object):
             response = self.find_resource(request).handle(request, self.url)
         except StopIteration:
             raise
-        except CustomResponse as r:
-            response = r.response()
+        except HTTPException as r:
+            response = r
         except Exception as e:
             import traceback;
             traceback.print_exc()
