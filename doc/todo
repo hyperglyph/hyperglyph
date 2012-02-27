@@ -25,8 +25,6 @@ remember:
     should handle http mapping by default, verbs, urls and content_type
     should be possible to use objects outside of mapper.
 
-    requests dependency
-        make requests.py :v
 
     handler 
 todo:
@@ -77,7 +75,7 @@ todo:
 
     http client:
         requests should be optional
-        handling different content-types?
+        handling different content-types returned?
 
     embeds: 
         look at hypermedia afforance list:
@@ -117,7 +115,7 @@ usecases/testcases
     twitter api
         last-modified embedding hack
             use embedded for all new items, links for all client is expected to have already
-    examples for tmu talk?
+    examples for a talk?
         
 
 ideas:

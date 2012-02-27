@@ -2,20 +2,23 @@ hate
 ----
 
 hate is a python client/server library.  use it to glue things together.
+n.b. although hate is written in python, the protocol is not tied to it.
 
-the server turns objects into something like json with callbacks. 
+the server turns objects into something like json* with callbacks. 
 
 the client uses the callbacks from the server, as opposed to hardcoding the api.
 
 not all of it is ready yet. check the examples to see what works.
 
+* may not resemble json when serialized
+
 example
 -------
 on the client::
 
-    mailbox = hate.get('http://...')
+    root = hate.get('http://...')
     
-    mailbox = mailbox.login(user, pass)
+    mailbox = root.login(user, pass)
 
     mailbox.send('hjalp@cyberdog',subject, message)
 
@@ -24,11 +27,14 @@ on the client::
 
 on the server::
 
+    r = hate.Router() # a wsgi app
+
+    @r.default()
     class Root(hate.r):
         def login(self, username, password):
             ...
             return Mailbox(user)
-            
+    @r.add()
     class Mailbox(hate.r):
         def __init__(self, user):
                 self.user = user
@@ -43,8 +49,8 @@ on the server::
 how it works
 ------------
 
-the initial hate.get() gets a json-like serialization of Root. 
-it has callbacks and attributes. these callbacks map to methods,
+the initial hate.get() gets a serialization of a Root instance. 
+it has callbacks and attributes. these callbacks map to methods at the server,
 and they can return other resources or json-like data.
 
 at the server side,  Root, Mailbox are transient. For each request the
@@ -53,16 +59,15 @@ server constructs a new instance to handle it, and deletes it afterwards.
 however, the callbacks know enough to reconstruct the object 
 or subsequent requests 
 
-under the covers, the serialization of a resource is much like a webpage.
+under the covers, the serialization of an object is much like a webpage.
 it has some data fields, but also contains forms. these forms are a callback to a 
 particular method on the resource, along with the arguments needed.
-
-in effect: the server is like a web server, and the client is like a screen scraper.
 
 the url is like a constructor of a resource. the path maps to the class 
 (and possibly method to invoke), and the query arguments map to the
 constructor arguments. 
 
+in effect: the server is like a web server, and the client is like a screen scraper.
 
 why hate?
 ---------
@@ -70,18 +75,15 @@ unlike other rpc systems where compiling service descriptions, or custom code
 is necessary for making requests, the server describes the object to the client,
 using forms explain how to make requests.
 
-instead of the api being defined in terms of urls, it is defined in terms 
-of form names.  the server is now free to change where forms point to. 
-
 this allows hate to provide duck-typing: clients do not care *what* 
 kind of object is returned, as long as it has the right methods.
 
-as a result, hate allows you to grow your api like you grow a website.
+the server is now free to change where forms point to.  as a result,
+hate allows you to grow your api like you grow a website.
 
 - hate services can redirect/link to other services on other hosts
 - new methods and resources can be added without breaking clients
 - take advantage of http tools like caches and load-balancers
-
 
 history
 -------
