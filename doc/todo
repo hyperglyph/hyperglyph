@@ -21,6 +21,8 @@ done:
     done: router should ask resources to urlify themselves?
         mapper now handles this outside router
 
+    worker queue example
+
 remember:
     should handle http mapping by default, verbs, urls and content_type
     should be possible to use objects outside of mapper.
@@ -46,8 +48,8 @@ todo:
     persistent objects:
         extend mapper with pool
         some expire, some don't ?
+            raise an Exception to delete ?
 
-        
     documentation:
         cookbook more examples 
             changing resources/adding methods/versioning
