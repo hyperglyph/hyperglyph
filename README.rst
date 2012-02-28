@@ -54,11 +54,11 @@ the initial hate.get() gets a serialization of a Root instance.
 it has callbacks and attributes. these callbacks map to methods at the server,
 and they can return other resources or json-like data.
 
-at the server side,  Root, Mailbox are transient. For each request the
+at the server side, the  Root, Mailbox objects are transient. For each request the
 server constructs a new instance to handle it, and deletes it afterwards. 
 
 however, the callbacks know enough to reconstruct the object 
-or subsequent requests 
+for subsequent requests. this means no in-place update of remote-objects.
 
 under the covers, the serialization of an object is much like a webpage.
 it has some data fields, but also contains forms. these forms are a callback to a 
