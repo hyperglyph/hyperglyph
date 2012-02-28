@@ -20,13 +20,8 @@ def methodargs(m):
     if ismethod(m):
         return m.func_code.co_varnames[1:]
 
-
-def page(resource):
-    page = {}
-    for k,v in resource.__dict__.items():
-        if not k.startswith('_'):
-            page[k] = v
-    
+def make_forms(resource):
+    forms = {}
     for m in dir(resource.__class__):
         if not m.startswith('_'):
             cls_attr = getattr(resource.__class__ ,m)
@@ -37,23 +32,30 @@ def page(resource):
             elif callable(cls_attr):
                 ins_attr = getattr(resource,m)
                 if hasattr(ins_attr, 'func_code'):
-                    page[m] = form(ins_attr, values=methodargs(ins_attr))
+                    forms[m] = form(ins_attr, values=methodargs(ins_attr))
+    return forms
 
-    return node(resource.__class__.__name__, attributes=page)
-
-
-
-
-class TransientMapper(object):
+class BaseMapper(object):
     def __init__(self, prefix, cls):
         self.prefix = prefix
         self.cls = cls
+
+    def url(self, r):
+        if isinstance(r, self.cls):
+            return "/%s/?%s"%(self.prefix, urlencode(self.get_state(r)))
+        elif isinstance(r, type) and issubclass(r, self.cls):
+                return '/%s/'%self.prefix
+        elif ismethod(r, self.cls):
+                return "/%s/%s/?%s"%(self.prefix, r.im_func.__name__, urlencode(self.get_state(r.im_self)))
+
 
     def handle(self,request, router):
         method = request.method
         path = request.path[1:].split('/')[1:]
         data = request.data
         headers = request.headers
+
+        obj = self.get_resource(request.args)
 
         if data:
             data = parse(data)
@@ -63,9 +65,6 @@ class TransientMapper(object):
         if path:
             path = path[0]
 
-        query = dict(request.args.items())
-        obj = self.cls(**query)
-
         if path:
             r = getattr(obj, path)
             if method == 'GET' or method == 'HEAD' and hasattr(r,'GET'):
@@ -74,7 +73,7 @@ class TransientMapper(object):
                 result =r(**data)
         else:
             if method == 'GET' or method == 'HEAD':
-                result = page(obj)
+                result = self.index(obj)
             else:
                 raise HTTPException('missing method '+repr(method))
 
@@ -84,18 +83,30 @@ class TransientMapper(object):
         result = dump(result, router.url)
         return Response(result, content_type=CONTENT_TYPE)
 
-    def url(self, r):
-        if isinstance(r, self.cls):
-            return "/%s/?%s"%(self.prefix, urlencode(r.__dict__))
-        elif isinstance(r, type) and issubclass(r, self.cls):
-                return '/%s/'%self.prefix
-        elif ismethod(r, self.cls):
-                return "/%s/%s/?%s"%(self.prefix, r.im_func.__name__, urlencode(r.im_self.__dict__))
+    def index(self, resource):
+        page = {}
+        page.update(resource.index())
+        page.update(make_forms(resource))
+        return node(resource.__class__.__name__, attributes=page)
+
+class TransientMapper(BaseMapper):
+    def get_resource(self, args):
+        """ given the representation of the state of a resource, return a resource instance """
+        query = dict(args.items())
+        return self.cls(**query)
+
+    def get_state(self, resource):
+        """ return the representation of the state of the resource as a dict """
+        return resource.__dict__
 
 
 
 class Resource(object):
     __hate__ = TransientMapper
+
+    def index(self):
+        return dict((k,v) for k,v in self.__dict__.items() if not k.startswith('_'))
+        
     
 
 class SeeOther(HTTPException):

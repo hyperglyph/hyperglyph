@@ -34,6 +34,9 @@ todo:
         don't use query arguments to serialize dict? urlencoded glyph :v
         caching decorator?
 
+        resource/handler has index() method returns self.__dict__ ?
+        resource/handler has to_args() from_args() methods
+
     refactoring:
         possible: make links, forms, embeds explicit again
         possible: handle return self, self (what to do? embeds, links?)
