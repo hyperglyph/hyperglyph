@@ -50,44 +50,34 @@ class BaseMapper(object):
 
 
     def handle(self,request, router):
-        method = request.method
         path = request.path[1:].split('/')[1:]
-        data = request.data
-        headers = request.headers
-
+        # todo throw nice errors here? bad request?
         obj = self.get_resource(request.args)
+        # try/ 404 ?
+        attr = 'index' if not path or not path[0] else path[0]
 
-        if data:
-            data = parse(data)
-        else:
-            data={}
+        attr  = getattr(obj, attr)
 
-        if path:
-            path = path[0]
-
-        if path:
-            r = getattr(obj, path)
-            if method == 'GET' or method == 'HEAD' and hasattr(r,'GET'):
-                result=r()
-            elif method =='POST': # post is always ok!
-                result =r(**data)
-        else:
-            if method == 'GET' or method == 'HEAD':
-                result = self.index(obj)
-            else:
-                raise HTTPException('missing method '+repr(method))
+        method = request.method
+        if method == 'GET' and (attr =='index' or getattr(attr, 'safe', False)):
+            result = attr()
+        elif method =='POST': # post is always ok!
+            data = parse(request.data) if request.data else {}
+            result =attr(**data)
 
         if isinstance(result, Resource):
             raise SeeOther(router.url(result))
 
         result = dump(result, router.url)
+
         return Response(result, content_type=CONTENT_TYPE)
 
-    def index(self, resource):
-        page = {}
-        page.update(resource.index())
-        page.update(make_forms(resource))
-        return node(resource.__class__.__name__, attributes=page)
+
+def safe():
+    def _decorate(fn):
+        fn.safe = True
+        return fn
+    return _decorate
 
 class TransientMapper(BaseMapper):
     def get_resource(self, args):
@@ -104,10 +94,16 @@ class TransientMapper(BaseMapper):
 class Resource(object):
     __hate__ = TransientMapper
 
+    @safe()
     def index(self):
-        return dict((k,v) for k,v in self.__dict__.items() if not k.startswith('_'))
+        page = dict((k,v) for k,v in self.__dict__.items() if not k.startswith('_'))
+        page.update(make_forms(self))
+        return node(self.__class__.__name__, attributes=page)
         
-    
+def get_mapper(obj, name):
+    if hasattr(obj, '__hate__') and issubclass(obj.__hate__, BaseMapper):
+        return obj.__hate__(name, obj)
+    raise StandardError('no mapper for object')
 
 class SeeOther(HTTPException):
     code = 303
@@ -148,7 +144,7 @@ class Router(object):
     def register(self, obj, path=None, default=False):
         if path is None: 
             path = obj.__name__
-        mapper = obj.__hate__(path, obj)
+        mapper = get_mapper(obj, path)
         self.routes[path] = mapper
         self.mappers[obj] = mapper
         if default:
