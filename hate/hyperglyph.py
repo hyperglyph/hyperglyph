@@ -26,8 +26,9 @@ hyperglyph is a serialization format roughly based around bencoding
             an object with a name, attributes and children
                 attributes is nominally a dict.
                 children nominally list
+            think html5 microdata like
         ext -> X<item><item><item>
-            like a node, but contains hyperlinks.
+            like a node, but contains url, method, possibly form values.
 
     todo: timezones, periods?
 

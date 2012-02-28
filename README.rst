@@ -2,15 +2,16 @@ hate
 ----
 
 hate is a python client/server library.  use it to glue things together.
-n.b. although hate is written in python, the protocol is not tied to it.
+
+(n.b. although hate is written in python, the protocol is not tied to it.)
 
 the server turns objects into something like json* with callbacks. 
 
-the client uses the callbacks from the server, as opposed to hardcoding the api.
+the client uses the callbacks from the server, as opposed to hardcoding a request
+
+(note: may not resemble json when serialized)
 
 not all of it is ready yet. check the examples to see what works.
-
-* may not resemble json when serialized
 
 example
 -------
