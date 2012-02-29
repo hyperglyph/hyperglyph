@@ -41,7 +41,11 @@ todo:
         attach a method mapper to func.__hate__, and pass on request to it
             default method mapping does POST only
         @safe, @cache change __hate__ if exists.
+        or add attribtues to methods - to overide dispatch you have to have a special mapper.
+        just one mapper ok ok?
 
+            mapper handles which method to call, but should it handle index? 
+            what about index special handling ?
         caching/safe methods: 
             return links in index, not forms. add caching headers?
             

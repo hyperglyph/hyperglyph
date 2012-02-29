@@ -54,14 +54,18 @@ class BaseMapper(object):
         # todo throw nice errors here? bad request?
         obj = self.get_resource(request.args)
         # try/ 404 ?
-        attr = 'index' if not path or not path[0] else path[0]
+        attr_name = 'index' if not path or not path[0] else path[0]
 
-        attr  = getattr(obj, attr)
+        attr  = getattr(obj, attr_name)
+
+        attr_type = getattr(obj, '__hate_method__', None)
+        if attr_type is None:
+            attr_type = HateMethod(safe=(attr_name=='index'))
 
         method = request.method
-        if method == 'GET' and (attr =='index' or getattr(attr, 'safe', False)):
+        if method == 'GET' and attr_type.safe:
             result = attr()
-        elif method =='POST': # post is always ok!
+        elif method =='POST' and not attr_type.safe: 
             data = parse(request.data) if request.data else {}
             result =attr(**data)
 
@@ -73,10 +77,28 @@ class BaseMapper(object):
         return Response(result, content_type=CONTENT_TYPE)
 
 
+class HateMethod(object):   
+    def __init__(self, safe=False, inline=False, expires=False):
+        self.safe=safe
+        self.inline=inline
+        self.expires=expires
+
 def safe():
     def _decorate(fn):
-        fn.safe = True
+        if not hasattr(fn, '__hate_method__'):
+            fn.__hate_method__ = HateMethod() 
+        fn.__hate_method__.safe=True
         return fn
+    return _decorate
+
+def inline():
+    def _decorate(fn):
+        if not hasattr(fn, '__hate_method__'):
+            fn.__hate_method__ = HateMethod() 
+        fn.__hate_method__.safe=True
+        fn.__hate_method__.inline=True
+        return fn
+
     return _decorate
 
 class TransientMapper(BaseMapper):
