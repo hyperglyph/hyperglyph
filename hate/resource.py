@@ -10,7 +10,7 @@ from pytz import utc
 from werkzeug.wrappers import Request, Response
 from werkzeug.exceptions import HTTPException
 
-from hate.hyperglyph import CONTENT_TYPE, dump, parse, get, form, link, node
+from hate.hyperglyph import CONTENT_TYPE, dump, parse, get, form, link, node, embed
 
 
 def ismethod(m, cls=None):
@@ -20,7 +20,7 @@ def methodargs(m):
     if ismethod(m):
         return m.func_code.co_varnames[1:]
 
-def make_forms(resource):
+def make_controls(resource):
     forms = {}
     for m in dir(resource.__class__):
         if not m.startswith('_'):
@@ -30,10 +30,16 @@ def make_forms(resource):
                 page[m] = prop((resource,m))
 
             elif callable(cls_attr):
-                
                 ins_attr = getattr(resource,m)
                 if hasattr(ins_attr, 'func_code'):
-                    forms[m] = form(ins_attr, values=methodargs(ins_attr))
+                    if HateMethod.is_safe(cls_attr):
+                        if HateMethod.is_inline(cls_attr):
+                            forms[m] = embed(ins_attr,content=ins_attr())
+                        else:
+                            forms[m] = link(ins_attr)
+
+                    else:
+                        forms[m] = form(ins_attr, values=methodargs(ins_attr))
     return forms
 
 class BaseMapper(object):
@@ -91,6 +97,12 @@ class HateMethod(object):
         except:
             return self.SAFE
 
+    @classmethod
+    def is_inline(self, m):
+        try:
+            return m.__hate_method__.inline
+        except:
+            return self.INLINE
 def safe():
     def _decorate(fn):
         if not hasattr(fn, '__hate_method__'):
@@ -127,7 +139,7 @@ class Resource(object):
     @safe()
     def index(self):
         page = dict((k,v) for k,v in self.__dict__.items() if not k.startswith('_'))
-        page.update(make_forms(self))
+        page.update(make_controls(self))
         return node(self.__class__.__name__, attributes=page)
         
 def get_mapper(obj, name):

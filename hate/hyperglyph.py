@@ -51,6 +51,9 @@ def form(url, method='POST',values=None):
 def link(url, method='GET'):
     return Extension.make('link', {'method':method, 'url':url}, [])
 
+def embed(url, content, method='GET'):
+    return Extension.make('embed', {'method':method, 'url':url}, content)
+
 def prop(url):
     return Extension.make('property', {'url':url}, [])
 
@@ -203,6 +206,17 @@ class Link(Extension):
     def resolve(self, resolver):
         self._attributes['url'] = resolver(self._attributes['url'])
 
+
+@Extension.register('embed')
+class Embed(Extension):
+    def __call__(self, *args, **kwargs):
+        return self._content
+
+    def url(self):
+        return self._attributes['url']
+        
+    def resolve(self, resolver):
+        self._attributes['url'] = resolver(self._attributes['url'])
 
 
 def _dump(obj, buf, resolver):
