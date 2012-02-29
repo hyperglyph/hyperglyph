@@ -30,6 +30,7 @@ def make_forms(resource):
                 page[m] = prop((resource,m))
 
             elif callable(cls_attr):
+                
                 ins_attr = getattr(resource,m)
                 if hasattr(ins_attr, 'func_code'):
                     forms[m] = form(ins_attr, values=methodargs(ins_attr))
@@ -58,14 +59,11 @@ class BaseMapper(object):
 
         attr  = getattr(obj, attr_name)
 
-        attr_type = getattr(obj, '__hate_method__', None)
-        if attr_type is None:
-            attr_type = HateMethod(safe=(attr_name=='index'))
 
         method = request.method
-        if method == 'GET' and attr_type.safe:
+        if method == 'GET' and (HateMethod.is_safe(attr) or attr_name == 'index'):
             result = attr()
-        elif method =='POST' and not attr_type.safe: 
+        elif method =='POST' and not HateMethod.is_safe(attr): 
             data = parse(request.data) if request.data else {}
             result =attr(**data)
 
@@ -78,10 +76,20 @@ class BaseMapper(object):
 
 
 class HateMethod(object):   
-    def __init__(self, safe=False, inline=False, expires=False):
+    SAFE=False
+    INLINE=False
+    EXPIRES=False
+    def __init__(self, safe=SAFE, inline=INLINE, expires=EXPIRES):
         self.safe=safe
         self.inline=inline
         self.expires=expires
+
+    @classmethod
+    def is_safe(self, m):
+        try:
+            return m.__hate_method__.safe
+        except:
+            return self.SAFE
 
 def safe():
     def _decorate(fn):
