@@ -1,5 +1,6 @@
 import unittest2
 import hate
+import hate.resource
 
 
 class Test(unittest2.TestCase):
@@ -103,6 +104,37 @@ class MethodTest(ServerTest):
         result = result.inc(n=5)
 
         self.assertEqual(result.value, 5)
+        
+
+class LinkEmbedTest(ServerTest):
+
+    def router(self):
+        m = hate.Router()
+        @m.default()
+        class Test(hate.r):
+            def __init__(self, _value=0):
+                self._value = int(_value)
+            @hate.resource.inline()
+            def value(self):
+                return self._value
+
+            @hate.resource.safe()
+            def add2(self):   
+                return self._value + 2
+        return m
+
+    def testCase(self):
+        result = hate.get(self.endpoint.url)
+        print result.value
+        self.assertEqual(result.value(), 0)
+        print result.add2
+        self.assertEqual(result.add2(), 2)
+
+
+
+
+
+
 class PropertyTest(ServerTest):
 
     def router(self):

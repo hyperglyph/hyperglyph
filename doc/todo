@@ -27,6 +27,9 @@ done:
         transientmapper/basemapper - transient mapper handles state transfer
         page/index - split inspection out into different bits.
 
+    HateMethod added for safe, inlining
+        safe get linked, unsafe get forms, inlines get embed
+
 remember:
     should handle http mapping by default, verbs, urls and content_type
     should be possible to use objects outside of mapper.
@@ -37,20 +40,9 @@ todo:
         hate.url(object) returns the url as a string
 
     
-    method mappers, decorators
-        attach a method mapper to func.__hate__, and pass on request to it
-            default method mapping does POST only
-        @safe, @cache change __hate__ if exists.
-        or add attribtues to methods - to overide dispatch you have to have a special mapper.
-        just one mapper ok ok?
+    hyperglyph handles unknown types with callback
+            callback from router turns resources into links/forms/etc?
 
-            mapper handles which method to call, but should it handle index? 
-            what about index special handling ?
-        caching/safe methods: 
-            return links in index, not forms. add caching headers?
-            
-        inlining: 
-            return in index instead of gettting, still behaves like a link, but with data attached.
         
     documentation:
         cookbook more examples:doing it by hand client/server.
@@ -61,8 +53,6 @@ todo:
         porting client to javascript/ajax?
         can use werkzeug templates to make html5/bootstrap interface.
 
-    hyperglyph handles unknown types with callback
-            callback from router turns resources into links/forms/etc?
 
     persistent mapper:
         can't create on get unless it exists already/linked to.
@@ -74,21 +64,12 @@ todo:
             throw result(content_type, content), decoded if text/*
         override in get(). 
 
+    caching 
+
     extending behavior:
-        decorators?
-            @inline @safe? 
-            @expires @idempotent @content_type @accept @ssl_only
-            @GET? @POST?  
-            how about @foo attaches a __hate__ methodmappper to the method, and sets the details.
-            in dispatch, if method has a mapper, call it
-            knowing when to link and to form...
-
-        hypermedia:
-            form/link/embed (get/put/delete)?
-
-        overrides:
-            method, content type
-            url mapping, query arguments
+        decorators?  @inline @safe?  @expires @idempotent @content_type @accept @ssl_only @GET? @POST?  
+        hypermedia: form/link/embed (get/put/delete)?
+        overrides: method, content type url mapping, query arguments
             @resource <-> @property, allow ovveriding bits of methods?
 
     properties:

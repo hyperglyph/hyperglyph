@@ -16,6 +16,7 @@ not all of it is ready yet. check the examples to see what works.
 example
 -------
 on the client::
+
     import hate # the only import, no server-specific code.
 
     root = hate.get('http://...')
