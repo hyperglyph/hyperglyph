@@ -36,6 +36,17 @@ remember:
     http ignorant not agnostic (don't need to know http semantics to use it, but can override)
 
 todo:
+    pretty printing.
+
+    documentation:
+        under the scenes - request by request
+            worked example
+        hyperglyph clarifcations
+            duplicate dict keys 
+            hex parsing
+
+        node/extension data types
+
     hate.get(url/link/page?, options) etc?
         hate.url(object) returns the url as a string
 
@@ -104,6 +115,9 @@ todo:
                 ?humane content_type arg
         new data types:
             charset handling ? timezones? time periods ?
+        refactoring:
+            make it dict driven instead of if-chain driven
+
 
 usecases/testcases
     demos:

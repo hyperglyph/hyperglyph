@@ -147,6 +147,7 @@ xml like vocabulary
       like a node, but contains hyperlinks.
 
 todo: timezones, periods?
+todo: behaviour on duplicate keys
 
 
 status
