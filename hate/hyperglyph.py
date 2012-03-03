@@ -46,6 +46,8 @@ def node(name, attributes, children=None):
     return Node(name, attributes, children)
 
 def form(url, method='POST',values=None):
+    if ismethod(url) and values is None:
+        values = methodargs(url)
     return Extension.make('form', {'method':method, 'url':url}, values)
 
 def link(url, method='GET'):
@@ -56,6 +58,13 @@ def embed(url, content, method='GET'):
 
 def prop(url):
     return Extension.make('property', {'url':url}, [])
+
+def ismethod(m, cls=None):
+    return callable(m) and hasattr(m,'im_self') and (cls is None or isinstance(m.im_self, cls))
+
+def methodargs(m):
+    if ismethod(m):
+        return m.func_code.co_varnames[1:]
 
 
 UNICODE_CHARSET="utf-8"

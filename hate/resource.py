@@ -10,20 +10,13 @@ from pytz import utc
 from werkzeug.wrappers import Request, Response
 from werkzeug.exceptions import HTTPException
 
-from hate.hyperglyph import CONTENT_TYPE, dump, parse, get, form, link, node, embed
+from hate.hyperglyph import CONTENT_TYPE, dump, parse, get, form, link, node, embed, ismethod
 
-
-def ismethod(m, cls=None):
-    return callable(m) and hasattr(m,'im_self') and (cls is None or isinstance(m.im_self, cls))
-
-def methodargs(m):
-    if ismethod(m):
-        return m.func_code.co_varnames[1:]
 
 def make_controls(resource):
     forms = {}
     for m in dir(resource.__class__):
-        if not m.startswith('_'):
+        if not m.startswith('_') and m != 'index':
             cls_attr = getattr(resource.__class__ ,m)
             if isinstance(cls_attr, property):
                 raise StandardError()
@@ -37,9 +30,8 @@ def make_controls(resource):
                             forms[m] = embed(ins_attr,content=ins_attr())
                         else:
                             forms[m] = link(ins_attr)
-
                     else:
-                        forms[m] = form(ins_attr, values=methodargs(ins_attr))
+                        forms[m] = form(ins_attr)
     return forms
 
 class BaseMapper(object):
@@ -65,9 +57,10 @@ class BaseMapper(object):
 
         attr  = getattr(obj, attr_name)
 
-
         method = request.method
-        if method == 'GET' and (HateMethod.is_safe(attr) or attr_name == 'index'):
+        if method == 'GET' and attr_name == 'index':
+            result = self.index(obj)
+        elif method == 'GET' and HateMethod.is_safe(attr):
             result = attr()
         elif method =='POST' and not HateMethod.is_safe(attr): 
             data = parse(request.data) if request.data else {}
@@ -80,6 +73,11 @@ class BaseMapper(object):
 
         return Response(result, content_type=CONTENT_TYPE)
 
+    def index(self, obj):
+        page = dict()
+        page.update(make_controls(obj))
+        page.update(obj.index())
+        return node(obj.__class__.__name__, attributes=page)
 
 class HateMethod(object):   
     SAFE=False
@@ -138,9 +136,8 @@ class Resource(object):
 
     @safe()
     def index(self):
-        page = dict((k,v) for k,v in self.__dict__.items() if not k.startswith('_'))
-        page.update(make_controls(self))
-        return node(self.__class__.__name__, attributes=page)
+        return dict((k,v) for k,v in self.__dict__.items() if not k.startswith('_'))
+
         
 def get_mapper(obj, name):
     if hasattr(obj, '__hate__') and issubclass(obj.__hate__, BaseMapper):

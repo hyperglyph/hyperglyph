@@ -57,6 +57,7 @@ class GetTest(ServerTest):
     def testCase(self):
         result = hate.get(self.endpoint.url)
 
+        print result, result.get()
         self.assertEqual(result.get(), self.value)
 
 class LinkTest(ServerTest):
