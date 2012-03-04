@@ -1,7 +1,7 @@
-import hate
+import glyph
 
 def client(endpoint):
-    broker = hate.get(endpoint)
+    broker = glyph.get(endpoint)
     # broker is a page, with a single element, 'queue' which is a form
     queue = broker.queue(name='help')
     # submitting this form takes us to the page for the queue
@@ -16,17 +16,17 @@ def server():
 
     queues = {}
 
-    m = hate.map()
+    m = glyph.map()
 
     # these are created on each request
     @m.default()
-    class Broker(hate.r):
+    class Broker(glyph.r):
         def queue(self, name):
-            raise hate.Redirect(Queue(name))
+            raise glyph.Redirect(Queue(name))
 
     # the url parameters are used to construct them
     @m.add()
-    class Queue(hate.r):
+    class Queue(glyph.r):
         def __init__(self, name):
             self.name = name
         def push(self, msg):
@@ -38,7 +38,7 @@ def server():
             if self.name in queues:
                 return queues[self.name].popleft()
 
-    s = hate.Server(m)
+    s = glyph.Server(m)
     s.start()
     print s.url
     try:

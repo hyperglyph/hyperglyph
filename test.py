@@ -1,6 +1,5 @@
 import unittest2
-import hate
-import hate.resource
+import glyph
 
 
 class Test(unittest2.TestCase):
@@ -18,24 +17,24 @@ class Test(unittest2.TestCase):
             {'a':1}
         ]
         for c in cases:
-            self.assertEqual(c, hate.parse(hate.dump(c)))
+            self.assertEqual(c, glyph.parse(glyph.dump(c)))
 
 
 class NodeTest(unittest2.TestCase):
     def testCase(self):
         cases = [
-            hate.node('doc',attributes=dict(aa=1,b="toot")),
-            hate.form("http://example.org",values=['a','b']),
-            hate.link("http://toot.org")
+            glyph.node('doc',attributes=dict(aa=1,b="toot")),
+            glyph.form("http://example.org",values=['a','b']),
+            glyph.link("http://toot.org")
         ]
         for c in cases:
-            self.assertEqual(c, hate.parse(hate.dump(c)))
+            self.assertEqual(c, glyph.parse(glyph.dump(c)))
 
 
 
 class ServerTest(unittest2.TestCase):
     def setUp(self):
-        self.endpoint=hate.Server(self.router())
+        self.endpoint=glyph.Server(self.router())
         self.endpoint.start()
 
     def tearDown(self):
@@ -47,17 +46,16 @@ class GetTest(ServerTest):
         ServerTest.setUp(self)
 
     def router(self):
-        m = hate.Router()
+        m = glyph.Router()
         @m.default()
-        class Test(hate.r):
+        class Test(glyph.r):
             def get(self_):
                 return self.value
         return m
 
     def testCase(self):
-        result = hate.get(self.endpoint.url)
+        result = glyph.get(self.endpoint.url)
 
-        print result, result.get()
         self.assertEqual(result.get(), self.value)
 
 class LinkTest(ServerTest):
@@ -66,21 +64,21 @@ class LinkTest(ServerTest):
         ServerTest.setUp(self)
 
     def router(self):
-        m = hate.Router()
+        m = glyph.Router()
         @m.add()
-        class Test(hate.r):
+        class Test(glyph.r):
             def __init__(self, value):
                 self.value = int(value)
             def double(self):
                 return self.value*2
         @m.default()
-        class Root(hate.r):
+        class Root(glyph.r):
             def get(self_):
                 return Test(self.value)
         return m
 
     def testCase(self):
-        result = hate.get(self.endpoint.url)
+        result = glyph.get(self.endpoint.url)
         result = result.get()
         self.assertEqual(result.double(), self.value)
 
@@ -90,9 +88,9 @@ class MethodTest(ServerTest):
         ServerTest.setUp(self)
 
     def router(self):
-        m = hate.Router()
+        m = glyph.Router()
         @m.default()
-        class Test(hate.r):
+        class Test(glyph.r):
             def __init__(self, value=0):
                 self.value = int(value)
             def inc(self, n):
@@ -100,7 +98,7 @@ class MethodTest(ServerTest):
         return m
 
     def testCase(self):
-        result = hate.get(self.endpoint.url)
+        result = glyph.get(self.endpoint.url)
         self.assertEqual(result.value, 0)
         result = result.inc(n=5)
 
@@ -110,25 +108,23 @@ class MethodTest(ServerTest):
 class LinkEmbedTest(ServerTest):
 
     def router(self):
-        m = hate.Router()
+        m = glyph.Router()
         @m.default()
-        class Test(hate.r):
+        class Test(glyph.r):
             def __init__(self, _value=0):
                 self._value = int(_value)
-            @hate.resource.inline()
+            @glyph.inline()
             def value(self):
                 return self._value
 
-            @hate.resource.safe()
+            @glyph.safe()
             def add2(self):   
                 return self._value + 2
         return m
 
     def testCase(self):
-        result = hate.get(self.endpoint.url)
-        print result.value
+        result = glyph.get(self.endpoint.url)
         self.assertEqual(result.value(), 0)
-        print result.add2
         self.assertEqual(result.add2(), 2)
 
 
@@ -139,9 +135,9 @@ class LinkEmbedTest(ServerTest):
 class PropertyTest(ServerTest):
 
     def router(self):
-        m = hate.Router()
+        m = glyph.Router()
         @m.default()
-        class Test(hate.r):
+        class Test(glyph.r):
             def __init__(self, value=0):
                 self._value = int(value)
             @property
@@ -152,7 +148,7 @@ class PropertyTest(ServerTest):
         return m
 
     def _testCase(self):
-        result = hate.get(self.endpoint.url)
+        result = glyph.get(self.endpoint.url)
         self.assertEqual(result.value, 0)
         result.value = 1
         self.assertEqual(result.double(), 2)

@@ -1,15 +1,14 @@
-hate
-----
+glyph
+-----
 
-hate is a python client/server library.  use it to glue things together.
+glyph is a python client/server library.  use it to glue things together.
 
-(n.b. although hate is written in python, the protocol is not tied to it.)
+(n.b. although glyph is written in python, the protocol is not tied to it.)
 
-the server turns objects into something like json* with callbacks. 
+the server turns objects into something like json (but more like bencode) with callbacks. 
 
 the client uses the callbacks from the server, as opposed to hardcoding a request
 
-(note: may not resemble json when serialized)
 
 not all of it is ready yet. check the examples to see what works.
 
@@ -17,9 +16,9 @@ example
 -------
 on the client::
 
-    import hate # the only import, no server-specific code.
+    import glyph # the only import, no server-specific code.
 
-    root = hate.get('http://...')
+    root = glyph.get('http://...')
     
     mailbox = root.login(user, pass)
 
@@ -30,15 +29,15 @@ on the client::
 
 on the server::
 
-    r = hate.Router() # a wsgi app
+    r = glyph.Router() # a wsgi app
 
     @r.default()
-    class Root(hate.r):
+    class Root(glyph.r):
         def login(self, username, password):
             ...
             return Mailbox(user)
     @r.add()
-    class Mailbox(hate.r):
+    class Mailbox(glyph.r):
         def __init__(self, user):
                 self.user = user
         def inbox(self):
@@ -52,7 +51,7 @@ on the server::
 how it works
 ------------
 
-the initial hate.get() gets a serialization of a Root instance. 
+the initial glyph.get() gets a serialization of a Root instance. 
 it has callbacks and attributes. these callbacks map to methods at the server,
 and they can return other resources or json-like data.
 
@@ -72,25 +71,25 @@ constructor arguments.
 
 in effect: the server is like a web server, and the client is like a screen scraper.
 
-why hate?
----------
+why glyph?
+----------
 unlike other rpc systems where compiling service descriptions, or custom code 
 is necessary for making requests, the server describes the object to the client,
 using forms explain how to make requests.
 
-this allows hate to provide duck-typing: clients do not care *what* 
+this allows glyph to provide duck-typing: clients do not care *what* 
 kind of object is returned, as long as it has the right methods.
 
 the server is now free to change where forms point to.  as a result,
-hate allows you to grow your api like you grow a website.
+glyph allows you to grow your api like you grow a website.
 
-- hate services can redirect/link to other services on other hosts
+- glyph services can redirect/link to other services on other hosts
 - new methods and resources can be added without breaking clients
 - take advantage of http tools like caches and load-balancers
 
 history
 -------
-hate evolved from trying to connect processes together, after some bad experiences
+glyph evolved from trying to connect processes together, after some bad experiences
 with message queues exploding. http was known and loved throughout the company, 
 and yet another ad-hoc rpc system was born.  
 
@@ -113,9 +112,9 @@ use for the client, and flexible for the server.
 
 of all the terrible code i've written, this worked out pretty well so far.
 
-hyperglyph
-----------
-the serialization format, hyperglyph, is an extension of bittorrent's bencoding. it is not language specific
+serialization
+-------------
+the serialization format,is an extension of bittorrent's bencoding. it is not language specific
 and contains a simple vocabulary of data - json with a few more convieniences.
 
 unfortunately; existing serialization formats don't cover links, forms and 8-bit data.

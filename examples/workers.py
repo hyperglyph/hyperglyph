@@ -1,8 +1,8 @@
-import hate
+import glyph
 from time import sleep
 
 def worker(endpoint, name):
-    s = hate.get(endpoint)
+    s = glyph.get(endpoint)
 
     print name
     queue = s.task_queue(name)
@@ -24,16 +24,16 @@ def queue():
 
     tasks = list("abcdefghijklmnopqrstuvwxyz")
 
-    m = hate.Router()
+    m = glyph.Router()
 
     @m.default()
-    class Server(hate.r):
+    class Server(glyph.r):
         def task_queue(self, worker_name):
             print worker_name
             return Queue(worker_name)
 
     @m.add()
-    class Queue(hate.r):
+    class Queue(glyph.r):
         def __init__(self, worker_name):
             self.worker_name = worker_name
 
@@ -42,7 +42,7 @@ def queue():
             return Task(self.worker_name, tasks.pop())
 
     @m.add()
-    class Task(hate.r):
+    class Task(glyph.r):
         def __init__(self, _worker, name, steps=2):
             self._worker = _worker
             self.name = name
@@ -54,7 +54,7 @@ def queue():
         def complete(self):
             print self._worker, self.name, 'complete'
 
-    s = hate.Server(m)
+    s = glyph.Server(m)
     return s
 
 

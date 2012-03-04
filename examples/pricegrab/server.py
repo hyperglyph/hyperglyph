@@ -1,18 +1,18 @@
-import hate
+import glyph
 
 import model
 
 
-m = hate.Mapper()
+m = glyph.Router()
 
 @m.default()
-class PriceService(hate.r):
+class PriceService(glyph.r):
     def flight(from_, to_, passengers, date):
         return model.get_flight_price(from_, to_, passengers, date)
 
 
 if __name__ == '__main__':
-    s = hate.Server(m)
+    s = glyph.Server(m)
     s.start()
     print s.url
     try:

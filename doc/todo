@@ -30,6 +30,11 @@ done:
     HateMethod added for safe, inlining
         safe get linked, unsafe get forms, inlines get embed
 
+    after removing index method, use in real world demanded it back
+    it's nice - you can now override methods
+
+    renaming
+
 remember:
     should handle http mapping by default, verbs, urls and content_type
     should be possible to use objects outside of mapper.
@@ -41,17 +46,17 @@ todo:
     documentation:
         under the scenes - request by request
             worked example
-        hyperglyph clarifcations
+        glyph encoding clarifcations
             duplicate dict keys 
             hex parsing
 
         node/extension data types
 
-    hate.get(url/link/page?, options) etc?
-        hate.url(object) returns the url as a string
+    glyph.get(url/link/page?, options) etc?
+        glyph.url(object) returns the url as a string
 
     
-    hyperglyph handles unknown types with callback
+    encoding handles unknown types with callback
             callback from router turns resources into links/forms/etc?
 
         
@@ -70,7 +75,7 @@ todo:
         some expire, some don't ? raise an Exception to delete ?
         expiry exception in client
 
-    hate.get handling different content-types 
+    glyph.get handling different content-types 
         if unhandled:
             throw result(content_type, content), decoded if text/*
         override in get(). 
@@ -99,7 +104,7 @@ todo:
 
 
     snapshoting:
-        crawling an api? hate.crawl(page) returns all links() ?
+        crawling an api? glyph.crawl(page) returns all links() ?
     
     routing:
         use werkzeug rules inside router
@@ -107,7 +112,7 @@ todo:
     dependencies
         requests should be optional dependency?
 
-    hyperglyph serialization
+    glyph serialization
             maybe: break bencode, use [] for list, {} for dict 
             maybe: better terminator char doesn't appear in float, datetimes?, newlines
             maybe: stick with e for some things?
