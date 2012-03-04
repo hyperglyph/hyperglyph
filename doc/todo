@@ -49,15 +49,22 @@ todo:
         glyph encoding clarifcations
             duplicate dict keys 
             hex parsing
+        tutorial
+            build a server, use a client
 
         node/extension data types
+    encoding:
+        how to handle return self
+        return obj a, obj b
+        turn classes/methods into forms, 
+            posting to a resource class should redirect to a get
+            i.e POST on index
 
     glyph.get(url/link/page?, options) etc?
         glyph.url(object) returns the url as a string
 
-    
     encoding handles unknown types with callback
-            callback from router turns resources into links/forms/etc?
+        callback from router turns resources into links/forms/etc?
 
     documentation:
         cookbook more examples:doing it by hand client/server.
@@ -66,10 +73,11 @@ todo:
     in-browser control/debugging:
         content negociation: html5/json serialization? 
         porting client to javascript/ajax?
+            rather than pure html - make a pushstate esque one
         can use werkzeug templates to make html5/bootstrap interface.
 
     media type separation ?
-
+        handling different content types/returns
     persistent mapper:
         can't create on get unless it exists already/linked to.
         some expire, some don't ? raise an Exception to delete ?
