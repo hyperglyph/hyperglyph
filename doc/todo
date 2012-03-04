@@ -27,13 +27,15 @@ done:
         transientmapper/basemapper - transient mapper handles state transfer
         page/index - split inspection out into different bits.
 
-    HateMethod added for safe, inlining
+    ResourceMethod added for safe, inlining
         safe get linked, unsafe get forms, inlines get embed
 
     after removing index method, use in real world demanded it back
     it's nice - you can now override methods
 
-    renaming
+    renaming done
+
+    query args now encoded too - because it's nice not to have to cast.
 
 remember:
     should handle http mapping by default, verbs, urls and content_type
@@ -41,11 +43,9 @@ remember:
     http ignorant not agnostic (don't need to know http semantics to use it, but can override)
 
 todo:
-    pretty printing.
-
     documentation:
         under the scenes - request by request
-            worked example
+            worked repl example
         glyph encoding clarifcations
             duplicate dict keys 
             hex parsing
@@ -59,7 +59,6 @@ todo:
     encoding handles unknown types with callback
             callback from router turns resources into links/forms/etc?
 
-        
     documentation:
         cookbook more examples:doing it by hand client/server.
         examples/pricechecker/ add loadbalancers, test caching, sharding version too
@@ -69,6 +68,7 @@ todo:
         porting client to javascript/ajax?
         can use werkzeug templates to make html5/bootstrap interface.
 
+    media type separation ?
 
     persistent mapper:
         can't create on get unless it exists already/linked to.
@@ -78,6 +78,7 @@ todo:
     glyph.get handling different content-types 
         if unhandled:
             throw result(content_type, content), decoded if text/*
+
         override in get(). 
 
     caching 

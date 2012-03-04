@@ -1,5 +1,6 @@
 from datetime import datetime
 from pytz import utc
+from urllib import quote_plus, unquote_plus
 
 from werkzeug.wrappers import Request, Response
 from werkzeug.exceptions import HTTPException
@@ -93,10 +94,10 @@ class BaseMapper(object):
 
     def get_query(self, r):
         s = self.get_state(r)
-        return dump(s) if s else ''
+        return quote_plus(dump(s)) if s else ''
 
     def parse_query(self, query):
-        return parse(query) if query else {}
+        return parse(unquote_plus(query)) if query else {}
 
 class TransientMapper(BaseMapper):
     def get_resource(self, args):
