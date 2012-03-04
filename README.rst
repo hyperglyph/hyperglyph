@@ -5,7 +5,7 @@ it is like json-rpc with callbacks.
 glyph is a client and server library for getting an object from a server,
 and calling methods on it using the callbacks provided by the server.
 the server offers objects over http, where the url describes the resource 
-and it's state, and GETing an object returns any contents & callbacks for methods
+and its state, and GETing an object returns any contents & callbacks for methods
 
 glyph uses urls internally to track the state between requests, but
 the server is free to change the mapping without breaking the client.
