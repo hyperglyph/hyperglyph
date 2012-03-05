@@ -26,7 +26,7 @@ from urllib import quote_plus, unquote_plus
 from werkzeug.wrappers import Request, Response
 from werkzeug.exceptions import HTTPException
 
-from .encoding import CONTENT_TYPE, dump, parse, get, form, link, node, embed, ismethod
+from .encoding import CONTENT_TYPE, dump, parse, get, form, link, node, embed, ismethod, methodargs
 
 
 class SeeOther(HTTPException):
@@ -63,6 +63,25 @@ class BaseMapper(object):
         self.prefix = prefix
         self.cls = cls
 
+    """ How post data is handled """
+    @staticmethod
+    def parse(data):
+        return parse(data)
+    
+    @staticmethod
+    def dump(data, resolver):
+        return dump(data, resolver)
+
+    """ How query strings are handled. """
+    @staticmethod
+    def dump_query(d):
+        """ transform a dict into a query string """
+        return quote_plus(dump(d)) if d else ''
+
+    @staticmethod
+    def parse_query(query):
+        """ turn a query string into a dict """
+        return parse(unquote_plus(query)) if query else {}
 
     def handle(self,request, router):
         """ handle a given request from a router:
@@ -81,12 +100,11 @@ class BaseMapper(object):
 
         if attr_name == 'index' and  verb  == 'POST':
             # the object state is either in the post data
-            args = self.parse(request.data) if request.data else {}
+            # if posting to the index
+            obj = self.create_resource(request.data)
         else:
-            # or in the query args
-            args = self.parse_query(request.query_string)
-
-        obj = self.get_resource(args)
+            # or in the query args otherwise
+            obj = self.find_resource(request.query_string)
 
         if attr_name == 'index':
             if verb == 'GET':
@@ -128,29 +146,28 @@ class BaseMapper(object):
             can be a resource class, instance or method
         """
         if isinstance(r, self.cls):
-            return "/%s/?%s"%(self.prefix, self.get_query(r))
+            return "/%s/?%s"%(self.prefix, self.dump_query(self.get_repr(r)))
         elif isinstance(r, type) and issubclass(r, self.cls):
                 return '/%s/'%self.prefix
         elif ismethod(r, self.cls):
-                return "/%s/%s/?%s"%(self.prefix, r.im_func.__name__, self.get_query(r.im_self))
+                return "/%s/%s/?%s"%(self.prefix, r.im_func.__name__, self.dump_query(self.get_repr(r.im_self)))
 
+    """ Abstract methods for creating, finding a resource, and getting the representation
+    of a resource, to embed in the url """
 
-    @staticmethod
-    def parse(data):
-        return parse(data)
-    
-    @staticmethod
-    def dump(data, resolver):
-        return dump(data, resolver)
+    def create_resource(self, data):
+        """ given the representation of the state of a resource, return a new resource instance """
+        raise StandardError('missing')
 
-    def get_query(self, r):
-        """ transform the state of a resource into a query string """
-        s = self.get_state(r)
-        return quote_plus(dump(s)) if s else ''
+    def find_resource(self, query_string):
+        """ given the representation of the state of a resource, return a new/existing resource instance """
+        raise StandardError('missing')
+        return self.cls(**args)
 
-    def parse_query(self, query):
-        """ turn a query string into a dict """
-        return parse(unquote_plus(query)) if query else {}
+    def get_repr(self, resource):
+        """ return the representation of the state of the resource as a dict """
+        raise StandardError('missing')
+
 
 """ Transient Resources
 
@@ -162,14 +179,23 @@ encoded in the query string
 
 """
             
-class TransientMapper(BaseMapper):
-    def get_resource(self, args):
-        """ given the representation of the state of a resource, return a resource instance """
+class TransientMapper(BaseMapper):  
+    def create_resource(self, data):
+        args = self.parse(data) if data else {}
         return self.cls(**args)
 
-    def get_state(self, resource):
-        """ return the representation of the state of the resource as a dict """
-        return resource.__dict__
+    def find_resource(self, query_string):
+        args = self.parse_query(query_string)
+        return self.cls(**args)
+
+    def get_repr(self, resource):
+        repr = {}
+        args = methodargs(resource.__init__)
+        for k,v in resource.__dict__.items():
+            if k in args:
+                repr[k] = v
+        
+        return  repr
 
 class Resource(BaseResource):
     __glyph__ = TransientMapper

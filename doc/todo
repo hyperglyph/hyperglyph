@@ -59,7 +59,6 @@ todo:
         examples/pricechecker/ add loadbalancers, test caching, sharding version too
 
     api:
-
         persistent mapper:
             can't create on get unless it exists already/linked to.
             some expire, some don't ? raise an Exception to delete ?
