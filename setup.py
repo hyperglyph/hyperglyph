@@ -5,7 +5,7 @@ import glob
 from setuptools import setup
 
 setup(name='glyph-rpc',
-      version='0',
+      version='0.1-20120305',
       license="MIT License",
       description='glyph-rpc is well behaved rpc over http with callbacks',
       author='tef',
