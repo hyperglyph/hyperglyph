@@ -1,6 +1,5 @@
 done:
     move to wsgi, requests. move to params as constructor; mapper; transient objects; silent server; make_server ssl args; carry over args to werzkeug; form bug; documentation; removed prints; split out into parts; price checker skeleton;
-;
     refactor:
         moved to werkzeug exceptions
         change from Mapper <-> Resources
@@ -31,6 +30,15 @@ done:
         a decorator, makes the function do the redirect from self.
         if a resource or link returned - throws a custom response.
 
+    glyph.form(Resource) should work 
+        methodargs for class 
+        POST to a Resouce.index should redirect to the instance
+        glyph.get(url/link/page?, options) etc?
+            glyph.url(object) returns the url as a string
+
+    moved stuff around, added docstrings
+    moved parsing handling into mapper & resourcemethod
+
 remember:
     should handle http mapping by default, verbs, urls and content_type
     should be possible to use objects outside of mapper.
@@ -51,11 +59,6 @@ todo:
         examples/pricechecker/ add loadbalancers, test caching, sharding version too
 
     api:
-        glyph.form(Resource) should work 
-            methodargs for class 
-            POST to a Resouce.index should redirect to the instance
-            glyph.get(url/link/page?, options) etc?
-                glyph.url(object) returns the url as a string
 
         persistent mapper:
             can't create on get unless it exists already/linked to.
@@ -63,6 +66,7 @@ todo:
             expiry exception in client
 
     code:
+        throw correct http exceptions
         dependencies: requests should be optional dependency?
         routing: use werkzeug rules inside router
 
@@ -88,10 +92,21 @@ todo:
         can use werkzeug templates to make html5/bootstrap interface.
 
     caching 
-            @expires 
+            @expires ?
+            adding caching information to index() ,etc?
+            cache control - max age, can store, revalidate?
+            etags vs last modified date?
+            @cache(max_age, revalidate?)
+            def foo(self):
+                return date, context
+
+            @foo.if_modified_since()
+            def foo_modified(self, date):
+                ......
 
     glyph mapper:
         ssl only, idempotent (nope cos put etc break)?
+
         properties:
             perhaps? handle @properties and produce getters and setters (GET/PUT/DELETE)
             dont expose form, expose an embed attribute with put, get, delete methods?
