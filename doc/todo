@@ -1,16 +1,6 @@
 done:
-    move to wsgi, requests. move to params as constructor
-    mapper
-    transient objects
-    silent server
-    make_server ssl args
-    carry over args to werzkeug
-    form bug
-    documentation
-    removed prints
-    split out into parts
-    price checker skeleton
-
+    move to wsgi, requests. move to params as constructor; mapper; transient objects; silent server; make_server ssl args; carry over args to werzkeug; form bug; documentation; removed prints; split out into parts; price checker skeleton;
+;
     refactor:
         moved to werkzeug exceptions
         change from Mapper <-> Resources
@@ -47,28 +37,49 @@ todo:
         under the scenes - request by request
             worked repl example
         glyph encoding clarifcations
-            duplicate dict keys 
-            hex parsing
+            duplicate dict keys,hex parsing
         tutorial
             build a server, use a client
+            add methods
 
         node/extension data types
-    encoding:
-        how to handle return self
-        return obj a, obj b
-        turn classes/methods into forms, 
-            posting to a resource class should redirect to a get
-            i.e POST on index
-
-    glyph.get(url/link/page?, options) etc?
-        glyph.url(object) returns the url as a string
-
-    encoding handles unknown types with callback
-        callback from router turns resources into links/forms/etc?
-
-    documentation:
         cookbook more examples:doing it by hand client/server.
         examples/pricechecker/ add loadbalancers, test caching, sharding version too
+
+    api:
+        @glyph.redirect()
+            a decorator, makes the function do the redirect from self.
+            if a resource or link returned - throws a custom response.
+
+        glyph.form(Resource) should work 
+            methodargs for class 
+            POST to a Resouce.index should redirect to the instance
+            glyph.get(url/link/page?, options) etc?
+                glyph.url(object) returns the url as a string
+
+        persistent mapper:
+            can't create on get unless it exists already/linked to.
+            some expire, some don't ? raise an Exception to delete ?
+            expiry exception in client
+
+    code:
+        dependencies: requests should be optional dependency?
+        routing: use werkzeug rules inside router
+
+    glyph encoding/ media types:
+        return xml or json instead of glyph
+            @accept(), @content_type()
+
+        handle: return [Resource(), ....]
+            callback from router turns resources into links/forms/etc?
+            possible: handles unknown types with callback
+
+        glyph.get(url, accept='....') handling different content-types 
+            if unhandledd:
+                throw result(content_type, content), decoded if text/*
+
+        new data types: charset handling ? timezones? time periods ?
+        refactoring: make it dict driven instead of if-chain driven?
 
     in-browser control/debugging:
         content negociation: html5/json serialization? 
@@ -76,61 +87,30 @@ todo:
             rather than pure html - make a pushstate esque one
         can use werkzeug templates to make html5/bootstrap interface.
 
-    media type separation ?
-        handling different content types/returns
-    persistent mapper:
-        can't create on get unless it exists already/linked to.
-        some expire, some don't ? raise an Exception to delete ?
-        expiry exception in client
-
-    glyph.get handling different content-types 
-        if unhandled:
-            throw result(content_type, content), decoded if text/*
-
-        override in get(). 
-
     caching 
+            @expires 
 
-    extending behavior:
-        decorators?  @inline @safe?  @expires @idempotent @content_type @accept @ssl_only @GET? @POST?  
-        hypermedia: form/link/embed (get/put/delete)?
-        overrides: method, content type url mapping, query arguments
-            @resource <-> @property, allow ovveriding bits of methods?
+    glyph mapper:
+        ssl only, idempotent (nope cos put etc break)?
+        properties:
+            perhaps? handle @properties and produce getters and setters (GET/PUT/DELETE)
+            dont expose form, expose an embed attribute with put, get, delete methods?
+            hard to do properly, what do you to do embed a link, etc ? self.foo calls __get__ ....
 
-    properties:
-        perhaps? handle @properties and produce getters and setters (GET/PUT/DELETE)
-        dont expose form, expose an embed attribute with put, get, delete methods?
-        hard to do properly, what do you to do embed a link, etc ? self.foo calls __get__ ....
 
-    versioning?
-        possibly: map default to /v0/ , default takes a version arg? breaks url mapping :v
-        possibly: / returns 300 if multiple versions, link header? rel=...
+        versioning?
+            possibly: map default to /v0/ , default takes a version arg? breaks url mapping :v
+            possibly: / returns 300 if multiple versions, link header? rel=...
 
-    collections:
-        like an embed/property, but behaves with the __getitem__ calls ?
-        think about interface for pagination/mapping to an infinite scroll, etc.
-        inlining - behaves like a link, isn't.
-
+        collections:
+            like an embed/property, but behaves with the __getitem__ calls ?
+            think about interface for pagination/mapping to an infinite scroll, etc.
+            inlining - behaves like a link, isn't.
 
     snapshoting:
         crawling an api? glyph.crawl(page) returns all links() ?
     
-    routing:
-        use werkzeug rules inside router
 
-    dependencies
-        requests should be optional dependency?
-
-    glyph serialization
-            maybe: break bencode, use [] for list, {} for dict 
-            maybe: better terminator char doesn't appear in float, datetimes?, newlines
-            maybe: stick with e for some things?
-                breaks possible pretty printing ?
-                ?humane content_type arg
-        new data types:
-            charset handling ? timezones? time periods ?
-        refactoring:
-            make it dict driven instead of if-chain driven
 
 
 usecases/testcases

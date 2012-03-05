@@ -8,20 +8,28 @@ from werkzeug.exceptions import HTTPException
 from .encoding import CONTENT_TYPE, dump, parse, get, form, link, node, embed, ismethod
 
 
-def safe():
+def redirect(is_redirect=True):
     def _decorate(fn):
         if not hasattr(fn, '__glyph_method__'):
             fn.__glyph_method__ = ResourceMethod() 
-        fn.__glyph_method__.safe=True
+        fn.__glyph_method__.redirect=is_redirect
         return fn
     return _decorate
 
-def inline():
+def safe(is_safe=True):
     def _decorate(fn):
         if not hasattr(fn, '__glyph_method__'):
             fn.__glyph_method__ = ResourceMethod() 
-        fn.__glyph_method__.safe=True
-        fn.__glyph_method__.inline=True
+        fn.__glyph_method__.safe=is_safe
+        return fn
+    return _decorate
+
+def inline(is_inline=True):
+    def _decorate(fn):
+        if not hasattr(fn, '__glyph_method__'):
+            fn.__glyph_method__ = ResourceMethod() 
+        fn.__glyph_method__.safe=is_inline
+        fn.__glyph_method__.inline=is_inline
         return fn
 
     return _decorate
@@ -79,7 +87,7 @@ class BaseMapper(object):
             data = parse(request.data) if request.data else {}
             result =attr(**data)
 
-        if isinstance(result, Resource):
+        if ResourceMethod.is_redirect(attr) and isinstance(result, Resource):
             raise SeeOther(router.url(result))
 
         result = dump(result, router.url)
@@ -189,7 +197,8 @@ class ResourceMethod(object):
     SAFE=False
     INLINE=False
     EXPIRES=False
-    def __init__(self, safe=SAFE, inline=INLINE, expires=EXPIRES):
+    REDIRECT=False
+    def __init__(self, safe=SAFE, inline=INLINE, expires=EXPIRES, redirect=REDIRECT):
         self.safe=safe
         self.inline=inline
         self.expires=expires
@@ -208,3 +217,9 @@ class ResourceMethod(object):
         except:
             return self.INLINE
 
+    @classmethod
+    def is_redirect(self, m):
+        try:
+            return m.__glyph_method__.redirect
+        except:
+            return self.REDIRECT

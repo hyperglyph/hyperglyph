@@ -21,12 +21,12 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
 
-from .resource import Router, Resource, safe, inline
+from .resource import Router, Resource, safe, inline, redirect
 from .encoding import CONTENT_TYPE, dump, parse, get, node, form, link
 from .wsgi import Server
 
 __all__ = [
-    'CONTENT_TYPE','Server',
+    'CONTENT_TYPE','Server','redirect',
     'get', 'Router','Resource','r', 'safe', 'inline'
     'parse','dump','node','form','link',
 ]

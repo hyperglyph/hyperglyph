@@ -73,6 +73,7 @@ class LinkTest(ServerTest):
                 return self.value*2
         @m.default()
         class Root(glyph.r):
+            @glyph.redirect()
             def get(self_):
                 return Test(self.value)
         return m
@@ -93,6 +94,7 @@ class MethodTest(ServerTest):
         class Test(glyph.r):
             def __init__(self, value=0):
                 self.value = int(value)
+            @glyph.redirect()
             def inc(self, n):
                 return Test(self.value+n)
         return m
