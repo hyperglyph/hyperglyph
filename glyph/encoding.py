@@ -2,6 +2,10 @@ from urlparse import urljoin
 from StringIO import StringIO
 import requests
 
+from datetime import datetime
+from pytz import utc
+
+
 CONTENT_TYPE='application/glyph'
 
 """
