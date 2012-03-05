@@ -37,11 +37,9 @@ contains Resource, Mapper and Router
         a glyph.node() with attributes
 
 """
-from datetime import datetime
 from urllib import quote_plus, unquote_plus
-from uuid import uuid4 as UUID
+from uuid import uuid4 
 
-from pytz import utc
 
 from werkzeug.wrappers import Request, Response
 from werkzeug.exceptions import HTTPException
@@ -66,7 +64,7 @@ class BaseResource(object):
     __glyph__ = None
 
     def index(self):
-        raise StandardError('missing')
+        return dict((k,v) for k,v in self.__dict__.items() if not k.startswith('_'))
 
 
 
@@ -121,10 +119,14 @@ class BaseMapper(object):
         if attr_name == 'index' and  verb  == 'POST':
             # the object state is either in the post data
             # if posting to the index
-            obj = self.create_resource(request.data)
+            data = request.data
+            args = ResourceMethod.parse(self.cls.__init__, data) if data else {}
+
+            obj = self.create_resource(args)
             raise SeeOther(router.url(obj))
         else:
-            obj = self.find_resource(request.query_string)
+            args = self.parse_query(request.query_string)
+            obj = self.find_resource(args)
             attr  = getattr(obj, attr_name)
 
             if verb == 'GET' and attr_name == 'index':
@@ -193,12 +195,10 @@ encoded in the query string
 """
             
 class TransientMapper(BaseMapper):  
-    def create_resource(self, data):
-        args = self.parse(data) if data else {}
+    def create_resource(self, args):
         return self.cls(**args)
 
-    def find_resource(self, query_string):
-        args = self.parse_query(query_string)
+    def find_resource(self, args):
         return self.cls(**args)
 
     def get_repr(self, resource):
@@ -213,36 +213,36 @@ class TransientMapper(BaseMapper):
 class Resource(BaseResource):
     __glyph__ = TransientMapper
 
-    def index(self):
-        return dict((k,v) for k,v in self.__dict__.items() if not k.startswith('_'))
 
 """ Persistent Resources """
             
 class PersistentMapper(BaseMapper):  
     def __init__(self, prefix, cls):
-        BaseMapper.__init__(prefix, cls)
+        BaseMapper.__init__(self, prefix, cls)
         self.instances = {}
         self.identifiers = {}
 
-    def create_resource(self, data):
-        args = self.parse(data) if data else {}
+    def create_resource(self, args):
         instance = self.cls(**args)
-        uuid = UUID()
+        uuid = str(uuid4())
         self.instances[uuid] = instance
         self.identifiers[instance] = uuid
+        return instance
 
-    def find_resource(self, query_string):
-        args = self.parse_query(query_string)
+    def find_resource(self, uuid):
         return self.instances[uuid]
 
     def get_repr(self, instance):
-        if resource not in self.identifiers:
-            uuid = UUID()
+        if instance not in self.identifiers:
+            uuid = str(uuid4())
             self.instances[uuid] = instance
             self.identifiers[instance] = uuid
         else:
             uuid = self.identifiers[instance]
         return uuid
+
+class PersistentResource(BaseResource):
+    __glyph__ = PersistentMapper
 
 
 class ResourceMethod(object):   

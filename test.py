@@ -1,5 +1,6 @@
 import unittest2
 import glyph
+import glyph.resource
 
 
 class Test(unittest2.TestCase):
@@ -161,6 +162,39 @@ class FormObjectTest(ServerTest):
         result = root.test(2)
         self.assertEqual(result.value(), 2)
 
+class PersistentObjectTest(ServerTest):
+
+    def router(self):
+        m = glyph.Router()
+        @m.default()
+        class Root(glyph.r):
+            def index(self):
+                return dict(
+                    test = glyph.form(Test)
+                )
+
+        @m.add()
+        class Test(glyph.resource.PersistentResource):
+            def __init__(self, _value=0):
+                self._value = int(_value)
+
+            @glyph.inline()
+            def value(self):
+                return self._value
+
+            def index(self):
+                return {'self': glyph.link(self)}
+
+
+        return m
+
+    def testCase(self):
+        root = glyph.get(self.endpoint.url)
+        result_a = root.test(0)
+        self.assertEqual(result_a.value(), 0)
+        result_b = root.test(0)
+        self.assertEqual(result_b.value(), 0)
+        self.assertNotEqual(result_a.self.url(), result_b.self.url())
 
 class PropertyTest(ServerTest):
 
