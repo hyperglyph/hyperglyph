@@ -27,8 +27,7 @@ done:
     query args now encoded too - because it's nice not to have to cast.
 
     @glyph.redirect()
-        a decorator, makes the function do the redirect from self.
-        if a resource or link returned - throws a custom response.
+        a decorator, makes the function do the redirect from return value
 
     glyph.form(Resource) should work 
         methodargs for class 
@@ -41,6 +40,8 @@ done:
     creating objects different from lookup
     persistent mapping proof of concept
     index creation moved to resourcemethod (noice!)
+    throw correct http exceptions, remove bare excepts
+    resourcemethod takes another as constructor
 
 remember:
     should handle http mapping by default, verbs, urls and content_type
@@ -61,28 +62,12 @@ todo:
         cookbook more examples:doing it by hand client/server.
         examples/pricechecker/ add loadbalancers, test caching, sharding version too
 
-    api:
-        persistent mapper: managing objects/deleting them
-
-    code:
-        throw correct http exceptions
-        dependencies: requests should be optional dependency?
-        routing: use werkzeug rules inside router
 
     glyph encoding/ media types:
         return xml or json instead of glyph
             @accept(), @content_type()
+            extend resourcemthod to override post/get
 
-        handle: return [Resource(), ....]
-            callback from router turns resources into links/forms/etc?
-            possible: handles unknown types with callback
-
-        glyph.get(url, accept='....') handling different content-types 
-            if unhandledd:
-                throw result(content_type, content), decoded if text/*
-
-        new data types: charset handling ? timezones? time periods ?
-        refactoring: make it dict driven instead of if-chain driven?
 
     in-browser control/debugging:
         content negociation: html5/json serialization? 
@@ -103,26 +88,48 @@ todo:
             def foo_modified(self, date):
                 ......
 
-    glyph mapper:
-        ssl only, idempotent (nope cos put etc break)?
+    api:
+        persistent mapper: managing objects/deleting them
 
-        properties:
-            perhaps? handle @properties and produce getters and setters (GET/PUT/DELETE)
-            dont expose form, expose an embed attribute with put, get, delete methods?
-            hard to do properly, what do you to do embed a link, etc ? self.foo calls __get__ ....
+        glyph.get(url, accept='....') handling different content-types 
+            url in page object?
+            if unhandledd:
+                throw result(content_type, content), decoded if text/*
+
+        handle: return [Resource(), ....]
+            callback from router turns resources into links/forms/etc?
+            possible: handles unknown types with callback
+
+        new data types: charset handling ? timezones? time periods ?
+        refactoring: make it dict driven instead of if-chain driven?
 
 
-        versioning?
-            possibly: map default to /v0/ , default takes a version arg? breaks url mapping :v
-            possibly: / returns 300 if multiple versions, link header? rel=...
+        dependencies: requests should be optional dependency?
+        routing: use werkzeug rules inside router
+
+        decorators? ssl only, idempotent (nope cos put etc break)?
+
 
         collections:
             like an embed/property, but behaves with the __getitem__ calls ?
             think about interface for pagination/mapping to an infinite scroll, etc.
             inlining - behaves like a link, isn't.
+            cursor/resultset behavior?
 
     snapshoting:
         crawling an api? glyph.crawl(page) returns all links() ?
+
+    versioning?
+        possibly: map default to /v0/ , default takes a version arg? breaks url mapping :v
+        possibly: / returns 300 if multiple versions, link header? rel=...
+
+    properties:
+        maybe links should be () free and use __get__ instead of call ?
+        (~~~ ruby style ~~~)
+        make a property() namedtuple for passing around as a url
+        perhaps? handle @properties and produce getters and setters (GET/PUT/DELETE)
+        dont expose form, expose an embed attribute with put, get, delete methods?
+        hard to do properly, what do you to do embed a link, etc ? self.foo calls __get__ ....
     
 
 

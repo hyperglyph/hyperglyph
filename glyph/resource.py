@@ -1,7 +1,18 @@
 """ resource.py
 
 contains Resource, Mapper and Router
+"""
 
+from urllib import quote_plus, unquote_plus
+from uuid import uuid4 
+
+
+from werkzeug.wrappers import Request, Response
+from werkzeug.exceptions import HTTPException, NotFound, BadRequest, NotImplemented, MethodNotAllowed
+
+from .encoding import CONTENT_TYPE, dump, parse, get, form, link, node, embed, ismethod, methodargs
+
+"""
 - router
    attach resource classes to url prefixes
    on request, finds resource and its mapper
@@ -37,15 +48,6 @@ contains Resource, Mapper and Router
         a glyph.node() with attributes
 
 """
-from urllib import quote_plus, unquote_plus
-from uuid import uuid4 
-
-
-from werkzeug.wrappers import Request, Response
-from werkzeug.exceptions import HTTPException
-
-from .encoding import CONTENT_TYPE, dump, parse, get, form, link, node, embed, ismethod, methodargs
-
 
 class SeeOther(HTTPException):
     """ A werkzeug http exception for redirects """
@@ -120,24 +122,34 @@ class BaseMapper(object):
             # the object state is either in the post data
             # if posting to the index
             data = request.data
-            args = ResourceMethod.parse(self.cls.__init__, data) if data else {}
+            try:
+                args = ResourceMethod.parse(self.cls.__init__, data) if data else {}
+                obj = self.create_resource(args)
+            except StandardError:
+                raise BadRequest()
 
-            obj = self.create_resource(args)
             raise SeeOther(router.url(obj))
         else:
-            args = self.parse_query(request.query_string)
-            obj = self.find_resource(args)
-            attr  = getattr(obj, attr_name)
+
+            try:
+                args = self.parse_query(request.query_string)
+                obj = self.find_resource(args)
+                attr  = getattr(obj, attr_name)
+            except StandardError:
+                raise BadRequest()
 
             if verb == 'GET' and attr_name == 'index':
                 result = ResourceMethod.index(obj)
             elif verb == 'GET' and ResourceMethod.is_safe(attr):
                 result = attr()
             elif verb == 'POST' and not ResourceMethod.is_safe(attr): 
-                data = ResourceMethod.parse(attr, request.data) if request.data else {}
+                try:
+                    data = ResourceMethod.parse(attr, request.data) if request.data else {}
+                except StandardError:
+                    raise BadRequest()
                 result =attr(**data)
             else:
-                raise StanardError('unhandled')
+                raise MethodNotAllowed()
 
             if ResourceMethod.is_redirect(attr) and isinstance(result, BaseResource):
                 raise SeeOther(router.url(result))
@@ -156,23 +168,21 @@ class BaseMapper(object):
                 return '/%s/'%self.prefix
         elif ismethod(r, self.cls):
                 return "/%s/%s/?%s"%(self.prefix, r.im_func.__name__, self.dump_query(self.get_repr(r.im_self)))
+        raise LookupError()
 
 
     """ Abstract methods for creating, finding a resource, and getting the representation
     of a resource, to embed in the url """
 
-    def create_resource(self, data):
-        """ given the representation of the state of a resource, return a new resource instance """
-        raise StandardError('missing')
+    def create_resource(self, representation):
+        raise NotImplemented()
 
-    def find_resource(self, query_string):
-        """ given the representation of the state of a resource, return a new/existing resource instance """
-        raise StandardError('missing')
-        return self.cls(**args)
+    def find_resource(self, representation):
+        raise NotImplemented()
 
     def get_repr(self, resource):
         """ return the representation of the state of the resource as a dict """
-        raise StandardError('missing')
+        raise NotImplemented()
 
 
 """ Transient Resources
@@ -244,10 +254,15 @@ class ResourceMethod(object):
     INLINE=False
     EXPIRES=False
     REDIRECT=False
-    def __init__(self, safe=SAFE, inline=INLINE, expires=EXPIRES, redirect=REDIRECT):
-        self.safe=safe
-        self.inline=inline
-        self.expires=expires
+    def __init__(self, resourcemethod=None):
+        if resourcemethod:
+            self.safe=resourcemethod.safe
+            self.inline=resourcemethod.inline
+            self.expires=resourcemethod.expires
+        else:
+            self.safe=self.SAFE
+            self.inline=self.INLINE
+            self.redirect=self.REDIRECT
 
     @staticmethod
     def index(obj):
@@ -271,21 +286,21 @@ class ResourceMethod(object):
     def is_safe(cls, m):
         try:
             return m.__glyph_method__.safe
-        except:
+        except StandardError:
             return cls.SAFE
 
     @classmethod
     def is_inline(cls, m):
         try:
             return m.__glyph_method__.inline
-        except:
+        except StandardError:
             return cls.INLINE
 
     @classmethod
     def is_redirect(cls, m):
         try:
             return m.__glyph_method__.redirect
-        except:
+        except StandardError:
             return cls.REDIRECT
 
 def get_mapper(obj, name):
@@ -304,7 +319,15 @@ class Router(object):
     def __call__(self, environ, start_response):
         request = Request(environ)
         try:
-            response = self.find_mapper(request.path).handle(request, self)
+            if request.path == '/':
+                raise SeeOther(self.default_path)
+            try:
+                mapper= self.find_mapper(request.path)
+            except StandardError:
+                raise NotFound()
+            
+            response = mapper.handle(request, self)
+
         except (StopIteration, GeneratorExit, SystemExit, KeyboardInterrupt):
             raise
         except HTTPException as r:
@@ -317,8 +340,6 @@ class Router(object):
 
 
     def find_mapper(self, path):
-        if path == '/':
-            raise SeeOther(self.default_path)
         path= path[1:].split('/')
         return  self.routes[path[0]]
 
@@ -343,7 +364,7 @@ class Router(object):
         elif ismethod(r, BaseResource):
             return self.mappers[r.im_class].url(r)
 
-        raise StandardError('cant encode',r )
+        raise LookupError('no url for',r )
 
     def add(self):
         return self.register
