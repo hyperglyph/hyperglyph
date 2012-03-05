@@ -38,6 +38,9 @@ done:
 
     moved stuff around, added docstrings
     moved parsing handling into mapper & resourcemethod
+    creating objects different from lookup
+    persistent mapping proof of concept
+    index creation moved to resourcemethod (noice!)
 
 remember:
     should handle http mapping by default, verbs, urls and content_type
@@ -59,10 +62,7 @@ todo:
         examples/pricechecker/ add loadbalancers, test caching, sharding version too
 
     api:
-        persistent mapper:
-            can't create on get unless it exists already/linked to.
-            some expire, some don't ? raise an Exception to delete ?
-            expiry exception in client
+        persistent mapper: managing objects/deleting them
 
     code:
         throw correct http exceptions

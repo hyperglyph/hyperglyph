@@ -130,7 +130,7 @@ class BaseMapper(object):
             attr  = getattr(obj, attr_name)
 
             if verb == 'GET' and attr_name == 'index':
-                result = self.index(obj, attr())
+                result = ResourceMethod.index(obj)
             elif verb == 'GET' and ResourceMethod.is_safe(attr):
                 result = attr()
             elif verb == 'POST' and not ResourceMethod.is_safe(attr): 
@@ -157,15 +157,6 @@ class BaseMapper(object):
         elif ismethod(r, self.cls):
                 return "/%s/%s/?%s"%(self.prefix, r.im_func.__name__, self.dump_query(self.get_repr(r.im_self)))
 
-    @staticmethod
-    def index(obj, content):
-        """ Generate a glyph-node that contains 
-            the object attributes and methods
-        """
-        page = dict()
-        page.update(make_controls(obj))
-        page.update(content)
-        return node(obj.__class__.__name__, attributes=page)
 
     """ Abstract methods for creating, finding a resource, and getting the representation
     of a resource, to embed in the url """
@@ -257,6 +248,16 @@ class ResourceMethod(object):
         self.safe=safe
         self.inline=inline
         self.expires=expires
+
+    @staticmethod
+    def index(obj):
+        """ Generate a glyph-node that contains 
+            the object attributes and methods
+        """
+        page = dict()
+        page.update(make_controls(obj))
+        page.update(obj.index())
+        return node(obj.__class__.__name__, attributes=page)
 
     @staticmethod
     def parse(resource, data):
