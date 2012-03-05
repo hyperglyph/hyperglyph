@@ -46,8 +46,12 @@ def node(name, attributes, children=None):
     return Node(name, attributes, children)
 
 def form(url, method='POST',values=None):
-    if ismethod(url) and values is None:
-        values = methodargs(url)
+    if values is None:
+        if ismethod(url):
+            values = methodargs(url)
+        elif isinstance(url, type):
+            values = methodargs(url.__init__)
+
     return Extension.make('form', {'method':method, 'url':url}, values)
 
 def link(url, method='GET'):

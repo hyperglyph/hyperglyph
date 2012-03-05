@@ -132,6 +132,34 @@ class LinkEmbedTest(ServerTest):
 
 
 
+class FormObjectTest(ServerTest):
+
+    def router(self):
+        m = glyph.Router()
+        @m.default()
+        class Root(glyph.r):
+            def index(self):
+                return dict(
+                    test = glyph.form(Test)
+                )
+
+        @m.add()
+        class Test(glyph.r):
+            def __init__(self, _value=0):
+                self._value = int(_value)
+
+            @glyph.inline()
+            def value(self):
+                return self._value
+
+        return m
+
+    def testCase(self):
+        root = glyph.get(self.endpoint.url)
+        result = root.test(0)
+        self.assertEqual(result.value(), 0)
+        result = root.test(2)
+        self.assertEqual(result.value(), 2)
 
 
 class PropertyTest(ServerTest):

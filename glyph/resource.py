@@ -70,25 +70,38 @@ class BaseMapper(object):
 
 
     def handle(self,request, router):
-        path = request.path[1:].split('/')[1:]
         # todo throw nice errors here? bad request?
-        obj = self.get_resource(self.parse_query(request.query_string))
         # try/ 404 ?
+        path = request.path[1:].split('/')[1:]
         attr_name = 'index' if not path or not path[0] else path[0]
+        verb = request.method
 
-        attr  = getattr(obj, attr_name)
 
-        method = request.method
-        if method == 'GET' and attr_name == 'index':
-            result = self.index(obj)
-        elif method == 'GET' and ResourceMethod.is_safe(attr):
-            result = attr()
-        elif method =='POST' and not ResourceMethod.is_safe(attr): 
-            data = parse(request.data) if request.data else {}
-            result =attr(**data)
+        if attr_name == 'index' and  verb  == 'POST':
+            args = parse(request.data) if request.data else {}
+        else:
+            args = self.parse_query(request.query_string)
 
-        if ResourceMethod.is_redirect(attr) and isinstance(result, Resource):
-            raise SeeOther(router.url(result))
+        obj = self.get_resource(args)
+
+        if attr_name == 'index':
+            if verb == 'GET':
+                result = self.index(obj)
+            else:
+                raise SeeOther(router.url(obj))
+        else:
+            attr  = getattr(obj, attr_name)
+
+            if verb == 'GET' and ResourceMethod.is_safe(attr):
+                result = attr()
+            elif verb == 'POST' and not ResourceMethod.is_safe(attr): 
+                data = parse(request.data) if request.data else {}
+                result =attr(**data)
+            else:
+                raise StanardError('unhandled')
+
+            if ResourceMethod.is_redirect(attr) and isinstance(result, Resource):
+                raise SeeOther(router.url(result))
 
         result = dump(result, router.url)
 

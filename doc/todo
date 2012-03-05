@@ -27,6 +27,10 @@ done:
 
     query args now encoded too - because it's nice not to have to cast.
 
+    @glyph.redirect()
+        a decorator, makes the function do the redirect from self.
+        if a resource or link returned - throws a custom response.
+
 remember:
     should handle http mapping by default, verbs, urls and content_type
     should be possible to use objects outside of mapper.
@@ -47,10 +51,6 @@ todo:
         examples/pricechecker/ add loadbalancers, test caching, sharding version too
 
     api:
-        @glyph.redirect()
-            a decorator, makes the function do the redirect from self.
-            if a resource or link returned - throws a custom response.
-
         glyph.form(Resource) should work 
             methodargs for class 
             POST to a Resouce.index should redirect to the instance
