@@ -62,12 +62,11 @@ todo:
         cookbook more examples:doing it by hand client/server.
         examples/pricechecker/ add loadbalancers, test caching, sharding version too
 
-
     glyph encoding/ media types:
+        accept header, contnt type header
         return xml or json instead of glyph
             @accept(), @content_type()
             extend resourcemthod to override post/get
-
 
     in-browser control/debugging:
         content negociation: html5/json serialization? 
@@ -104,12 +103,10 @@ todo:
         new data types: charset handling ? timezones? time periods ?
         refactoring: make it dict driven instead of if-chain driven?
 
-
         dependencies: requests should be optional dependency?
         routing: use werkzeug rules inside router
 
         decorators? ssl only, idempotent (nope cos put etc break)?
-
 
         collections:
             like an embed/property, but behaves with the __getitem__ calls ?
@@ -120,7 +117,7 @@ todo:
     snapshoting:
         crawling an api? glyph.crawl(page) returns all links() ?
 
-    versioning?
+    api versioning?
         possibly: map default to /v0/ , default takes a version arg? breaks url mapping :v
         possibly: / returns 300 if multiple versions, link header? rel=...
 
@@ -138,6 +135,8 @@ todo:
         e.g timestamps, versions
         want to be able to say @glyph.version()/if not modified, etc
         on forms, etc?
+
+    transactions?
 
 
 usecases/testcases
