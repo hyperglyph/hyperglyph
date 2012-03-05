@@ -102,6 +102,8 @@ HEADERS={'Accept': CONTENT_TYPE, 'Content-Type': CONTENT_TYPE}
 session = requests.session()
 
 def get(url, args=None,headers=None):
+    if hasattr(url, 'url'):
+        url = url.url()
     return  fetch('GET', url, args, '', headers)
 
 def fetch(method, url, args=None,data="", headers=None):
