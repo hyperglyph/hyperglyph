@@ -18,10 +18,30 @@ contains Resource, Mapper and Router
     have an index() method that returns contents
     are created per request - represent a handle
     to some state at the serve
+    
+    url is roughly
+        /ClassName/
+        /ClassName/?instance-state
+        /ClassName/method?instance state
+
+    instance state for transient resources is
+        a serialize dict of the class's constructor args
+        from the instance dict
+
+    posting /ClassName/ with args
+        creates c = Class(**args)
+        redirects to c 
+
+    getting /ClassName/?args
+        creates an index of the instance of Class
+        a glyph.node() with attributes
+
 """
 from datetime import datetime
-from pytz import utc
 from urllib import quote_plus, unquote_plus
+from uuid import uuid4 as UUID
+
+from pytz import utc
 
 from werkzeug.wrappers import Request, Response
 from werkzeug.exceptions import HTTPException
@@ -70,7 +90,7 @@ class BaseMapper(object):
     
     @staticmethod
     def dump(data, resolver):
-        return dump(data, resolver)
+        return CONTENT_TYPE, dump(data, resolver)
 
     """ How query strings are handled. """
     @staticmethod
@@ -102,22 +122,14 @@ class BaseMapper(object):
             # the object state is either in the post data
             # if posting to the index
             obj = self.create_resource(request.data)
+            raise SeeOther(router.url(obj))
         else:
-            # or in the query args otherwise
             obj = self.find_resource(request.query_string)
-
-        if attr_name == 'index':
-            if verb == 'GET':
-                result = self.index(obj)
-                result = self.dump(result, router.url)
-            else:
-                # POSTing to the index redirects
-                # to GETing it with the state in the query string
-                raise SeeOther(router.url(obj))
-        else:
             attr  = getattr(obj, attr_name)
 
-            if verb == 'GET' and ResourceMethod.is_safe(attr):
+            if verb == 'GET' and attr_name == 'index':
+                result = self.index(obj, attr())
+            elif verb == 'GET' and ResourceMethod.is_safe(attr):
                 result = attr()
             elif verb == 'POST' and not ResourceMethod.is_safe(attr): 
                 data = ResourceMethod.parse(attr, request.data) if request.data else {}
@@ -127,19 +139,10 @@ class BaseMapper(object):
 
             if ResourceMethod.is_redirect(attr) and isinstance(result, BaseResource):
                 raise SeeOther(router.url(result))
+            else:
+                content_type, result = ResourceMethod.dump(attr, result, router.url)
+                return Response(result, content_type=content_type)
 
-            result = dump(result, router.url)
-
-        return Response(result, content_type=CONTENT_TYPE)
-
-    def index(self, obj):
-        """ Generate a glyph-node that contains 
-            the object attributes and methods
-        """
-        page = dict()
-        page.update(make_controls(obj))
-        page.update(obj.index())
-        return node(obj.__class__.__name__, attributes=page)
 
     def url(self, r):
         """ return a url string that reflects this resource:
@@ -151,6 +154,16 @@ class BaseMapper(object):
                 return '/%s/'%self.prefix
         elif ismethod(r, self.cls):
                 return "/%s/%s/?%s"%(self.prefix, r.im_func.__name__, self.dump_query(self.get_repr(r.im_self)))
+
+    @staticmethod
+    def index(obj, content):
+        """ Generate a glyph-node that contains 
+            the object attributes and methods
+        """
+        page = dict()
+        page.update(make_controls(obj))
+        page.update(content)
+        return node(obj.__class__.__name__, attributes=page)
 
     """ Abstract methods for creating, finding a resource, and getting the representation
     of a resource, to embed in the url """
@@ -203,6 +216,34 @@ class Resource(BaseResource):
     def index(self):
         return dict((k,v) for k,v in self.__dict__.items() if not k.startswith('_'))
 
+""" Persistent Resources """
+            
+class PersistentMapper(BaseMapper):  
+    def __init__(self, prefix, cls):
+        BaseMapper.__init__(prefix, cls)
+        self.instances = {}
+        self.identifiers = {}
+
+    def create_resource(self, data):
+        args = self.parse(data) if data else {}
+        instance = self.cls(**args)
+        uuid = UUID()
+        self.instances[uuid] = instance
+        self.identifiers[instance] = uuid
+
+    def find_resource(self, query_string):
+        args = self.parse_query(query_string)
+        return self.instances[uuid]
+
+    def get_repr(self, instance):
+        if resource not in self.identifiers:
+            uuid = UUID()
+            self.instances[uuid] = instance
+            self.identifiers[instance] = uuid
+        else:
+            uuid = self.identifiers[instance]
+        return uuid
+
 
 class ResourceMethod(object):   
     """ Represents the capabilities of methods on resources, used by the mapper
@@ -223,7 +264,7 @@ class ResourceMethod(object):
     
     @staticmethod
     def dump(resource, data, resolver):
-        return dump(data, resolver)
+        return CONTENT_TYPE, dump(data, resolver)
 
     @classmethod
     def is_safe(cls, m):
