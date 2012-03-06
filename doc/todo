@@ -87,7 +87,6 @@ todo:
             def foo_modified(self, date):
                 ......
 
-
     api:
         persistent mapper: managing objects/deleting them
 
@@ -128,7 +127,6 @@ todo:
         perhaps? handle @properties and produce getters and setters (GET/PUT/DELETE)
         dont expose form, expose an embed attribute with put, get, delete methods?
         hard to do properly, what do you to do embed a link, etc ? self.foo calls __get__ ....
-    
 
     properties of resources:
         things that apply to resources, but are not serialized as the state

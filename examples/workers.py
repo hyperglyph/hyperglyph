@@ -28,6 +28,7 @@ def queue():
 
     @m.default()
     class Server(glyph.r):
+        @glyph.redirect()
         def task_queue(self, worker_name):
             print worker_name
             return Queue(worker_name)
@@ -37,6 +38,7 @@ def queue():
         def __init__(self, worker_name):
             self.worker_name = worker_name
 
+        @glyph.redirect()
         def task(self):
             print self.worker_name
             return Task(self.worker_name, tasks.pop())
