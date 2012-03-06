@@ -347,7 +347,8 @@ def _read_one(fh,c, resolver):
             f = _read_one(fh, first, resolver)
             second = fh.read(1)
             g = _read_one(fh, second, resolver)
-            out[f]=g
+            # first value kept? out.setdefault(f,g)
+            out[f] = g
             first = fh.read(1)
         return out
     elif c == NODE:

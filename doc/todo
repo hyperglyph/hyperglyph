@@ -1,5 +1,4 @@
 done:
-
     move to wsgi, requests. move to params as constructor; mapper; transient objects; silent server; make_server ssl args; carry over args to werzkeug; form bug; documentation; removed prints; split out into parts; price checker skeleton;
     refactor:
         moved to werkzeug exceptions
@@ -21,10 +20,10 @@ done:
         safe get linked, unsafe get forms, inlines get embed
 
     after removing index method, use in real world demanded it back
-    it's nice - you can now override methods
+        it's nice - you can now override methods
+        that broke though as it got passed back in
 
     renaming done
-
     query args now encoded too - because it's nice not to have to cast.
 
     @glyph.redirect()
@@ -49,11 +48,10 @@ remember:
     should be possible to use objects outside of mapper.
     http ignorant not agnostic (don't need to know http semantics to use it, but can override)
 
-todo:
-    documentation:
+todo documentation:
         under the scenes - request by request
             worked repl example
-        glyph encoding clarifcations
+        glyph encoding clarifcations/iana-esque spec
             duplicate dict keys,hex parsing
         tutorial
             build a server, use a client
@@ -68,6 +66,7 @@ todo:
             yes - hyperlinks, hateoas, caching
             no - non standard mime type, ad-hoc interfaces 
 
+todo code
     glyph encoding/ media types:
         glyph.get/fetch supports other media types
 
@@ -79,6 +78,7 @@ todo:
 
     in-browser control/debugging:
         jinja2 templates? twitter bootstrap?
+        serializing! lxml!
         text/html serialization, x-www-url-encoding
         content negociation: html5/json serialization? 
         porting client to javascript/ajax?
@@ -146,11 +146,13 @@ todo:
         on forms, etc?
 
     transactions?
+        preconditions/postconditions on forms
+
+    demos:
+        heroku/appengine ?
 
 
 usecases/testcases
-    demos:
-        heroku/appengine ?
     atom pub mail server?  mail store? forum queue/broker(herp?)
         use preconditions to do transactional semantics?
 
@@ -161,6 +163,8 @@ usecases/testcases
             use embedded for all new items, links for all client is expected to have already
     examples for a talk?
     db cursors alike for collections ? pagination
+
+    http link_headers
 
 
 ports:

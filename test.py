@@ -57,7 +57,6 @@ class GetTest(ServerTest):
     def testCase(self):
         result = glyph.get(self.endpoint.url)
 
-        print result
         self.assertEqual(result.get(), self.value)
 
 class LinkTest(ServerTest):
