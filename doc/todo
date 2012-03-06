@@ -62,13 +62,23 @@ todo:
         cookbook more examples:doing it by hand client/server.
         examples/pricechecker/ add loadbalancers, test caching, sharding version too
 
+        is it rest?
+            put vs post essentially -
+            yes - hyperlinks, hateoas, caching
+            no - non standard mime type, ad-hoc interfaces 
+
     glyph encoding/ media types:
-        accept header, contnt type header
+        glyph.get/fetch supports other media types
+
+        resource handles/parses accept/content-type header
+
         return xml or json instead of glyph
             @accept(), @content_type()
             extend resourcemthod to override post/get
 
     in-browser control/debugging:
+        jinja2 templates? twitter bootstrap?
+        text/html serialization, x-www-url-encoding
         content negociation: html5/json serialization? 
         porting client to javascript/ajax?
             rather than pure html - make a pushstate esque one

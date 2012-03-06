@@ -6,7 +6,7 @@ from datetime import datetime
 from pytz import utc
 
 
-CONTENT_TYPE='application/glyph'
+CONTENT_TYPE='application/vnd.glyph'
 
 """
 glyph is a serialization format roughly based around bencoding
