@@ -67,6 +67,15 @@ todo documentation:
             no - non standard mime type, ad-hoc interfaces 
 
 todo code
+    werkzeug parsing form data?
+        use the stream ?
+        http://werkzeug.pocoo.org/docs/request_data/#when-does-werkzeug-parse
+        werkzeug.utils.redirect(location, code=302)
+        ?
+
+    http headers:
+        date, cache-control, etc
+
     glyph encoding/ media types:
         glyph.get/fetch supports other media types
 
@@ -77,8 +86,10 @@ todo code
             extend resourcemthod to override post/get
 
     in-browser control/debugging:
+        node <-> html mapping? section? document?
         jinja2 templates? twitter bootstrap?
-        serializing! lxml!
+            serializing! lxml!
+            customizing serializing per method?
         text/html serialization, x-www-url-encoding
         content negociation: html5/json serialization? 
         porting client to javascript/ajax?
@@ -155,7 +166,8 @@ todo code
 usecases/testcases
     atom pub mail server?  mail store? forum queue/broker(herp?)
         use preconditions to do transactional semantics?
-
+    tekpub/ 
+        http://wekeroad.com/2012/03/03/moving-the-philosophy-into-machinery/
     snmp? crawling
     scraper pool ?
         sharding, load balancing, caching, extending

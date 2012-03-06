@@ -9,6 +9,8 @@ from uuid import uuid4
 
 from werkzeug.wrappers import Request, Response
 from werkzeug.exceptions import HTTPException, NotFound, BadRequest, NotImplemented, MethodNotAllowed
+from werkzeug.utils import redirect as Redirect
+
 
 from .encoding import CONTENT_TYPE, dump, parse, get, form, link, node, embed, ismethod, methodargs
 
@@ -48,16 +50,6 @@ from .encoding import CONTENT_TYPE, dump, parse, get, form, link, node, embed, i
         a glyph.node() with attributes
 
 """
-
-class SeeOther(HTTPException):
-    """ A werkzeug http exception for redirects """
-    code = 303
-    description = ''
-    def __init__(self, url):
-        self.url = url
-        HTTPException.__init__(self)
-    def get_headers(self, environ):
-        return [('Location', self.url)]
 
 class BaseResource(object):
     """ An abstract resource to be served. Contains a mapper attribute __glyph__,
@@ -128,7 +120,7 @@ class BaseMapper(object):
             except StandardError:
                 raise BadRequest()
 
-            raise SeeOther(router.url(obj))
+            return Redirect(router.url(obj), code=303)
         else:
 
             try:
@@ -152,7 +144,7 @@ class BaseMapper(object):
                 raise MethodNotAllowed()
 
             if ResourceMethod.is_redirect(attr) and isinstance(result, BaseResource):
-                raise SeeOther(router.url(result))
+                return Redirect(router.url(result), code=ResourceMethod.redirect_code(attr))
             else:
                 content_type, result = ResourceMethod.dump(attr, result, router.url)
                 return Response(result, content_type=content_type)
@@ -302,6 +294,9 @@ class ResourceMethod(object):
             return m.__glyph_method__.redirect
         except StandardError:
             return cls.REDIRECT
+    @staticmethod
+    def redirect_code(self):
+        return 303
 
 def get_mapper(obj, name):
     """ return the mapper for this object, with a given name"""
@@ -320,13 +315,9 @@ class Router(object):
         request = Request(environ)
         try:
             if request.path == '/':
-                raise SeeOther(self.default_path)
-            try:
-                mapper= self.find_mapper(request.path)
-            except StandardError:
-                raise NotFound()
-            
-            response = mapper.handle(request, self)
+                response = Redirect(self.default_path, code=303)
+            else:
+                response = self.find_mapper(request.path).handle(request, self)
 
         except (StopIteration, GeneratorExit, SystemExit, KeyboardInterrupt):
             raise
@@ -340,8 +331,11 @@ class Router(object):
 
 
     def find_mapper(self, path):
-        path= path[1:].split('/')
-        return  self.routes[path[0]]
+        try:
+            path= path[1:].split('/')
+            return  self.routes[path[0]]
+        except StandardError:
+            raise NotFound()
 
     def register(self, obj, path=None, default=False):
         if path is None: 
