@@ -1,4 +1,5 @@
 done:
+
     move to wsgi, requests. move to params as constructor; mapper; transient objects; silent server; make_server ssl args; carry over args to werzkeug; form bug; documentation; removed prints; split out into parts; price checker skeleton;
     refactor:
         moved to werkzeug exceptions
