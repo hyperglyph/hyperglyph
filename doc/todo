@@ -43,6 +43,7 @@ done:
     throw correct http exceptions, remove bare excepts
     resourcemethod takes another as constructor
     using werkzeug.utils.redirect(location, code=302)
+    optional requests dependency
 
 remember:
     should handle http mapping by default, verbs, urls and content_type
@@ -63,7 +64,7 @@ todo documentation:
         examples/pricechecker/ add loadbalancers, test caching, sharding version too
 
         explain: is it rest?
-            put vs post essentially -
+            put vs post essentially - hypermedia forms vs resources with verbs
             yes - hyperlinks, hateoas, caching
             no - non standard mime type, ad-hoc interfaces 
 
@@ -126,8 +127,6 @@ todo code
         new data types: charset handling ? timezones? time periods ?
         refactoring: make it dict driven instead of if-chain driven?
 
-        dependencies: requests should be optional dependency?
-        routing: use werkzeug rules inside router
 
         decorators? ssl only, idempotent (nope cos put etc break)?
 
@@ -161,30 +160,26 @@ todo code
     transactions?
         preconditions/postconditions on forms
 
-        
-
     demos:
         heroku/appengine ?
+        examples for a talk?
+        atom pub mail server?  mail store? forum queue/broker(herp?)
+            use preconditions to do transactional semantics?
+        tekpub/ 
+            http://wekeroad.com/2012/03/03/moving-the-philosophy-into-machinery/
 
-
-usecases/testcases
-    atom pub mail server?  mail store? forum queue/broker(herp?)
-        use preconditions to do transactional semantics?
-    tekpub/ 
-        http://wekeroad.com/2012/03/03/moving-the-philosophy-into-machinery/
-    snmp? crawling
     scraper pool ?
         sharding, load balancing, caching, extending
+
+misc shit:
+    snmp? crawling
     twitter api - last-modified embedding hack
             use embedded for all new items, links for all client is expected to have already
-    examples for a talk?
     db cursors alike for collections ? pagination
 
-    http link_headers
-
-
-ports:
     jquery plugin?
     ruby, js - object style
     cgi/php: create foo.php for each resource, use links.
     0mq transport :v websocket upgrades to get a bi-di socket :v
+    routing: use werkzeug rules inside router
+        nope - does arg parsing
