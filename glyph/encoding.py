@@ -1,8 +1,7 @@
 from urlparse import urljoin
 from StringIO import StringIO
-import requests
-
 from datetime import datetime
+
 from pytz import utc
 
 
@@ -46,6 +45,9 @@ glyph is a serialization format roughly based around bencoding
     [datetime.datetime(2001, 2, 3, 4, 5, 6, 70000, tzinfo=<UTC>)]
 
 """
+
+# move these to __init__ ?
+
 def node(name, attributes, children=None):
     return Node(name, attributes, children)
 
@@ -66,6 +68,8 @@ def embed(url, content, method='GET'):
 
 def prop(url):
     return Extension.make('property', {'url':url}, [])
+
+# move to inspect ?
 
 def ismethod(m, cls=None):
     return callable(m) and hasattr(m,'im_self') and (cls is None or isinstance(m.im_self, cls))
@@ -99,12 +103,44 @@ EXT='X'
 
 HEADERS={'Accept': CONTENT_TYPE, 'Content-Type': CONTENT_TYPE}
 
-session = requests.session()
 
 def get(url, args=None,headers=None):
     if hasattr(url, 'url'):
         url = url.url()
     return  fetch('GET', url, args, '', headers)
+
+
+try:
+    import requests
+    session = requests.session()
+except:
+    import urllib2, urllib, collections
+    Result = collections. namedtuple('Result', 'url, status_code, content,  headers') 
+    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    class session(object):
+        @staticmethod
+
+        def request(method, url, params, data, headers, allow_redirects):
+            url = "%s?%s" % (url, urllib.urlencode(params)) if params else url
+
+            if data:
+                req = urllib2.Request(url, data)
+            else:
+                req = urllib2.Request(url)
+
+            for header, value in headers.items():
+                req.add_header(header, value)
+            req.get_method = lambda: method
+            try:
+                result = opener.open(req)
+
+                return Result(result.geturl(), result.code, result.read(), result.info())
+            except StopIteration: # In 2.7 this does not derive from Exception
+                raise
+            except StandardError as e:
+                import traceback
+                traceback.print_exc()
+                raise StandardError(e)
 
 def fetch(method, url, args=None,data="", headers=None):
     if headers is None:
@@ -115,16 +151,15 @@ def fetch(method, url, args=None,data="", headers=None):
     result = session.request(method, url, params=args, data=dump(data), headers=headers, allow_redirects=False)
     def join(u):
         return urljoin(result.url, u)
-    if result.status_code in [ requests.codes.see_other]:
+    if result.status_code == 303:
         return get(join(result.headers['Location']))
-    elif result.status_code in [ requests.codes.created]:
+    elif result.status_code == 201:
         # never called
         return link(join(result.headers['Location']))
     data = result.content
     if result.headers['Content-Type'].startswith(CONTENT_TYPE):
         data = parse(data, join)
     return data
-
 
 identity = lambda x:x
 

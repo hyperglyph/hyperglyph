@@ -42,6 +42,7 @@ done:
     index creation moved to resourcemethod (noice!)
     throw correct http exceptions, remove bare excepts
     resourcemethod takes another as constructor
+    using werkzeug.utils.redirect(location, code=302)
 
 remember:
     should handle http mapping by default, verbs, urls and content_type
@@ -61,19 +62,14 @@ todo documentation:
         cookbook more examples:doing it by hand client/server.
         examples/pricechecker/ add loadbalancers, test caching, sharding version too
 
-        is it rest?
+        explain: is it rest?
             put vs post essentially -
             yes - hyperlinks, hateoas, caching
             no - non standard mime type, ad-hoc interfaces 
 
 todo code
-    werkzeug parsing form data?
-        use the stream ?
-        http://werkzeug.pocoo.org/docs/request_data/#when-does-werkzeug-parse
-        werkzeug.utils.redirect(location, code=302)
-        ?
-
     http headers:
+        parsing content-type?
         date, cache-control, etc
 
     glyph encoding/ media types:
@@ -86,6 +82,10 @@ todo code
             extend resourcemthod to override post/get
 
     in-browser control/debugging:
+        html serialization for glyph datatypes
+            node, extension?
+                make extentions defined in __init__.py
+                use tag to pass to callback to construct
         node <-> html mapping? section? document?
         jinja2 templates? twitter bootstrap?
             serializing! lxml!
@@ -108,6 +108,8 @@ todo code
             @foo.if_modified_since()
             def foo_modified(self, date):
                 ......
+
+            caching on embeds?
 
     api:
         persistent mapper: managing objects/deleting them
@@ -158,6 +160,8 @@ todo code
 
     transactions?
         preconditions/postconditions on forms
+
+        
 
     demos:
         heroku/appengine ?
