@@ -382,8 +382,9 @@ def _read_one(fh,c, resolver):
             f = _read_one(fh, first, resolver)
             second = fh.read(1)
             g = _read_one(fh, second, resolver)
-            # first value kept? out.setdefault(f,g)
-            out[f] = g
+            new = out.setdefault(f,g)
+            if new is not g:
+                raise StandardError('duplicate key')
             first = fh.read(1)
         return out
     elif c == NODE:
