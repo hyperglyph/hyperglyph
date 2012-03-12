@@ -4,7 +4,6 @@ from datetime import datetime
 
 from pytz import utc
 
-
 CONTENT_TYPE='application/vnd.glyph'
 
 """
@@ -46,39 +45,6 @@ glyph is a serialization format roughly based around bencoding
 
 """
 
-# move these to __init__ ?
-
-def node(name, attributes, children=None):
-    return Node(name, attributes, children)
-
-def form(url, method='POST',values=None):
-    if values is None:
-        if ismethod(url):
-            values = methodargs(url)
-        elif isinstance(url, type):
-            values = methodargs(url.__init__)
-
-    return Extension.make('form', {'method':method, 'url':url}, values)
-
-def link(url, method='GET'):
-    return Extension.make('link', {'method':method, 'url':url}, [])
-
-def embed(url, content, method='GET'):
-    return Extension.make('embed', {'method':method, 'url':url}, content)
-
-def prop(url):
-    return Extension.make('property', {'url':url}, [])
-
-# move to inspect ?
-
-def ismethod(m, cls=None):
-    return callable(m) and hasattr(m,'im_self') and (cls is None or isinstance(m.im_self, cls))
-
-def methodargs(m):
-    if ismethod(m):
-        return m.func_code.co_varnames[1:]
-
-
 UNICODE_CHARSET="utf-8"
 
 STR='s'
@@ -104,236 +70,7 @@ EXT='X'
 HEADERS={'Accept': CONTENT_TYPE, 'Content-Type': CONTENT_TYPE}
 
 
-def get(url, args=None,headers=None):
-    if hasattr(url, 'url'):
-        url = url.url()
-    return  fetch('GET', url, args, '', headers)
-
-
-try:
-    import requests
-    session = requests.session()
-except:
-    import urllib2, urllib, collections
-    Result = collections. namedtuple('Result', 'url, status_code, content,  headers') 
-    opener = urllib2.build_opener(urllib2.HTTPHandler)
-    class session(object):
-        @staticmethod
-
-        def request(method, url, params, data, headers, allow_redirects):
-            url = "%s?%s" % (url, urllib.urlencode(params)) if params else url
-
-            if data:
-                req = urllib2.Request(url, data)
-            else:
-                req = urllib2.Request(url)
-
-            for header, value in headers.items():
-                req.add_header(header, value)
-            req.get_method = lambda: method
-            try:
-                result = opener.open(req)
-
-                return Result(result.geturl(), result.code, result.read(), result.info())
-            except StopIteration: # In 2.7 this does not derive from Exception
-                raise
-            except StandardError as e:
-                import traceback
-                traceback.print_exc()
-                raise StandardError(e)
-
-def fetch(method, url, args=None,data="", headers=None):
-    if headers is None:
-        headers = {}
-    headers.update(HEADERS)
-    if args is None:
-        args = {}
-    result = session.request(method, url, params=args, data=dump(data), headers=headers, allow_redirects=False)
-    def join(u):
-        return urljoin(result.url, u)
-    if result.status_code == 303:
-        return get(join(result.headers['Location']))
-    elif result.status_code == 201:
-        # never called
-        return link(join(result.headers['Location']))
-    data = result.content
-    if result.headers['Content-Type'].startswith(CONTENT_TYPE):
-        data = parse(data, join)
-    return data
-
 identity = lambda x:x
-
-def dump(obj, resolver=identity):
-    buf = StringIO()
-    _dump(obj, buf, resolver)
-    return buf.getvalue()
-
-def parse(s, resolver=identity):
-    #try:
-        buf = StringIO(s)
-        return read(buf, resolver)
-    #except:
-    #    raise StandardError('cantparse',s)
-
-""" Data Types """
-
-class Node(object):
-    def __init__(self, name, attributes, content):
-        self._name = name
-        self._attributes = attributes
-        self._content = content
-    def __getstate__(self):
-        return self._name, self._attributes, self._content
-
-    def __setstate__(self, state):
-        self._name = state[0]
-        self._attributes = state[1]
-        self._content = state[2]
-
-    def __getattr__(self, name):
-        try:
-            return self._attributes[name]
-        except KeyError:
-            raise AttributeError(name)
-
-    def __getitem__(self, name):
-        return self._content[name]
-
-    def __eq__(self, other):
-        return self._name == other._name and self._attributes == other._attributes and self._content == other._content
-
-    def __repr__(self):
-        return '<node:%s %s %s>'%(self._name, repr(self._attributes), repr(self._content))
-
-class Extension(Node):
-    _exts = {}
-    @classmethod
-    def make(cls, name, attributes, content):
-        ext = cls._exts.get(name, Node)
-        return ext(name,attributes, content)
-    
-    @classmethod
-    def register(cls, name):
-        def _decorator(fn):
-            cls._exts[name] = fn
-            return fn
-        return _decorator
-
-    def __eq__(self, other):
-        return isinstance(other, Extension) and Node.__eq__(self, other)
-
-    def __repr__(self):
-        return '<ext:%s %s %s>'%(self._name, repr(self._attributes), repr(self._content))
-
-    def resolve(self, resolver):
-        pass
-
-@Extension.register('form')
-class Form(Extension):
-    def __call__(self, *args, **kwargs):
-        url = self._attributes['url']
-        data = {}
-        names = self._content[:]
-
-            
-        for n,v in zip(names, args):
-            data[n] = v
-
-        for k,v in kwargs.items():
-            if k in names:
-                data[k]=v   
-
-        return fetch(self._attributes.get('method','GET'),url, data=data)
-
-    def resolve(self, resolver):
-        self._attributes['url'] = resolver(self._attributes['url'])
-
-@Extension.register('link')
-class Link(Extension):
-    def __call__(self, *args, **kwargs):
-        url = self._attributes['url']
-        return fetch(self._attributes.get('method','GET'),url)
-
-    def url(self):
-        return self._attributes['url']
-        
-    def resolve(self, resolver):
-        self._attributes['url'] = resolver(self._attributes['url'])
-
-
-@Extension.register('embed')
-class Embed(Extension):
-    def __call__(self, *args, **kwargs):
-        return self._content
-
-    def url(self):
-        return self._attributes['url']
-        
-    def resolve(self, resolver):
-        self._attributes['url'] = resolver(self._attributes['url'])
-
-
-def _dump(obj, buf, resolver):
-    if obj is True:
-        buf.write(TRUE)
-    elif obj is False:
-        buf.write(FALSE)
-    elif obj is None:
-        buf.write(NONE)
-    elif isinstance(obj, (Extension,)):
-        buf.write(EXT)
-        obj.resolve(resolver)
-        _dump(obj._name, buf, resolver)
-        _dump(obj._attributes, buf, resolver)
-        _dump(obj._content, buf, resolver)
-    elif isinstance(obj, (Node,)):
-        buf.write(NODE)
-        _dump(obj._name, buf, resolver)
-        _dump(obj._attributes, buf, resolver)
-        _dump(obj._content, buf, resolver)
-
-
-    elif isinstance(obj, (str, buffer)):
-        buf.write(STR)
-        buf.write("%d"%len(obj))
-        buf.write(BLOB_SEP)
-        buf.write(obj)
-    elif isinstance(obj, unicode):
-        buf.write(UNI)
-        obj = obj.encode(UNICODE_CHARSET)
-        buf.write("%d"%len(obj))
-        buf.write(BLOB_SEP)
-        buf.write(obj)
-    elif hasattr(obj, 'iteritems'):
-        buf.write(DICT)
-        for k in sorted(obj.keys()): # always sorted, so can compare serialized
-            v=obj[k]
-            _dump(k, buf, resolver)
-            _dump(v, buf, resolver)
-        buf.write(END)
-    elif hasattr(obj, '__iter__'):
-        buf.write(LIST)
-        for x in obj:
-            _dump(x, buf, resolver)
-        buf.write(END)
-    elif isinstance(obj, (int, long)):
-        buf.write(NUM)
-        buf.write(str(obj))
-        buf.write(END)
-    elif isinstance(obj, float):
-        buf.write(FLT)
-        obj= float.hex(obj)
-        buf.write("%d"%len(obj))
-        buf.write(BLOB_SEP)
-        buf.write(obj)
-    elif isinstance(obj, datetime):
-        buf.write(DTM)
-        obj = obj.astimezone(utc)
-        buf.write(obj.strftime("%Y-%m-%dT%H:%M:%S.%f"))
-    else:
-        raise StandardError('cant encode', obj)
-
-
 def _read_num(fh, term, parse):
     c = fh.read(1)
     buf=StringIO()
@@ -342,76 +79,6 @@ def _read_num(fh, term, parse):
         c = fh.read(1)
     d = parse(buf.getvalue())
     return d, c
-
-    
-
-def _read_one(fh,c, resolver):
-    if c == NONE:
-        return None
-    elif c == TRUE:
-        return True
-    elif c == FALSE:
-        return False
-    if c == STR or c == UNI:
-        l = _read_num(fh, BLOB_SEP, parse=int)[0]
-        buf= fh.read(l)
-        if c == UNI:
-            buf=buf.decode(UNICODE_CHARSET)
-        return buf
-
-    elif c == NUM:
-        return _read_num(fh, END, parse=int)[0]
-
-    elif c == FLT:
-        l = _read_num(fh, BLOB_SEP, parse=int)[0]
-        buf= fh.read(l)
-        return float.fromhex(buf)
-
-    elif c == LIST:
-        first = fh.read(1)
-        out = []
-        while first != END:
-            out.append(_read_one(fh, first, resolver))
-            first = fh.read(1)
-        return out
-
-    elif c == DICT:
-        first = fh.read(1)
-        out = {}
-        while first != END:
-            f = _read_one(fh, first, resolver)
-            second = fh.read(1)
-            g = _read_one(fh, second, resolver)
-            new = out.setdefault(f,g)
-            if new is not g:
-                raise StandardError('duplicate key')
-            first = fh.read(1)
-        return out
-    elif c == NODE:
-        first = fh.read(1)
-        name = _read_one(fh, first, resolver)
-        first = fh.read(1)
-        attr  = _read_one(fh, first, resolver)
-        first = fh.read(1)
-        content = _read_one(fh, first, resolver)
-        return Node(name, attr, content)
-    elif c == EXT:
-        first = fh.read(1)
-        name = _read_one(fh, first, resolver)
-        first = fh.read(1)
-        attr  = _read_one(fh, first, resolver)
-        first = fh.read(1)
-        content = _read_one(fh, first, resolver)
-        ext= Extension.make(name, attr, content)
-        ext.resolve(resolver)
-        return ext
-    elif c == DTM:
-        datestring = fh.read(26)
-        dtm = datetime.strptime(datestring, "%Y-%m-%dT%H:%M:%S.%f").replace(tzinfo=utc)
-        return dtm
-    elif c not in ('', ):
-        raise StandardError('decoding err', c)
-    raise EOFError()
 
 class wrapped(object):
     def __init__(self, fh):
@@ -428,21 +95,165 @@ class wrapped(object):
         self.buf.write(r)
         return self.buf.getvalue()
 
+class Encoder(object):
+    def __init__(self, node, extension):
+        self.node = node
+        self.extension = extension
 
-def read(fh, resolver=identity):
-    fh = wrapped(fh)
-    try:
-        first = fh.read(1)
-        while first =='\n':
+    def dump(self, obj, resolver=identity):
+        buf = StringIO()
+        self._dump(obj, buf, resolver)
+        return buf.getvalue()
+
+    def parse(self, s, resolver=identity):
+        buf = StringIO(s)
+        return self.read(buf, resolver)
+
+
+    def _dump(self, obj, buf, resolver):
+        if obj is True:
+            buf.write(TRUE)
+        elif obj is False:
+            buf.write(FALSE)
+        elif obj is None:
+            buf.write(NONE)
+        elif isinstance(obj, (self.extension,)):
+            buf.write(EXT)
+            name, attributes, content = obj.__getstate__()
+            obj.resolve(resolver)
+            self._dump(name, buf, resolver)
+            self._dump(attributes, buf, resolver)
+            self._dump(content, buf, resolver)
+        elif isinstance(obj, (self.node,)):
+            buf.write(NODE)
+            name, attributes, content = obj.__getstate__()
+            self._dump(name, buf, resolver)
+            self._dump(attributes, buf, resolver)
+            self._dump(content, buf, resolver)
+        elif isinstance(obj, (str, buffer)):
+            buf.write(STR)
+            buf.write("%d"%len(obj))
+            buf.write(BLOB_SEP)
+            buf.write(obj)
+        elif isinstance(obj, unicode):
+            buf.write(UNI)
+            obj = obj.encode(UNICODE_CHARSET)
+            buf.write("%d"%len(obj))
+            buf.write(BLOB_SEP)
+            buf.write(obj)
+        elif hasattr(obj, 'iteritems'):
+            buf.write(DICT)
+            for k in sorted(obj.keys()): # always sorted, so can compare serialized
+                v=obj[k]
+                self._dump(k, buf, resolver)
+                self._dump(v, buf, resolver)
+            buf.write(END)
+        elif hasattr(obj, '__iter__'):
+            buf.write(LIST)
+            for x in obj:
+                self._dump(x, buf, resolver)
+            buf.write(END)
+        elif isinstance(obj, (int, long)):
+            buf.write(NUM)
+            buf.write(str(obj))
+            buf.write(END)
+        elif isinstance(obj, float):
+            buf.write(FLT)
+            obj= float.hex(obj)
+            buf.write("%d"%len(obj))
+            buf.write(BLOB_SEP)
+            buf.write(obj)
+        elif isinstance(obj, datetime):
+            buf.write(DTM)
+            obj = obj.astimezone(utc)
+            buf.write(obj.strftime("%Y-%m-%dT%H:%M:%S.%f"))
+        else:
+            raise StandardError('cant encode', obj)
+
+
+    def _read_one(self, fh, c, resolver):
+        if c == NONE:
+            return None
+        elif c == TRUE:
+            return True
+        elif c == FALSE:
+            return False
+        if c == STR or c == UNI:
+            l = _read_num(fh, BLOB_SEP, parse=int)[0]
+            buf= fh.read(l)
+            if c == UNI:
+                buf=buf.decode(UNICODE_CHARSET)
+            return buf
+
+        elif c == NUM:
+            return _read_num(fh, END, parse=int)[0]
+
+        elif c == FLT:
+            l = _read_num(fh, BLOB_SEP, parse=int)[0]
+            buf= fh.read(l)
+            return float.fromhex(buf)
+
+        elif c == LIST:
             first = fh.read(1)
-        if first == '':
-            raise EOFError()
+            out = []
+            while first != END:
+                out.append(self._read_one(fh, first, resolver))
+                first = fh.read(1)
+            return out
 
-        return _read_one(fh, first, resolver)
-    except EOFError as r:
-        raise r
-    except StandardError as e:
-        raise 
-        import traceback; traceback.print_exc() 
-        raise StandardError('decoding %s'%(fh.getvalue()))
+        elif c == DICT:
+            first = fh.read(1)
+            out = {}
+            while first != END:
+                f = self._read_one(fh, first, resolver)
+                second = fh.read(1)
+                g = self._read_one(fh, second, resolver)
+                new = out.setdefault(f,g)
+                if new is not g:
+                    raise StandardError('duplicate key')
+                first = fh.read(1)
+            return out
+        elif c == NODE:
+            first = fh.read(1)
+            name = self._read_one(fh, first, resolver)
+            first = fh.read(1)
+            attr  = self._read_one(fh, first, resolver)
+            first = fh.read(1)
+            content = self._read_one(fh, first, resolver)
+            return self.node.__make__(name, attr, content)
+        elif c == EXT:
+            first = fh.read(1)
+            name = self._read_one(fh, first, resolver)
+            first = fh.read(1)
+            attr  = self._read_one(fh, first, resolver)
+            first = fh.read(1)
+            content = self._read_one(fh, first, resolver)
+            ext= self.extension.__make__(name, attr, content)
+            ext.resolve(resolver)
+            return ext
+        elif c == DTM:
+            datestring = fh.read(26)
+            dtm = datetime.strptime(datestring, "%Y-%m-%dT%H:%M:%S.%f").replace(tzinfo=utc)
+            return dtm
+        elif c not in ('', ):
+            raise StandardError('decoding err', c)
+        raise EOFError()
+
+
+    def read(self, fh, resolver=identity):
+        fh = wrapped(fh)
+        try:
+            first = fh.read(1)
+            while first =='\n':
+                first = fh.read(1)
+            if first == '':
+                raise EOFError()
+
+            return self._read_one(fh, first, resolver)
+        except EOFError as r:
+            raise r
+        except StandardError as e:
+            raise 
+            import traceback; traceback.print_exc() 
+            raise StandardError('decoding %s'%(fh.getvalue()))
 

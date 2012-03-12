@@ -12,7 +12,7 @@ from werkzeug.exceptions import HTTPException, NotFound, BadRequest, NotImplemen
 from werkzeug.utils import redirect as Redirect
 
 
-from .encoding import CONTENT_TYPE, dump, parse, get, form, link, node, embed, ismethod, methodargs
+from .data import CONTENT_TYPE, dump, parse, get, form, link, node, embed, ismethod, methodargs
 
 """
 - router
@@ -303,68 +303,6 @@ def get_mapper(obj, name):
     if hasattr(obj, '__glyph__') and issubclass(obj.__glyph__, BaseMapper):
         return obj.__glyph__(name, obj)
     raise StandardError('no mapper for object')
-
-
-class Router(object):
-    def __init__(self):
-        self.mappers = {}
-        self.routes = {}
-        self.default_path=''
-
-    def __call__(self, environ, start_response):
-        request = Request(environ)
-        try:
-            if request.path == '/':
-                response = Redirect(self.default_path, code=303)
-            else:
-                response = self.find_mapper(request.path).handle(request, self)
-
-        except (StopIteration, GeneratorExit, SystemExit, KeyboardInterrupt):
-            raise
-        except HTTPException as r:
-            response = r
-        except Exception as e:
-            import traceback;
-            traceback.print_exc()
-            response = Response(traceback.format_exc(), status='500 not ok')
-        return response(environ, start_response)
-
-
-    def find_mapper(self, path):
-        try:
-            path= path[1:].split('/')
-            return  self.routes[path[0]]
-        except StandardError:
-            raise NotFound()
-
-    def register(self, obj, path=None, default=False):
-        if path is None: 
-            path = obj.__name__
-        mapper = get_mapper(obj, path)
-        self.routes[path] = mapper
-        self.mappers[obj] = mapper
-        if default:
-            self.default_path=path
-        return obj
-
-
-    def url(self, r):
-        if isinstance(r, basestring):
-            return r
-        elif isinstance(r, BaseResource):
-            return self.mappers[r.__class__].url(r)
-        elif (isinstance(r, type) and issubclass(r, BaseResource)):
-            return self.mappers[r].url(r)
-        elif ismethod(r, BaseResource):
-            return self.mappers[r.im_class].url(r)
-
-        raise LookupError('no url for',r )
-
-    def add(self):
-        return self.register
-
-    def default(self):
-        return lambda obj: self.register(obj, default=True)
 
 def make_controls(resource):
     forms = {}
