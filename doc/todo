@@ -44,6 +44,7 @@ done:
     resourcemethod takes another as constructor
     using werkzeug.utils.redirect(location, code=302)
     optional requests dependency
+    reject dupe keys
 
 remember:
     should handle http mapping by default, verbs, urls and content_type
@@ -69,47 +70,95 @@ todo documentation:
             no - non standard mime type, ad-hoc interfaces 
 
 todo code
-    http headers:
-        parsing content-type?
-        date, cache-control, etc
+    re-import glyph rpc
+    move to wsgi internally :v
+    encoding:
+        split out nodes/extensions from base
 
     glyph encoding/ media types:
-        glyph.get/fetch supports other media types
-
         resource handles/parses accept/content-type header
+        must be able to dispatch to correct method?
+
+        glyphmethod.call(....)
+        http headers:
+            parsing content-type?
+            date, cache-control, etc
+        glyph.get/fetch supports other media types
 
         return xml or json instead of glyph
             @accept(), @content_type()
             extend resourcemthod to override post/get
 
-    in-browser control/debugging:
-        html serialization for glyph datatypes
-            node, extension?
-                make extentions defined in __init__.py
-                use tag to pass to callback to construct
-        node <-> html mapping? section? document?
-        jinja2 templates? twitter bootstrap?
+    mapper:
+        transients - shouldn't post to create?
+        or form method is get for transient objects
+            default method on glyphmapper
+
+        with no default, just links to functions/object creators
+        handling functions ? 
+            defaulty a post mapper ?
+            overriding with resourcemethod?
+            mapper should only call self, router and resourcemethod.*
+                ensures delegation etc.
+            mapper should only map to latter part of url ?
+
+    glyph json/xhtml:
+        write data types.
+            should add/draft them
+                make a spec, get the vendor tag registered
+            rules for forms, embeds?
+        new data types: charset handling ? timezones? time periods ?
+            resource type (like link,etc has a href, but is default page container)o
+        form elements should have some type info perhaps ?
+            i.e akin to input = ... 
+
+
+        format changes:
+            [] {} U<len>: l<arbitrary>
+
+        application/vnd.glyph+json vnd.glyph+xml
+            map glyph types to xhtml/json
+                {'__glyph': embedded object } 
+            escape sequence:
+                {'__glyph__foo' : object } -> mapped to {'__glyphfoo'}
+                    so __glyph becomes __glyph__, __glyph__ becomes, ___glyph____
             serializing! lxml!
-            customizing serializing per method?
-        text/html serialization, x-www-url-encoding
-        content negociation: html5/json serialization? 
-        porting client to javascript/ajax?
-            rather than pure html - make a pushstate esque one
-        can use werkzeug templates to make html5/bootstrap interface.
+        xml:
+            xhtml: use a glyph namespace to annotate links/objects
+                glyph:type"link"? 
+            or write an xml format and include xslt transformation
+                possibly better and simpler.
+                can also add script to reformat requests ? 
+                or x-www-urlencoding/form encoding?
+        in-browser control/debugging:
+            danger: cross site request forgery?
 
-    caching 
-            @expires ?
-            adding caching information to index() ,etc?
-            cache control - max age, can store, revalidate?
-            etags vs last modified date?
-            @cache(max_age, revalidate?)
-            def foo(self):
-                return date, context
+    refactor?
+        glyph.rpc, glyph.encoding  - __init__ ties it together / dep inj
+        glyph.tests.encoding, rpc
 
-            @foo.if_modified_since()
-            def foo_modified(self, date):
-                ......
+        setup.py test target 
 
+        glyph.client, server, model, encoding
+            encoding uses dep injection.
+            model has constructors, link etc ?
+
+
+
+    decorators chains:
+        rel attribute on methods? 
+        @glyph.method(rel='....')
+        def foo()
+            ....
+
+        @foo.accept()
+        @foo.if_none_match() .... ?
+        @foo.last_modified()
+
+        @glyph.cache(max_age=....)
+        resource last modified property ?
+
+        cache control - max age, can store, revalidate?
             caching on embeds?
 
     api:
@@ -124,7 +173,6 @@ todo code
             callback from router turns resources into links/forms/etc?
             possible: handles unknown types with callback
 
-        new data types: charset handling ? timezones? time periods ?
         refactoring: make it dict driven instead of if-chain driven?
 
 
@@ -143,13 +191,8 @@ todo code
         possibly: map default to /v0/ , default takes a version arg? breaks url mapping :v
         possibly: / returns 300 if multiple versions, link header? rel=...
 
-    properties:
-        maybe links should be () free and use __get__ instead of call ?
-        (~~~ ruby style ~~~)
-        make a property() namedtuple for passing around as a url
-        perhaps? handle @properties and produce getters and setters (GET/PUT/DELETE)
-        dont expose form, expose an embed attribute with put, get, delete methods?
-        hard to do properly, what do you to do embed a link, etc ? self.foo calls __get__ ....
+    @property ?
+        should index them ? hard to link - link with extra methods?
 
     properties of resources:
         things that apply to resources, but are not serialized as the state
