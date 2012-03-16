@@ -124,23 +124,8 @@ class BaseMapper(object):
 
         except StandardError:
             raise BadRequest()
-            
-        if verb == 'GET' and ResourceMethod.is_safe(attr):
-            result = attr()
-        elif verb == 'POST' and not ResourceMethod.is_safe(attr): 
-            try:
-                data = ResourceMethod.parse(attr, request.data) if request.data else {}
-            except StandardError:
-                raise BadRequest()
-            result =attr(**data)
-        else:
-            raise MethodNotAllowed()
 
-        if ResourceMethod.is_redirect(attr) and isinstance(result, BaseResource):
-            return Redirect(router.url(result), code=ResourceMethod.redirect_code(attr))
-        else:
-            content_type, result = ResourceMethod.dump(attr, result, router.url)
-            return Response(result, content_type=content_type)
+        return ResourceMethod.call(attr, request, router)
 
     def default_method(self, verb):
         try:
@@ -251,6 +236,26 @@ class ResourceMethod(object):
                 return link(m)
         else:
             return form(m)
+
+    @classmethod
+    def call(cls, attr, request, router):
+        verb = request.method
+        if verb == 'GET' and cls.is_safe(attr):
+            result = attr()
+        elif verb == 'POST' and not cls.is_safe(attr): 
+            try:
+                data = cls.parse(attr, request.data) if request.data else {}
+            except StandardError:
+                raise BadRequest()
+            result =attr(**data)
+        else:
+            raise MethodNotAllowed()
+
+        if cls.is_redirect(attr) and isinstance(result, BaseResource):
+            return Redirect(router.url(result), code=cls.redirect_code(attr))
+        else:
+            content_type, result = cls.dump(attr, result, router.url)
+            return Response(result, content_type=content_type)
 
 def make_method_mapper(fn):
     if not hasattr(fn, '__glyph_method__'):
