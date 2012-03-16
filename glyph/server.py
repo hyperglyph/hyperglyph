@@ -12,13 +12,13 @@ class Router(object):
     def __init__(self):
         self.mappers = {}
         self.routes = {}
-        self.default_path=''
+        self.default_resource = None
 
     def __call__(self, environ, start_response):
         request = Request(environ)
         try:
             if request.path == '/':
-                response = Redirect(self.default_path, code=303)
+                response = Redirect(self.url(self.default_resource), code=303)
             else:
                 response = self.find_mapper(request.path).handle(request, self)
 
@@ -40,14 +40,12 @@ class Router(object):
         except StandardError:
             raise NotFound()
 
-    def register(self, obj, path=None, default=False):
+    def register(self, obj, path=None):
         if path is None: 
-            path = obj.__name__
+            path = '/'+obj.__name__
         mapper = get_mapper(obj, path)
         self.routes[path] = mapper
         self.mappers[obj] = mapper
-        if default:
-            self.default_path=path
         return obj
 
 
@@ -66,8 +64,12 @@ class Router(object):
     def add(self):
         return self.register
 
-    def default(self):
-        return lambda obj: self.register(obj, default=True)
+    def default(self, **args):
+        def _register(obj):
+            self.register(obj)
+            self.default_resource=obj(**args)
+            return obj
+        return _register
 
         
 
