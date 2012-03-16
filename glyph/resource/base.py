@@ -4,14 +4,13 @@ contains Resource, Mapper and Router
 """
 
 from urllib import quote_plus, unquote_plus
-from uuid import uuid4 
 
 
 from werkzeug.wrappers import Request, Response
 from werkzeug.exceptions import HTTPException, NotFound, BadRequest, NotImplemented, MethodNotAllowed
 from werkzeug.utils import redirect as Redirect
 
-from .data import CONTENT_TYPE, dump, parse, get, form, link, node, embed, ismethod, methodargs
+from ..data import CONTENT_TYPE, dump, parse, get, form, link, node, embed, ismethod, methodargs
 
 VERBS = set(("GET", "POST", "PUT","DELETE","PATCH",))
 
@@ -235,71 +234,4 @@ def safe(inline=False):
 
 def inline():
     return safe(inline=True)
-
-""" Transient Resources
-
-When a request arrives, the mapper constructs a new instance of the resource,
-using the query string to construct it. 
-
-when you link to a resource instance, the link contains the state of the resource
-encoded in the query string
-
-"""
-            
-class TransientMapper(BaseMapper):  
-    def get_instance(self, args):
-        return self.cls(**args)
-
-    def get_repr(self, resource):
-        repr = {}
-        args = methodargs(resource.__init__)
-        for k,v in resource.__dict__.items():
-            if k in args:
-                repr[k] = v
-        
-        return  repr
-
-    @redirect()
-    def POST(self, **args):
-        """ Posting to a class, i.e from form(Resource), creates a new instance
-            and redirects to it """
-        return self.get_instance(args)
-
-
-class Resource(BaseResource):
-    __glyph__ = TransientMapper
-
-""" Persistent Resources """
-            
-class PersistentMapper(BaseMapper):  
-    def __init__(self, prefix, cls):
-        BaseMapper.__init__(self, prefix, cls)
-        self.instances = {}
-        self.identifiers = {}
-
-    @redirect()
-    def POST(self, **args):
-        instance = self.cls(**args)
-        uuid = str(uuid4())
-        self.instances[uuid] = instance
-        self.identifiers[instance] = uuid
-        return instance
-
-    def get_instance(self, uuid):
-        return self.instances[uuid]
-
-    def get_repr(self, instance):
-        if instance not in self.identifiers:
-            uuid = str(uuid4())
-            self.instances[uuid] = instance
-            self.identifiers[instance] = uuid
-        else:
-            uuid = self.identifiers[instance]
-        return uuid
-
-class PersistentResource(BaseResource):
-    __glyph__ = PersistentMapper
-
-
-        
 

@@ -1,6 +1,5 @@
 import unittest2
 import glyph
-import glyph.resource
 import datetime
 from pytz import utc
 
@@ -178,7 +177,7 @@ class PersistentObjectTest(ServerTest):
                 )
 
         @m.add()
-        class Test(glyph.resource.PersistentResource):
+        class Test(glyph.PersistentResource):
             def __init__(self, _value=0):
                 self._value = int(_value)
 
@@ -205,7 +204,7 @@ class DefaultPersistentObjectTest(ServerTest):
     def router(self):
         m = glyph.Router()
         @m.default()
-        class Test(glyph.resource.PersistentResource):
+        class Test(glyph.PersistentResource):
             def __init__(self, _value=0):
                 self._value = int(_value)
 

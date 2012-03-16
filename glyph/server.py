@@ -5,7 +5,8 @@ import threading
 import socket
 
 from werkzeug.serving import make_server, WSGIRequestHandler
-from .resource import BaseMapper, BaseResource, get_mapper, ismethod
+from .resource.base import BaseMapper, BaseResource, get_mapper
+from .data import ismethod
 
 
 class Router(object):

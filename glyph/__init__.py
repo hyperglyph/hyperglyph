@@ -21,15 +21,17 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
 
-from .resource import Resource, safe, inline, redirect
-from .server import Router, Server
 from .data import CONTENT_TYPE, dump, parse, get, node, form, link
+from .resource.base import safe, inline, redirect
+from .resource.transient import TransientResource
+from .resource.persistent import PersistentResource
+from .server import Router, Server
 
 __all__ = [
     'CONTENT_TYPE','Server','redirect',
     'get', 'Router','Resource','r', 'safe', 'inline'
     'parse','dump','node','form','link',
+    'TransientResource', 'PersistentResource',
 ]
 
-
-r = Resource
+r = Resource = TransientResource
