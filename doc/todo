@@ -45,6 +45,12 @@ done:
     using werkzeug.utils.redirect(location, code=302)
     optional requests dependency
     reject dupe keys
+    moved shit around
+        encoder now takes type arguments, nicer seperation
+
+    glyph.client, server, model, encoding
+        encoding uses dep injection.
+        model has constructors, link etc ?
 
 remember:
     should handle http mapping by default, verbs, urls and content_type
@@ -52,17 +58,18 @@ remember:
     http ignorant not agnostic (don't need to know http semantics to use it, but can override)
 
 todo documentation:
+
+        glyph encoding clarifcations/iana-esque spec
+            duplicate dict keys,hex parsing, xml/json?
+
         under the scenes - request by request
             worked repl example
-        glyph encoding clarifcations/iana-esque spec
-            duplicate dict keys,hex parsing
+            flask/glyph.document style server
         tutorial
             build a server, use a client
-            add methods
-
-        node/extension data types
-        cookbook more examples:doing it by hand client/server.
-        examples/pricechecker/ add loadbalancers, test caching, sharding version too
+            add methods, change methods.
+        cookbook?
+            examples/pricechecker/ add loadbalancers, test caching, sharding version too
 
         explain: is it rest?
             put vs post essentially - hypermedia forms vs resources with verbs
@@ -70,13 +77,26 @@ todo documentation:
             no - non standard mime type, ad-hoc interfaces 
 
 todo code
-    re-import glyph rpc
-    move to wsgi internally :v
-    encoding:
-        split out nodes/extensions from base
+    default resource returns index
+
+    javascript interface? browser interface thinking?
+        option a) xhtml
+        option b) xml + xslt 
+        option c) javascript ?
+
+    http compliance:
+        set cache-control, expires headers on get 
+        resource handles/parses accept/content-type header
+        check the spec - allow: on 403 ?
+        OPTIONS/HEAD handling ?
+            etags ?
+
+        put/?
+        204 - no content on none ?
 
     glyph encoding/ media types:
-        resource handles/parses accept/content-type header
+        beef out form type?
+            hidden inputs ? type arguments 
         must be able to dispatch to correct method?
 
         glyphmethod.call(....)
@@ -90,60 +110,14 @@ todo code
             extend resourcemthod to override post/get
 
     mapper:
-        transients - shouldn't post to create?
-        or form method is get for transient objects
-            default method on glyphmapper
+        transients
+            - shouldn't post to create? form should use get?
+        default object on glyphmapper
+            forms to every named object in mapper ?
 
-        with no default, just links to functions/object creators
         handling functions ? 
-            defaulty a post mapper ?
-            overriding with resourcemethod?
-            mapper should only call self, router and resourcemethod.*
-                ensures delegation etc.
-            mapper should only map to latter part of url ?
-
-    glyph json/xhtml:
-        write data types.
-            should add/draft them
-                make a spec, get the vendor tag registered
-            rules for forms, embeds?
-        new data types: charset handling ? timezones? time periods ?
-            resource type (like link,etc has a href, but is default page container)o
-        form elements should have some type info perhaps ?
-            i.e akin to input = ... 
-
-
-        format changes:
-            [] {} U<len>: l<arbitrary>
-
-        application/vnd.glyph+json vnd.glyph+xml
-            map glyph types to xhtml/json
-                {'__glyph': embedded object } 
-            escape sequence:
-                {'__glyph__foo' : object } -> mapped to {'__glyphfoo'}
-                    so __glyph becomes __glyph__, __glyph__ becomes, ___glyph____
-            serializing! lxml!
-        xml:
-            xhtml: use a glyph namespace to annotate links/objects
-                glyph:type"link"? 
-            or write an xml format and include xslt transformation
-                possibly better and simpler.
-                can also add script to reformat requests ? 
-                or x-www-urlencoding/form encoding?
-        in-browser control/debugging:
-            danger: cross site request forgery?
-
-    refactor?
-        glyph.rpc, glyph.encoding  - __init__ ties it together / dep inj
-        glyph.tests.encoding, rpc
-
-        setup.py test target 
-
-        glyph.client, server, model, encoding
-            encoding uses dep injection.
-            model has constructors, link etc ?
-
-
+            use resourcemethod to dispatch:
+                default a post mapper ?
 
     decorators chains:
         rel attribute on methods? 
@@ -161,6 +135,42 @@ todo code
         cache control - max age, can store, revalidate?
             caching on embeds?
 
+    glyph json/xml/xhtml/xhtml5?
+        write data types.
+            should add/draft them
+                make a spec, get the vendor tag registered
+            rules for forms, embeds?
+        new data types: charset handling ? timezones? time periods ?
+            resource type (like link,etc has a href, but is default page container)o
+
+        format changes ? 
+            [] {} U<len>: l<arbitrary>
+
+        application/vnd.glyph+json vnd.glyph+xml
+            map glyph types to xhtml/json
+                {'__glyph': embedded object } 
+            escape sequence:
+                {'__glyph__foo' : object } -> mapped to {'__glyphfoo'}
+                    so __glyph becomes __glyph__, __glyph__ becomes, ___glyph____
+            serializing! lxml!
+        xml:
+            xhtml: use a glyph namespace to annotate links/objects
+                glyph:type"link"? 
+            or write an xml format and include xslt transformation
+                possibly better and simpler.
+                can also add script to reformat requests ? 
+                or x-www-urlencoding/form encoding?
+    in-browser control/debugging:
+        danger: cross site request forgery?
+
+
+    test runner 
+        setup.py test target 
+
+to think?
+    gzip encoding :v
+        gzip middleware?
+
     api:
         persistent mapper: managing objects/deleting them
 
@@ -169,14 +179,9 @@ todo code
             if unhandledd:
                 throw result(content_type, content), decoded if text/*
 
-        handle: return [Resource(), ....]
+        auto link resources ?  handle: return [Resource(), ....]
             callback from router turns resources into links/forms/etc?
             possible: handles unknown types with callback
-
-        refactoring: make it dict driven instead of if-chain driven?
-
-
-        decorators? ssl only, idempotent (nope cos put etc break)?
 
         collections:
             like an embed/property, but behaves with the __getitem__ calls ?
@@ -215,6 +220,13 @@ todo code
         sharding, load balancing, caching, extending
 
 misc shit:
+    true rest - generating mime types from objects
+
+    replace glyphmethod.index with resource.get()
+        resource.GET() calls index() by default. 
+        resource.POST(), etc?
+        resource.POST() creates by default ?
+
     snmp? crawling
     twitter api - last-modified embedding hack
             use embedded for all new items, links for all client is expected to have already
