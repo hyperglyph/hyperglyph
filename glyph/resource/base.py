@@ -192,7 +192,10 @@ class Handler(object):
         else:
             raise MethodNotAllowed()
 
-        if cls.is_redirect(attr) and isinstance(result, BaseResource):
+        if result is None:
+            return Response('', status='204 None')
+
+        elif cls.is_redirect(attr) and isinstance(result, BaseResource):
             return Redirect(router.url(result), code=cls.redirect_code(attr))
         else:
             content_type, result = cls.dump(attr, result, router.url)

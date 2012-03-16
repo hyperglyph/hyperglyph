@@ -85,9 +85,11 @@ def fetch(method, url, args=None,data="", headers=None):
     result = session.request(method, url, params=args, data=dump(data), headers=headers, allow_redirects=False)
     def join(u):
         return urljoin(result.url, u)
-    if result.status_code == 303:
+    if result.status_code == 303: # See Other
         return get(join(result.headers['Location']))
-    elif result.status_code == 201:
+    elif result.status_code == 204: # No Content
+        return None
+    elif result.status_code == 201: # 
         # never called
         return link(join(result.headers['Location']))
 
