@@ -79,6 +79,13 @@ def _read_num(fh, term, parse):
         c = fh.read(1)
     d = parse(buf.getvalue())
     return d, c
+def read_first(fh):
+    c = fh.read(1)
+    while c in ('\n',' ','\t'):
+        c = fh.read(1)
+    return c
+        
+
 
 class wrapped(object):
     def __init__(self, fh):
@@ -189,44 +196,44 @@ class Encoder(object):
             return _read_num(fh, END, parse=int)[0]
 
         elif c == FLT:
-            l = _read_num(fh, BLOB_SEP, parse=int)[0]
-            buf= fh.read(l)
+            flt_len = _read_num(fh, BLOB_SEP, parse=int)[0]
+            buf= fh.read(flt_len)
             return float.fromhex(buf)
 
         elif c == LIST:
-            first = fh.read(1)
+            first = read_first(fh)
             out = []
             while first != END:
                 out.append(self._read_one(fh, first, resolver))
-                first = fh.read(1)
+                first = read_first(fh)
             return out
 
         elif c == DICT:
-            first = fh.read(1)
+            first = read_first(fh)
             out = {}
             while first != END:
                 f = self._read_one(fh, first, resolver)
-                second = fh.read(1)
+                second = read_first(fh)
                 g = self._read_one(fh, second, resolver)
                 new = out.setdefault(f,g)
                 if new is not g:
                     raise StandardError('duplicate key')
-                first = fh.read(1)
+                first = read_first(fh)
             return out
         elif c == NODE:
-            first = fh.read(1)
+            first = read_first(fh)
             name = self._read_one(fh, first, resolver)
-            first = fh.read(1)
+            first = read_first(fh)
             attr  = self._read_one(fh, first, resolver)
-            first = fh.read(1)
+            first = read_first(fh)
             content = self._read_one(fh, first, resolver)
             return self.node.__make__(name, attr, content)
         elif c == EXT:
-            first = fh.read(1)
+            first = read_first(fh)
             name = self._read_one(fh, first, resolver)
-            first = fh.read(1)
+            first = read_first(fh)
             attr  = self._read_one(fh, first, resolver)
-            first = fh.read(1)
+            first = read_first(fh)
             content = self._read_one(fh, first, resolver)
             ext= self.extension.__make__(name, attr, content)
             ext.resolve(resolver)
@@ -243,9 +250,7 @@ class Encoder(object):
     def read(self, fh, resolver=identity):
         fh = wrapped(fh)
         try:
-            first = fh.read(1)
-            while first =='\n':
-                first = fh.read(1)
+            first = read_first(fh)
             if first == '':
                 raise EOFError()
 

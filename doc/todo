@@ -91,13 +91,13 @@ todo documentation:
             yes - hyperlinks, hateoas, caching
             no - non standard mime type, ad-hoc interfaces 
 
+    fix requests raising error
+    ignore whitespace in decoding 
 
 todo code
     default resource returns index
 
-    fix requests raising error
 
-    ignore whitespace in decoding 
 
     javascript interface? browser interface thinking?
         option a) xhtml
