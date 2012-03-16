@@ -11,45 +11,7 @@ from werkzeug.wrappers import Request, Response
 from werkzeug.exceptions import HTTPException, NotFound, BadRequest, NotImplemented, MethodNotAllowed
 from werkzeug.utils import redirect as Redirect
 
-
 from .data import CONTENT_TYPE, dump, parse, get, form, link, node, embed, ismethod, methodargs
-
-"""
-- router # moved to server.py
-   attach resource classes to url prefixes
-   on request, finds resource and its mapper
-   uses the mapper to handle the request
-
-- mappers
-    maps http <-> resource class
-    url query string is the resource state
-    make a resource to handle this request, and dispatch to a method
-    special handling for index 
-    deals with representing the state of an object in the url
-
-- resources
-    have an index() method that returns contents
-    are created per request - represent a handle
-    to some state at the serve
-    
-    url is roughly
-        /ClassName/
-        /ClassName/?instance-state
-        /ClassName/method?instance state
-
-    instance state for transient resources is
-        a serialize dict of the class's constructor args
-        from the instance dict
-
-    posting /ClassName/ with args
-        creates c = Class(**args)
-        redirects to c 
-
-    getting /ClassName/?args
-        creates an index of the instance of Class
-        a glyph.node() with attributes
-
-"""
 
 VERBS = set(("GET", "POST", "PUT","DELETE","PATCH",))
 
@@ -71,6 +33,11 @@ class BaseResource(object):
     def index(self):
         return dict((k,v) for k,v in self.__dict__.items() if not k.startswith('_'))
 
+def get_mapper(obj, name):
+    """ return the mapper for this object, with a given name"""
+    if hasattr(obj, '__glyph__') and issubclass(obj.__glyph__, BaseMapper):
+        return obj.__glyph__(name, obj)
+    raise StandardError('no mapper for object')
 
 class BaseMapper(object):
     """ The base mapper - bound to a class and a prefix, handles requests
@@ -84,15 +51,6 @@ class BaseMapper(object):
     def __init__(self, prefix, cls):
         self.prefix = prefix
         self.cls = cls
-
-    """ How post data is handled """
-    @staticmethod
-    def parse(data):
-        return parse(data)
-    
-    @staticmethod
-    def dump(data, resolver):
-        return CONTENT_TYPE, dump(data, resolver)
 
     """ How query strings are handled. """
     @staticmethod
@@ -109,13 +67,14 @@ class BaseMapper(object):
         path = request.path[1:].split('/')
         verb = request.method.upper()
 
-
         try:
             if len(path) > 1: 
                 # if we are mapping to an instance
                 attr_name = path[1] if path[1] else verb
                 args = self.parse_query(request.query_string)
                 obj = self.get_instance(args)
+
+                # find the method to call
                 attr = getattr(obj, attr_name)
 
             else:
@@ -142,7 +101,7 @@ class BaseMapper(object):
         elif isinstance(r, type) and issubclass(r, self.cls):
                 return '/%s'%self.prefix
         elif ismethod(r, self.cls):
-                return "/%s/%s/?%s"%(self.prefix, r.im_func.__name__, self.dump_query(self.get_repr(r.im_self)))
+                return "/%s/%s?%s"%(self.prefix, r.im_func.__name__, self.dump_query(self.get_repr(r.im_self)))
         raise LookupError()
 
 
@@ -156,23 +115,6 @@ class BaseMapper(object):
         """ return the representation of the state of the resource as a dict """
         raise NotImplemented()
 
-def get_mapper(obj, name):
-    """ return the mapper for this object, with a given name"""
-    if hasattr(obj, '__glyph__') and issubclass(obj.__glyph__, BaseMapper):
-        return obj.__glyph__(name, obj)
-    raise StandardError('no mapper for object')
-
-def make_controls(resource):
-    forms = {}
-    for m in dir(resource.__class__):
-        if not m.startswith('_') and m not in VERBS:
-            cls_attr = getattr(resource.__class__ ,m)
-            if callable(cls_attr):
-                ins_attr = getattr(resource,m)
-                if hasattr(ins_attr, 'func_code'):
-                    forms[m] = ResourceMethod.make_link(ins_attr)
-
-    return forms
 
 class ResourceMethod(object):   
     """ Represents the capabilities of methods on resources, used by the mapper
@@ -256,6 +198,19 @@ class ResourceMethod(object):
         else:
             content_type, result = cls.dump(attr, result, router.url)
             return Response(result, content_type=content_type)
+
+def make_controls(resource):
+    forms = {}
+    for m in dir(resource.__class__):
+        if not m.startswith('_') and m not in VERBS:
+            cls_attr = getattr(resource.__class__ ,m)
+            if callable(cls_attr):
+                ins_attr = getattr(resource,m)
+                if hasattr(ins_attr, 'func_code'):
+                    forms[m] = ResourceMethod.make_link(ins_attr)
+
+    return forms
+
 
 def make_method_mapper(fn):
     if not hasattr(fn, '__glyph_method__'):
