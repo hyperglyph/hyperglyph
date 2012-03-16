@@ -157,15 +157,19 @@ class Form(Extension):
     def __call__(self, *args, **kwargs):
         url = self._attributes['url']
         data = {}
-        names = self._content[:]
+        if self._content:
+            names = self._content[:]
 
-            
-        for n,v in zip(names, args):
-            data[n] = v
+            for n,v in zip(names, args):
+                data[n] = v
+        elif args:
+            raise StandardError('no unamed arguments')
 
         for k,v in kwargs.items():
             if k in names:
                 data[k]=v   
+            else:
+                raise StandardError('unknown argument')
 
         return fetch(self._attributes.get('method','GET'),url, data=data)
 
