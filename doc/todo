@@ -94,17 +94,19 @@ todo documentation:
     fix requests raising error
     ignore whitespace in decoding 
     default resource returns index
+    204 - no content on none ?
 
 todo code
 
     http compliance:
         set cache-control, expires, etags headers on get 
-
-            make_conditional - ignore steve about 'argle bargle saves recomputation'
+            use make_conditional - ignore steve about 'argle bargle saves recomputation'
+            weak/strong etags?
+            Handler. make_etag? add_headers? make_response?
         resource handles/parses accept/content-type header
+            @accept(...,q=), @content_type()
         missing header on 403: allow: on 403 ?
         OPTIONS/HEAD/PUT/DELETE handling ?
-        204 - no content on none ?
 
     javascript interface? browser interface thinking?
         option a) xhtml
@@ -115,6 +117,8 @@ todo code
             doesn't work in lynx.
         danger: cross site request forgery?
 
+        xhtml5 w microdata or xml w namespaces?
+
 
     glyph encoding/ media types:
         beef out form type?  hidden inputs ? type arguments 
@@ -122,15 +126,11 @@ todo code
 
         glyph.get/fetch supports other media types
 
-        return xml or json instead of glyph
-            @accept(), @content_type()
 
     mapper:
-        default object on glyphmapper
-            forms to every named object in mapper ?
-
         handling functions ? 
-            use resourcemethod to dispatch:
+            methodargs? funcargs?
+            use handler  to dispatch:
                 default a post mapper ?
         transients
             - shouldn't post to create? form should use get?
@@ -142,9 +142,6 @@ todo code
         def foo()
             ....
 
-        @foo.accept()
-        @foo.if_none_match() .... ?
-        @foo.last_modified()
 
         @glyph.cache(max_age=....)
         resource last modified property ?
@@ -158,7 +155,6 @@ todo code
                 make a spec, get the vendor tag registered
             rules for forms, embeds?
         new data types: charset handling ? timezones? time periods ?
-            resource type (like link,etc has a href, but is default page container)o
 
         format changes ? 
             [] {} U<len>: l<arbitrary>
@@ -171,6 +167,9 @@ todo code
                     so __glyph becomes __glyph__, __glyph__ becomes, ___glyph____
             serializing! lxml!
         xml:
+            resource type (like link,etc has a href, but is default page container)o
+            use data uri + octet-stream for str data, 
+
             xhtml: use a glyph namespace to annotate links/objects
                 glyph:type"link"? 
             or write an xml format and include xslt transformation
@@ -186,6 +185,10 @@ todo code
 to think?
     gzip encoding :v
         gzip middleware?
+    argle bargel transactions:
+
+        @foo.if_none_match() .... ?
+        @foo.last_modified()
 
     api:
         persistent mapper: managing objects/deleting them

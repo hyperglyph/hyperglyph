@@ -14,6 +14,8 @@ def form(url, method='POST',values=None):
             values = methodargs(url)
         elif isinstance(url, type):
             values = methodargs(url.__init__)
+        elif callable(url):
+            values = funcargs(url)
 
     return Extension.__make__('form', {'method':method, 'url':url}, values)
 
@@ -34,7 +36,10 @@ def ismethod(m, cls=None):
 
 def methodargs(m):
     if ismethod(m):
-        return m.func_code.co_varnames[1:]
+        return funcargs(m)
+
+def funcargs(m):
+    return m.func_code.co_varnames[1:]
 
 
 

@@ -95,7 +95,9 @@ class BaseMapper(object):
         """ return a url string that reflects this resource:
             can be a resource class, instance or method
         """
-        if isinstance(r, self.cls):
+        if r is self.cls:
+            return '/%s'%self.prefix
+        elif isinstance(r, self.cls):
             return "/%s/?%s"%(self.prefix, self.dump_query(self.get_repr(r)))
         elif isinstance(r, type) and issubclass(r, self.cls):
                 return '/%s'%self.prefix
