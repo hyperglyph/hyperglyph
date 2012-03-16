@@ -83,7 +83,7 @@ class BaseMapper(object):
         except StandardError:
             raise BadRequest()
 
-        return ResourceMethod.call(attr, request, router)
+        return Handler.call(attr, request, router)
 
     def default_method(self, verb):
         try:
@@ -115,7 +115,7 @@ class BaseMapper(object):
         raise NotImplemented()
 
 
-class ResourceMethod(object):   
+class Handler(object):   
     """ Represents the capabilities of methods on resources, used by the mapper
         to determine how to handle requests
     """
@@ -123,11 +123,11 @@ class ResourceMethod(object):
     INLINE=False
     EXPIRES=False
     REDIRECT=None
-    def __init__(self, resourcemethod=None):
-        if resourcemethod:
-            self.safe=resourcemethod.safe
-            self.inline=resourcemethod.inline
-            self.expires=resourcemethod.expires
+    def __init__(self, handler=None):
+        if handler:
+            self.safe=handler.safe
+            self.inline=handler.inline
+            self.expires=handler.expires
         else:
             self.safe=self.SAFE
             self.inline=self.INLINE
@@ -206,27 +206,27 @@ def make_controls(resource):
             if callable(cls_attr):
                 ins_attr = getattr(resource,m)
                 if hasattr(ins_attr, 'func_code'):
-                    forms[m] = ResourceMethod.make_link(ins_attr)
+                    forms[m] = Handler.make_link(ins_attr)
 
     return forms
 
 
-def make_method_mapper(fn):
+def make_handler(fn):
     if not hasattr(fn, '__glyph_method__'):
-        fn.__glyph_method__ = ResourceMethod() 
+        fn.__glyph_method__ = Handler() 
     return fn.__glyph_method__
 
 
 def redirect(code=303):
     def _decorate(fn):
-        m = make_method_mapper(fn)
+        m = make_handler(fn)
         m.redirect=code
         return fn
     return _decorate
 
 def safe(inline=False):
     def _decorate(fn):
-        m = make_method_mapper(fn)
+        m = make_handler(fn)
         m.safe=True
         m.inline=inline
         return fn
