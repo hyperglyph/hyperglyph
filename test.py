@@ -62,6 +62,27 @@ class GetTest(ServerTest):
 
         self.assertEqual(result.get(), self.value)
 
+class IndexTest(ServerTest):
+    def setUp(self):
+        ServerTest.setUp(self)
+
+    def router(self):
+        m = glyph.Router()
+        @m.add()
+        class Test(glyph.r):
+            def get(self):
+                return 1
+        @m.add()
+        class Other(glyph.r):
+            def __init__(self, v=0):
+                self.v = v
+        return m
+
+    def testCase(self):
+        index = glyph.get(self.endpoint.url)
+
+        self.assertEqual(index.Test().get(), 1)
+        self.assertEqual(index.Other(4).v,4)
 class LinkTest(ServerTest):
     def setUp(self):
         self.value = 0

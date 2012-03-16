@@ -3,17 +3,28 @@ from werkzeug.exceptions import HTTPException, NotFound, BadRequest, NotImplemen
 from werkzeug.utils import redirect as Redirect
 import threading
 import socket
+import weakref
 
 from werkzeug.serving import make_server, WSGIRequestHandler
 from .resource.base import BaseMapper, BaseResource, get_mapper
-from .data import ismethod
+from .resource.persistent import PersistentResource
+from .data import ismethod, form
 
+
+class DefaultResource(PersistentResource):
+    def __init__(self, router):
+        self.router = router
+
+    def index(self):
+        return dict((r.__name__, form(r)) for r in self.router.mappers if r is not DefaultResource) 
+        
 
 class Router(object):
     def __init__(self):
         self.mappers = {}
         self.routes = {}
-        self.default_resource = None
+        self.register(DefaultResource)
+        self.default_resource = DefaultResource(weakref.proxy(self))
 
     def __call__(self, environ, start_response):
         request = Request(environ)
