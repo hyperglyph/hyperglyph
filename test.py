@@ -200,6 +200,36 @@ class PersistentObjectTest(ServerTest):
         self.assertEqual(result_b.value(), 0)
         self.assertNotEqual(result_a.self.url(), result_b.self.url())
 
+class DefaultPersistentObjectTest(ServerTest):
+
+    def router(self):
+        m = glyph.Router()
+        @m.default()
+        class Test(glyph.resource.PersistentResource):
+            def __init__(self, _value=0):
+                self._value = int(_value)
+
+            @glyph.inline()
+            def value(self):
+                return self._value
+
+            @glyph.redirect()
+            def make(self, value):
+                return Test(value)
+
+            def index(self):
+                return {'self': glyph.link(self)}
+
+
+        return m
+
+    def testCase(self):
+        result_a = glyph.get(self.endpoint.url)
+        self.assertEqual(result_a.value(), 0)
+        result_b = result_a.make(0)
+        self.assertEqual(result_b.value(), 0)
+        self.assertNotEqual(result_a.self.url(), result_b.self.url())
+
 class VerbTest(ServerTest):
 
     def router(self):

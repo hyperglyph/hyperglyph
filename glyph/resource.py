@@ -109,22 +109,22 @@ class BaseMapper(object):
         path = request.path[1:].split('/')
         verb = request.method.upper()
 
-        if len(path) > 1 and path[1]:
-            attr_name = path[1]
-        else:
-            attr_name = verb
 
         try:
-            if len(path) > 1:
+            if len(path) > 1: 
+                # if we are mapping to an instance
+                attr_name = path[1] if path[1] else verb
                 args = self.parse_query(request.query_string)
                 obj = self.get_instance(args)
                 attr = getattr(obj, attr_name)
+
             else:
+                # no instance found, use default handler
                 attr = self.default_method(verb)
+
         except StandardError:
             raise BadRequest()
             
-
         if verb == 'GET' and ResourceMethod.is_safe(attr):
             result = attr()
         elif verb == 'POST' and not ResourceMethod.is_safe(attr): 
@@ -143,10 +143,10 @@ class BaseMapper(object):
             return Response(result, content_type=content_type)
 
     def default_method(self, verb):
-        if verb in VERBS:
+        try:
             return getattr(self, verb)
-        else:
-            raise BadRequest()
+        except:
+            raise MethodNotAllowed()
 
     def url(self, r):
         """ return a url string that reflects this resource:
@@ -171,6 +171,23 @@ class BaseMapper(object):
         """ return the representation of the state of the resource as a dict """
         raise NotImplemented()
 
+def get_mapper(obj, name):
+    """ return the mapper for this object, with a given name"""
+    if hasattr(obj, '__glyph__') and issubclass(obj.__glyph__, BaseMapper):
+        return obj.__glyph__(name, obj)
+    raise StandardError('no mapper for object')
+
+def make_controls(resource):
+    forms = {}
+    for m in dir(resource.__class__):
+        if not m.startswith('_') and m not in VERBS:
+            cls_attr = getattr(resource.__class__ ,m)
+            if callable(cls_attr):
+                ins_attr = getattr(resource,m)
+                if hasattr(ins_attr, 'func_code'):
+                    forms[m] = ResourceMethod.make_link(ins_attr)
+
+    return forms
 
 class ResourceMethod(object):   
     """ Represents the capabilities of methods on resources, used by the mapper
@@ -179,7 +196,7 @@ class ResourceMethod(object):
     SAFE=False
     INLINE=False
     EXPIRES=False
-    REDIRECT=False
+    REDIRECT=None
     def __init__(self, resourcemethod=None):
         if resourcemethod:
             self.safe=resourcemethod.safe
@@ -217,12 +234,13 @@ class ResourceMethod(object):
     @classmethod
     def is_redirect(cls, m):
         try:
-            return m.__glyph_method__.redirect
+            return m.__glyph_method__.redirect is not None
         except StandardError:
             return cls.REDIRECT
+
     @staticmethod
-    def redirect_code(self):
-        return 303
+    def redirect_code(m):
+        return m.__glyph_method__.redirect
 
     @classmethod
     def make_link(cls, m):
@@ -240,10 +258,10 @@ def make_method_mapper(fn):
     return fn.__glyph_method__
 
 
-def redirect():
+def redirect(code=303):
     def _decorate(fn):
         m = make_method_mapper(fn)
-        m.redirect=True
+        m.redirect=code
         return fn
     return _decorate
 
@@ -269,10 +287,6 @@ encoded in the query string
 """
             
 class TransientMapper(BaseMapper):  
-    @redirect()
-    def POST(self, **args):
-        return self.get_instance(args)
-
     def get_instance(self, args):
         return self.cls(**args)
 
@@ -285,9 +299,15 @@ class TransientMapper(BaseMapper):
         
         return  repr
 
+    @redirect()
+    def POST(self, **args):
+        """ Posting to a class, i.e from form(Resource), creates a new instance
+            and redirects to it """
+        return self.get_instance(args)
+
+
 class Resource(BaseResource):
     __glyph__ = TransientMapper
-
 
 """ Persistent Resources """
             
@@ -321,22 +341,5 @@ class PersistentResource(BaseResource):
     __glyph__ = PersistentMapper
 
 
-def get_mapper(obj, name):
-    """ return the mapper for this object, with a given name"""
-    if hasattr(obj, '__glyph__') and issubclass(obj.__glyph__, BaseMapper):
-        return obj.__glyph__(name, obj)
-    raise StandardError('no mapper for object')
-
-def make_controls(resource):
-    forms = {}
-    for m in dir(resource.__class__):
-        if not m.startswith('_') and m not in VERBS:
-            cls_attr = getattr(resource.__class__ ,m)
-            if callable(cls_attr):
-                ins_attr = getattr(resource,m)
-                if hasattr(ins_attr, 'func_code'):
-                    forms[m] = ResourceMethod.make_link(ins_attr)
-
-    return forms
         
 

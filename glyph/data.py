@@ -91,6 +91,8 @@ def fetch(method, url, args=None,data="", headers=None):
     elif result.status_code == 201:
         # never called
         return link(join(result.headers['Location']))
+
+    result.raise_for_status()
     data = result.content
     if result.headers['Content-Type'].startswith(CONTENT_TYPE):
         data = parse(data, join)
