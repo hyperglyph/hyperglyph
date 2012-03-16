@@ -52,6 +52,17 @@ done:
         encoding uses dep injection.
         model has constructors, link etc ?
 
+    rmethod has make_forms now
+
+    resource has POST, GET methods
+    mapper has POST, GET methods
+    mapper maps class to /Foo, instance to /Foo/ 
+        now call mapper for /Foo, instance for /Foo/
+    eliminated create_resource as a side effect
+    router has a default instance to redirect too (allows persistent to be default)
+    redirect takes a code argument
+    more tests
+
 remember:
     should handle http mapping by default, verbs, urls and content_type
     should be possible to use objects outside of mapper.
@@ -65,7 +76,9 @@ todo documentation:
         under the scenes - request by request
             worked repl example
             flask/glyph.document style server
-        tutorial
+        richardson maturtiry model
+
+        tutoriala?
             build a server, use a client
             add methods, change methods.
         cookbook?
@@ -76,48 +89,42 @@ todo documentation:
             yes - hyperlinks, hateoas, caching
             no - non standard mime type, ad-hoc interfaces 
 
+
 todo code
     default resource returns index
 
     javascript interface? browser interface thinking?
         option a) xhtml
         option b) xml + xslt 
-        option c) javascript ?
+        option c) static site + javascript rpc ?
+        danger: cross site request forgery?
 
     http compliance:
-        set cache-control, expires headers on get 
+        set cache-control, expires, etags headers on get 
         resource handles/parses accept/content-type header
-        check the spec - allow: on 403 ?
-        OPTIONS/HEAD handling ?
-            etags ?
-
-        put/?
+        missing header on 403: allow: on 403 ?
+        OPTIONS/HEAD/PUT/DELETE handling ?
         204 - no content on none ?
 
     glyph encoding/ media types:
-        beef out form type?
-            hidden inputs ? type arguments 
+        beef out form type?  hidden inputs ? type arguments 
         must be able to dispatch to correct method?
 
-        glyphmethod.call(....)
-        http headers:
-            parsing content-type?
-            date, cache-control, etc
         glyph.get/fetch supports other media types
 
         return xml or json instead of glyph
             @accept(), @content_type()
-            extend resourcemthod to override post/get
 
     mapper:
-        transients
-            - shouldn't post to create? form should use get?
         default object on glyphmapper
             forms to every named object in mapper ?
 
         handling functions ? 
             use resourcemethod to dispatch:
                 default a post mapper ?
+        transients
+            - shouldn't post to create? form should use get?
+            - attr on resource ?
 
     decorators chains:
         rel attribute on methods? 
@@ -161,7 +168,6 @@ todo code
                 can also add script to reformat requests ? 
                 or x-www-urlencoding/form encoding?
     in-browser control/debugging:
-        danger: cross site request forgery?
 
 
     test runner 
@@ -221,11 +227,6 @@ to think?
 
 misc shit:
     true rest - generating mime types from objects
-
-    replace glyphmethod.index with resource.get()
-        resource.GET() calls index() by default. 
-        resource.POST(), etc?
-        resource.POST() creates by default ?
 
     snmp? crawling
     twitter api - last-modified embedding hack

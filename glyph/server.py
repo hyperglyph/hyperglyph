@@ -53,10 +53,10 @@ class Router(object):
             return r
         elif isinstance(r, BaseResource):
             return self.mappers[r.__class__].url(r)
-        elif (isinstance(r, type) and issubclass(r, BaseResource)):
-            return self.mappers[r].url(r)
         elif ismethod(r, BaseResource):
             return self.mappers[r.im_class].url(r)
+        elif r in self.mappers:
+            return self.mappers[r].url(r)
 
         raise LookupError('no url for',r )
 
