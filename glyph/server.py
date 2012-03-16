@@ -40,9 +40,8 @@ class Router(object):
         except StandardError:
             raise NotFound()
 
-    def register(self, obj, path=None):
-        if path is None: 
-            path = '/'+obj.__name__
+    def register(self, obj):
+        path = obj.__name__
         mapper = get_mapper(obj, path)
         self.routes[path] = mapper
         self.mappers[obj] = mapper

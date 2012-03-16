@@ -15,7 +15,7 @@ from werkzeug.utils import redirect as Redirect
 from .data import CONTENT_TYPE, dump, parse, get, form, link, node, embed, ismethod, methodargs
 
 """
-- router
+- router # moved to server.py
    attach resource classes to url prefixes
    on request, finds resource and its mapper
    uses the mapper to handle the request
@@ -72,7 +72,6 @@ class BaseResource(object):
         return dict((k,v) for k,v in self.__dict__.items() if not k.startswith('_'))
 
 
-
 class BaseMapper(object):
     """ The base mapper - bound to a class and a prefix, handles requests
     from the router, and finds/creates a resource to handle it.
@@ -107,55 +106,47 @@ class BaseMapper(object):
         return parse(unquote_plus(query)) if query else {}
 
     def handle(self,request, router):
-        """ handle a given request from a router:
-            find the right resource:
-                dispatch to a method 
-            or
-                create an index of the object,
-                including forms for methods
-
-        """
-        # todo throw nice errors here? bad request?
-
-        path = request.path[1:].split('/')[1:]
+        path = request.path[1:].split('/')
         verb = request.method.upper()
-        attr_name =  verb if not path or not path[0] else path[0]
 
-        if attr_name == verb  == 'POST': # create
-            data = request.data
-            try:
-                args = ResourceMethod.parse(self.cls.__init__, data) if data else {}
-                obj = self.create_resource(args)
-            except StandardError:
-                raise BadRequest()
-
-            return Redirect(router.url(obj), code=303)
+        if len(path) > 1 and path[1]:
+            attr_name = path[1]
         else:
+            attr_name = verb
 
-            try:
+        try:
+            if len(path) > 1:
                 args = self.parse_query(request.query_string)
-                obj = self.find_resource(args)
-                attr  = getattr(obj, attr_name)
+                obj = self.get_instance(args)
+                attr = getattr(obj, attr_name)
+            else:
+                attr = self.default_method(verb)
+        except StandardError:
+            raise BadRequest()
+            
+
+        if verb == 'GET' and ResourceMethod.is_safe(attr):
+            result = attr()
+        elif verb == 'POST' and not ResourceMethod.is_safe(attr): 
+            try:
+                data = ResourceMethod.parse(attr, request.data) if request.data else {}
             except StandardError:
                 raise BadRequest()
+            result =attr(**data)
+        else:
+            raise MethodNotAllowed()
 
-            if verb == 'GET' and (attr_name == 'GET' or ResourceMethod.is_safe(attr) ):
-                result = attr()
-            elif verb == 'POST' and (attr_name == 'POST' or not ResourceMethod.is_safe(attr) ): 
-                try:
-                    data = ResourceMethod.parse(attr, request.data) if request.data else {}
-                except StandardError:
-                    raise BadRequest()
-                result =attr(**data)
-            else:
-                raise MethodNotAllowed()
+        if ResourceMethod.is_redirect(attr) and isinstance(result, BaseResource):
+            return Redirect(router.url(result), code=ResourceMethod.redirect_code(attr))
+        else:
+            content_type, result = ResourceMethod.dump(attr, result, router.url)
+            return Response(result, content_type=content_type)
 
-            if ResourceMethod.is_redirect(attr) and isinstance(result, BaseResource):
-                return Redirect(router.url(result), code=ResourceMethod.redirect_code(attr))
-            else:
-                content_type, result = ResourceMethod.dump(attr, result, router.url)
-                return Response(result, content_type=content_type)
-
+    def default_method(self, verb):
+        if verb in VERBS:
+            return getattr(self, verb)
+        else:
+            raise BadRequest()
 
     def url(self, r):
         """ return a url string that reflects this resource:
@@ -164,7 +155,7 @@ class BaseMapper(object):
         if isinstance(r, self.cls):
             return "/%s/?%s"%(self.prefix, self.dump_query(self.get_repr(r)))
         elif isinstance(r, type) and issubclass(r, self.cls):
-                return '/%s/'%self.prefix
+                return '/%s'%self.prefix
         elif ismethod(r, self.cls):
                 return "/%s/%s/?%s"%(self.prefix, r.im_func.__name__, self.dump_query(self.get_repr(r.im_self)))
         raise LookupError()
@@ -173,76 +164,12 @@ class BaseMapper(object):
     """ Abstract methods for creating, finding a resource, and getting the representation
     of a resource, to embed in the url """
 
-    def create_resource(self, representation):
-        raise NotImplemented()
-
-    def find_resource(self, representation):
+    def get_instance(self, representation):
         raise NotImplemented()
 
     def get_repr(self, resource):
         """ return the representation of the state of the resource as a dict """
         raise NotImplemented()
-
-
-""" Transient Resources
-
-When a request arrives, the mapper constructs a new instance of the resource,
-using the query string to construct it. 
-
-when you link to a resource instance, the link contains the state of the resource
-encoded in the query string
-
-"""
-            
-class TransientMapper(BaseMapper):  
-    def create_resource(self, args):
-        return self.cls(**args)
-
-    def find_resource(self, args):
-        return self.cls(**args)
-
-    def get_repr(self, resource):
-        repr = {}
-        args = methodargs(resource.__init__)
-        for k,v in resource.__dict__.items():
-            if k in args:
-                repr[k] = v
-        
-        return  repr
-
-class Resource(BaseResource):
-    __glyph__ = TransientMapper
-
-
-""" Persistent Resources """
-            
-class PersistentMapper(BaseMapper):  
-    def __init__(self, prefix, cls):
-        BaseMapper.__init__(self, prefix, cls)
-        self.instances = {}
-        self.identifiers = {}
-
-    def create_resource(self, args):
-        instance = self.cls(**args)
-        uuid = str(uuid4())
-        self.instances[uuid] = instance
-        self.identifiers[instance] = uuid
-        return instance
-
-    def find_resource(self, uuid):
-        return self.instances[uuid]
-
-    def get_repr(self, instance):
-        if instance not in self.identifiers:
-            uuid = str(uuid4())
-            self.instances[uuid] = instance
-            self.identifiers[instance] = uuid
-        else:
-            uuid = self.identifiers[instance]
-        return uuid
-
-class PersistentResource(BaseResource):
-    __glyph__ = PersistentMapper
 
 
 class ResourceMethod(object):   
@@ -276,6 +203,8 @@ class ResourceMethod(object):
         try:
             return m.__glyph_method__.safe
         except StandardError:
+            if m.__name__ == 'GET':
+                return True
             return cls.SAFE
 
     @classmethod
@@ -305,6 +234,93 @@ class ResourceMethod(object):
         else:
             return form(m)
 
+def make_method_mapper(fn):
+    if not hasattr(fn, '__glyph_method__'):
+        fn.__glyph_method__ = ResourceMethod() 
+    return fn.__glyph_method__
+
+
+def redirect():
+    def _decorate(fn):
+        m = make_method_mapper(fn)
+        m.redirect=True
+        return fn
+    return _decorate
+
+def safe(inline=False):
+    def _decorate(fn):
+        m = make_method_mapper(fn)
+        m.safe=True
+        m.inline=inline
+        return fn
+    return _decorate
+
+def inline():
+    return safe(inline=True)
+
+""" Transient Resources
+
+When a request arrives, the mapper constructs a new instance of the resource,
+using the query string to construct it. 
+
+when you link to a resource instance, the link contains the state of the resource
+encoded in the query string
+
+"""
+            
+class TransientMapper(BaseMapper):  
+    @redirect()
+    def POST(self, **args):
+        return self.get_instance(args)
+
+    def get_instance(self, args):
+        return self.cls(**args)
+
+    def get_repr(self, resource):
+        repr = {}
+        args = methodargs(resource.__init__)
+        for k,v in resource.__dict__.items():
+            if k in args:
+                repr[k] = v
+        
+        return  repr
+
+class Resource(BaseResource):
+    __glyph__ = TransientMapper
+
+
+""" Persistent Resources """
+            
+class PersistentMapper(BaseMapper):  
+    def __init__(self, prefix, cls):
+        BaseMapper.__init__(self, prefix, cls)
+        self.instances = {}
+        self.identifiers = {}
+
+    @redirect()
+    def POST(self, **args):
+        instance = self.cls(**args)
+        uuid = str(uuid4())
+        self.instances[uuid] = instance
+        self.identifiers[instance] = uuid
+        return instance
+
+    def get_instance(self, uuid):
+        return self.instances[uuid]
+
+    def get_repr(self, instance):
+        if instance not in self.identifiers:
+            uuid = str(uuid4())
+            self.instances[uuid] = instance
+            self.identifiers[instance] = uuid
+        else:
+            uuid = self.identifiers[instance]
+        return uuid
+
+class PersistentResource(BaseResource):
+    __glyph__ = PersistentMapper
+
+
 def get_mapper(obj, name):
     """ return the mapper for this object, with a given name"""
     if hasattr(obj, '__glyph__') and issubclass(obj.__glyph__, BaseMapper):
@@ -323,31 +339,4 @@ def make_controls(resource):
 
     return forms
         
-def make_method_mapper(fn):
-    if not hasattr(fn, '__glyph_method__'):
-        fn.__glyph_method__ = ResourceMethod() 
-    return fn.__glyph_method__
-
-def redirect(is_redirect=True):
-    def _decorate(fn):
-        m = make_method_mapper(fn)
-        m.redirect=is_redirect
-        return fn
-    return _decorate
-
-def safe(is_safe=True):
-    def _decorate(fn):
-        m = make_method_mapper(fn)
-        m.safe=is_safe
-        return fn
-    return _decorate
-
-def inline(is_inline=True):
-    def _decorate(fn):
-        m = make_method_mapper(fn)
-        m.safe=is_inline
-        m.inline=is_inline
-        return fn
-
-    return _decorate
 

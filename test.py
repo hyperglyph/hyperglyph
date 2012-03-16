@@ -200,25 +200,23 @@ class PersistentObjectTest(ServerTest):
         self.assertEqual(result_b.value(), 0)
         self.assertNotEqual(result_a.self.url(), result_b.self.url())
 
-class PropertyTest(ServerTest):
+class VerbTest(ServerTest):
 
     def router(self):
         m = glyph.Router()
         @m.default()
         class Test(glyph.r):
-            def __init__(self, value=0):
-                self._value = int(value)
-            @property
-            def value(self):
-                return self._value
-            def double(self):   
-                return self._value * 2
+            def POST(self):   
+                return 0
+
+            def index(self):
+                return {'make':glyph.form(Test), 'zero': glyph.form(self)}
         return m
 
-    def _testCase(self):
+    def testCase(self):
         result = glyph.get(self.endpoint.url)
-        self.assertEqual(result.value, 0)
-        result.value = 1
-        self.assertEqual(result.double(), 2)
+        self.assertEqual(result.zero(), 0)
+        result = result.make()
+        self.assertEqual(result.zero(), 0)
 if __name__ == '__main__':
     unittest2.main()
