@@ -5,7 +5,6 @@ from .encoding import Encoder, CONTENT_TYPE
 
 HEADERS={'Accept': CONTENT_TYPE, 'Content-Type': CONTENT_TYPE}
 
-
 def node(name, attributes, children=None):
     return Node(name, attributes, children)
 
@@ -50,7 +49,7 @@ try:
     session = requests.session()
 except:
     import urllib2, urllib, collections
-    Result = collections. namedtuple('Result', 'url, status_code, content,  headers') 
+    Result = collections. namedtuple('Result', 'url, status_code, content,  headers,  raise_for_status') 
     opener = urllib2.build_opener(urllib2.HTTPHandler)
     class session(object):
         @staticmethod
@@ -69,7 +68,7 @@ except:
             try:
                 result = opener.open(req)
 
-                return Result(result.geturl(), result.code, result.read(), result.info())
+                return Result(result.geturl(), result.code, result.read(), result.info(), lambda: None)
             except StopIteration: # In 2.7 this does not derive from Exception
                 raise
             except StandardError as e:

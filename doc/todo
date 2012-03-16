@@ -62,6 +62,8 @@ done:
     router has a default instance to redirect too (allows persistent to be default)
     redirect takes a code argument
     more tests
+    resourcemethod.call
+    moving shit around again.
 
 remember:
     should handle http mapping by default, verbs, urls and content_type
@@ -92,6 +94,10 @@ todo documentation:
 
 todo code
     default resource returns index
+
+    fix requests raising error
+
+    ignore whitespace in decoding 
 
     javascript interface? browser interface thinking?
         option a) xhtml
