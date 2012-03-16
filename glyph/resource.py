@@ -51,11 +51,22 @@ from .data import CONTENT_TYPE, dump, parse, get, form, link, node, embed, ismet
 
 """
 
+VERBS = set(("GET", "POST", "PUT","DELETE","PATCH",))
+
 class BaseResource(object):
     """ An abstract resource to be served. Contains a mapper attribute __glyph__,
     which contains a mapper class to use for this resource,
     """
     __glyph__ = None
+
+    def GET(self):
+        """ Generate a glyph-node that contains 
+            the object attributes and methods
+        """
+        page = dict()
+        page.update(make_controls(self))
+        page.update(self.index())
+        return node(self.__class__.__name__, attributes=page)
 
     def index(self):
         return dict((k,v) for k,v in self.__dict__.items() if not k.startswith('_'))
@@ -107,12 +118,10 @@ class BaseMapper(object):
         # todo throw nice errors here? bad request?
 
         path = request.path[1:].split('/')[1:]
-        attr_name = 'index' if not path or not path[0] else path[0]
-        verb = request.method
+        verb = request.method.upper()
+        attr_name =  verb if not path or not path[0] else path[0]
 
-        if attr_name == 'index' and  verb  == 'POST':
-            # the object state is either in the post data
-            # if posting to the index
+        if attr_name == verb  == 'POST': # create
             data = request.data
             try:
                 args = ResourceMethod.parse(self.cls.__init__, data) if data else {}
@@ -130,11 +139,9 @@ class BaseMapper(object):
             except StandardError:
                 raise BadRequest()
 
-            if verb == 'GET' and attr_name == 'index':
-                result = ResourceMethod.index(obj)
-            elif verb == 'GET' and ResourceMethod.is_safe(attr):
+            if verb == 'GET' and (attr_name == 'GET' or ResourceMethod.is_safe(attr) ):
                 result = attr()
-            elif verb == 'POST' and not ResourceMethod.is_safe(attr): 
+            elif verb == 'POST' and (attr_name == 'POST' or not ResourceMethod.is_safe(attr) ): 
                 try:
                     data = ResourceMethod.parse(attr, request.data) if request.data else {}
                 except StandardError:
@@ -257,16 +264,6 @@ class ResourceMethod(object):
             self.redirect=self.REDIRECT
 
     @staticmethod
-    def index(obj):
-        """ Generate a glyph-node that contains 
-            the object attributes and methods
-        """
-        page = dict()
-        page.update(make_controls(obj))
-        page.update(obj.index())
-        return node(obj.__class__.__name__, attributes=page)
-
-    @staticmethod
     def parse(resource, data):
         return parse(data)
     
@@ -298,6 +295,16 @@ class ResourceMethod(object):
     def redirect_code(self):
         return 303
 
+    @classmethod
+    def make_link(cls, m):
+        if cls.is_safe(m):
+            if cls.is_inline(m):
+                return embed(m,content=m())
+            else:
+                return link(m)
+        else:
+            return form(m)
+
 def get_mapper(obj, name):
     """ return the mapper for this object, with a given name"""
     if hasattr(obj, '__glyph__') and issubclass(obj.__glyph__, BaseMapper):
@@ -307,22 +314,13 @@ def get_mapper(obj, name):
 def make_controls(resource):
     forms = {}
     for m in dir(resource.__class__):
-        if not m.startswith('_') and m != 'index':
+        if not m.startswith('_') and m not in VERBS:
             cls_attr = getattr(resource.__class__ ,m)
-            if isinstance(cls_attr, property):
-                raise StandardError()
-                page[m] = prop((resource,m))
-
-            elif callable(cls_attr):
+            if callable(cls_attr):
                 ins_attr = getattr(resource,m)
                 if hasattr(ins_attr, 'func_code'):
-                    if ResourceMethod.is_safe(cls_attr):
-                        if ResourceMethod.is_inline(cls_attr):
-                            forms[m] = embed(ins_attr,content=ins_attr())
-                        else:
-                            forms[m] = link(ins_attr)
-                    else:
-                        forms[m] = form(ins_attr)
+                    forms[m] = ResourceMethod.make_link(ins_attr)
+
     return forms
         
 def make_method_mapper(fn):
