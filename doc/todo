@@ -182,23 +182,22 @@ to think?
         @foo.if_none_match() .... ?
         @foo.last_modified()
 
-    api:
-        persistent mapper: managing objects/deleting them
+    persistent mapper: managing objects/deleting them
 
-        glyph.get(url, accept='....') handling different content-types 
-            url in page object?
-            if unhandledd:
-                throw result(content_type, content), decoded if text/*
+    glyph.get(url, accept='....') handling different content-types 
+        url in page object?
+        if unhandledd:
+            throw result(content_type, content), decoded if text/*
 
-        auto link resources ?  handle: return [Resource(), ....]
-            callback from router turns resources into links/forms/etc?
-            possible: handles unknown types with callback
+    auto link resources ?  handle: return [Resource(), ....]
+        callback from router turns resources into links/forms/etc?
+        possible: handles unknown types with callback
 
-        collections:
-            like an embed/property, but behaves with the __getitem__ calls ?
-            think about interface for pagination/mapping to an infinite scroll, etc.
-            inlining - behaves like a link, isn't.
-            cursor/resultset behavior?
+    collections:
+        like an embed/property, but behaves with the __getitem__ calls ?
+        think about interface for pagination/mapping to an infinite scroll, etc.
+        inlining - behaves like a link, isn't.
+        cursor/resultset behavior?
 
     snapshoting:
         crawling an api? glyph.crawl(page) returns all links() ?
@@ -230,7 +229,6 @@ to think?
     scraper pool ?
         sharding, load balancing, caching, extending
 
-misc shit:
     true rest - generating mime types from objects
 
     snmp? crawling
