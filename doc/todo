@@ -64,6 +64,19 @@ done:
     more tests
     resourcemethod.call
     moving shit around again.
+    fix requests raising error
+    ignore whitespace in decoding 
+    default resource returns index
+    204 - no content on none ?
+    FunctionMapper
+        Split out BaseMapper into ResourceMapper 
+        add FunctionMapper - does Handler.call(fn)
+        handling functions ? 
+            methodargs? funcargs?
+            use handler  to dispatch:
+                default a post mapper ?
+    test runner 
+        setup.py test target 
 
 remember:
     should handle http mapping by default, verbs, urls and content_type
@@ -91,21 +104,15 @@ todo documentation:
             yes - hyperlinks, hateoas, caching
             no - non standard mime type, ad-hoc interfaces 
 
-    fix requests raising error
-    ignore whitespace in decoding 
-    default resource returns index
-    204 - no content on none ?
 
 todo code
-    FunctionMapper
-        Split out BaseMapper into ResourceMapper 
-        add FunctionMapper - does Handler.call(fn)
-
     http compliance:
         set cache-control, expires, etags headers on get 
             use make_conditional - ignore steve about 'argle bargle saves recomputation'
             weak/strong etags?
             Handler. make_etag? add_headers? make_response?
+        cache control - max age, can store, revalidate?
+            caching on embeds?
         resource handles/parses accept/content-type header
             @accept(...,q=), @content_type()
         missing header on 403: allow: on 403 ?
@@ -122,38 +129,20 @@ todo code
 
         xhtml5 w microdata or xml w namespaces?
 
-
-    glyph encoding/ media types:    
-        beef out form type?  hidden inputs ? type arguments 
-        must be able to dispatch to correct method?
-
-        glyph.get/fetch supports other media types
-
-
-    mapper:
-        handling functions ? 
-            methodargs? funcargs?
-            use handler  to dispatch:
-                default a post mapper ?
-        transients
-            - shouldn't post to create? form should use get?
-            - attr on resource ?
-
     decorators chains:
         rel attribute on methods? 
-        @glyph.method(rel='....')
+        @glyph.handler(rel='....')
         def foo()
             ....
-
 
         @glyph.cache(max_age=....)
         resource last modified property ?
 
-        cache control - max age, can store, revalidate?
-            caching on embeds?
 
     glyph json/xml/xhtml/xhtml5?
-        write data types.
+        glyph.get/fetch supports other media types
+        beef out form type?  hidden inputs ? type arguments 
+        document media type:
             should add/draft them
                 make a spec, get the vendor tag registered
             rules for forms, embeds?
@@ -179,13 +168,13 @@ todo code
                 possibly better and simpler.
                 can also add script to reformat requests ? 
                 or x-www-urlencoding/form encoding?
-    in-browser control/debugging:
-
-
-    test runner 
-        setup.py test target 
 
 to think?
+    mapper:
+        transients
+            - shouldn't post to create? form should use get?
+            - attr on resource ?
+
     gzip encoding :v
         gzip middleware?
     argle bargel transactions:

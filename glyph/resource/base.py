@@ -202,7 +202,6 @@ class Handler(object):
                 data = cls.parse(attr, request.data) if request.data else {}
             except StandardError:
                 raise BadRequest()
-            print attr, data
             result =attr(**data)
         else:
             raise MethodNotAllowed()

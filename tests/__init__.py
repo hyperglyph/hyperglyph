@@ -299,7 +299,6 @@ class FunctiontTest(ServerTest):
 
     def testCase(self):
         root = glyph.get(self.endpoint.url)
-        print root
         self.assertEqual(root.foo(1,1), 2)
         self.assertEqual(root.bar(1,1), 1)
 if __name__ == '__main__':
