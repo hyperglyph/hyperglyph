@@ -6,25 +6,26 @@ import socket
 import weakref
 
 from werkzeug.serving import make_server, WSGIRequestHandler
-from .resource.base import BaseMapper, BaseResource, get_mapper, Handler
-from .resource.persistent import PersistentResource
+from .resource.base import BaseMapper, BaseResource, get_mapper, Handler, safe
+from .resource.transient import TransientResource
 from .data import ismethod
 
 
-class DefaultResource(PersistentResource):
-    def __init__(self, router):
-        self.router = router
-
-    def index(self):
-        return dict((r.__name__, Handler.make_link(r)) for r in self.router.mappers if r is not DefaultResource) 
         
 
+def make_default(router):
+    class __default__(TransientResource):
+        def index(self):
+            return dict((r.__name__, Handler.make_link(r)) for r in router.mappers if r is not self.__class__) 
+    return __default__
 class Router(object):
     def __init__(self):
         self.mappers = {}
         self.routes = {}
-        self.register(DefaultResource)
-        self.default_resource = DefaultResource(weakref.proxy(self))
+        default = make_default(weakref.proxy(self))
+    
+        self.register(default)
+        self.default_resource = default()
 
     def __call__(self, environ, start_response):
         request = Request(environ)
