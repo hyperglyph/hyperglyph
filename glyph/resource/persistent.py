@@ -1,16 +1,16 @@
 from uuid import uuid4 
 
-from .base import BaseMapper, BaseResource, redirect
+from .base import ClassMapper, BaseResource, redirect
 
-class PersistentMapper(BaseMapper):  
-    def __init__(self, prefix, cls):
-        BaseMapper.__init__(self, prefix, cls)
+class PersistentMapper(ClassMapper):  
+    def __init__(self, prefix, res):
+        ClassMapper.__init__(self, prefix, res)
         self.instances = {}
         self.identifiers = {}
 
     @redirect()
     def POST(self, **args):
-        instance = self.cls(**args)
+        instance = self.res(**args)
         uuid = str(uuid4())
         self.instances[uuid] = instance
         self.identifiers[instance] = uuid

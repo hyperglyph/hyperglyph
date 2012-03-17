@@ -7,12 +7,12 @@ when you link to a resource instance, the link contains the state of the resourc
 encoded in the query string
 
 """
-from .base import BaseMapper, BaseResource, redirect
+from .base import ClassMapper, BaseResource, redirect
 from ..data import methodargs
             
-class TransientMapper(BaseMapper):  
+class TransientMapper(ClassMapper):  
     def get_instance(self, args):
-        return self.cls(**args)
+        return self.res(**args)
 
     def get_repr(self, resource):
         repr = {}

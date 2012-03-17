@@ -47,9 +47,9 @@ class BaseMapper(object):
     state representation.
     """
 
-    def __init__(self, prefix, cls):
+    def __init__(self, prefix, res):
         self.prefix = prefix
-        self.cls = cls
+        self.res = res
 
     """ How query strings are handled. """
     @staticmethod
@@ -62,6 +62,21 @@ class BaseMapper(object):
         """ turn a query string into a dict """
         return parse(unquote_plus(query)) if query else {}
 
+    def handle(self,request, router):
+        return Handler.call(self.res, request, router)
+
+    def url(self, r):
+        """ return a url string that reflects this resource:
+            can be a resource class, instance or method
+        """
+        if isinstance(r, basestring):
+            return r
+        elif r is self.res:
+            return '/%s'%self.prefix
+
+        raise LookupError()
+
+class ClassMapper(BaseMapper):
     def handle(self,request, router):
         path = request.path[1:].split('/')
         verb = request.method.upper()
@@ -90,21 +105,18 @@ class BaseMapper(object):
             return getattr(self, verb)
         except:
             raise MethodNotAllowed()
-
     def url(self, r):
         """ return a url string that reflects this resource:
             can be a resource class, instance or method
         """
-        if r is self.cls:
-            return '/%s'%self.prefix
-        elif isinstance(r, self.cls):
+        if isinstance(r, self.res):
             return "/%s/?%s"%(self.prefix, self.dump_query(self.get_repr(r)))
-        elif isinstance(r, type) and issubclass(r, self.cls):
+        elif isinstance(r, type) and issubclass(r, self.res):
                 return '/%s'%self.prefix
-        elif ismethod(r, self.cls):
+        elif ismethod(r, self.res):
                 return "/%s/%s?%s"%(self.prefix, r.im_func.__name__, self.dump_query(self.get_repr(r.im_self)))
-        raise LookupError()
-
+        else:
+            return BaseMapper.url(self, r)
 
     """ Abstract methods for creating, finding a resource, and getting the representation
     of a resource, to embed in the url """
@@ -115,6 +127,7 @@ class BaseMapper(object):
     def get_repr(self, resource):
         """ return the representation of the state of the resource as a dict """
         raise NotImplemented()
+
 
 
 class Handler(object):   

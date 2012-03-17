@@ -97,6 +97,9 @@ todo documentation:
     204 - no content on none ?
 
 todo code
+    FunctionMapper
+        Split out BaseMapper into ResourceMapper 
+        add FunctionMapper - does Handler.call(fn)
 
     http compliance:
         set cache-control, expires, etags headers on get 
@@ -109,7 +112,7 @@ todo code
         OPTIONS/HEAD/PUT/DELETE handling ?
 
     javascript interface? browser interface thinking?
-        option a) xhtml
+        option a) xhtml + namespaces
             works in lynx
         option b) xml + xslt 
             doesn't work in lynx
@@ -120,7 +123,7 @@ todo code
         xhtml5 w microdata or xml w namespaces?
 
 
-    glyph encoding/ media types:
+    glyph encoding/ media types:    
         beef out form type?  hidden inputs ? type arguments 
         must be able to dispatch to correct method?
 
