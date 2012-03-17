@@ -6,9 +6,9 @@ import socket
 import weakref
 
 from werkzeug.serving import make_server, WSGIRequestHandler
-from .resource.base import BaseMapper, BaseResource, get_mapper
+from .resource.base import BaseMapper, BaseResource, get_mapper, Handler
 from .resource.persistent import PersistentResource
-from .data import ismethod, form
+from .data import ismethod
 
 
 class DefaultResource(PersistentResource):
@@ -16,7 +16,7 @@ class DefaultResource(PersistentResource):
         self.router = router
 
     def index(self):
-        return dict((r.__name__, form(r)) for r in self.router.mappers if r is not DefaultResource) 
+        return dict((r.__name__, Handler.make_link(r)) for r in self.router.mappers if r is not DefaultResource) 
         
 
 class Router(object):

@@ -1,7 +1,4 @@
-""" resource.py
-
-contains Resource, Mapper and Router
-"""
+import types
 
 from urllib import quote_plus, unquote_plus
 
@@ -36,6 +33,8 @@ def get_mapper(obj, name):
     """ return the mapper for this object, with a given name"""
     if hasattr(obj, '__glyph__') and issubclass(obj.__glyph__, BaseMapper):
         return obj.__glyph__(name, obj)
+    elif isinstance(obj, types.FunctionType):
+        return BaseMapper(name, obj)
     raise StandardError('no mapper for object')
 
 class BaseMapper(object):
@@ -203,6 +202,7 @@ class Handler(object):
                 data = cls.parse(attr, request.data) if request.data else {}
             except StandardError:
                 raise BadRequest()
+            print attr, data
             result =attr(**data)
         else:
             raise MethodNotAllowed()

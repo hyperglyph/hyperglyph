@@ -36,10 +36,10 @@ def ismethod(m, cls=None):
 
 def methodargs(m):
     if ismethod(m):
-        return funcargs(m)
+        return m.func_code.co_varnames[1:]
 
 def funcargs(m):
-    return m.func_code.co_varnames[1:]
+    return m.func_code.co_varnames[:]
 
 
 

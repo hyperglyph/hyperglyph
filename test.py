@@ -281,6 +281,26 @@ class VerbTest(ServerTest):
         result = glyph.get(self.endpoint.url)
         self.assertEqual(result.zero(), 0)
         result = result.make()
-        self.assertEqual(result.zero(), 0)
+
+class FunctiontTest(ServerTest):
+
+    def router(self):
+        m = glyph.Router()
+        @m.add()
+        def foo(a,b):
+            return a+b
+
+        @m.add()
+        def bar(a,b):
+            return a*b
+
+
+        return m
+
+    def testCase(self):
+        root = glyph.get(self.endpoint.url)
+        print root
+        self.assertEqual(root.foo(1,1), 2)
+        self.assertEqual(root.bar(1,1), 1)
 if __name__ == '__main__':
     unittest2.main()
