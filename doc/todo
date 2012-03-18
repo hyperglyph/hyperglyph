@@ -86,6 +86,7 @@ remember:
 todo documentation:
 
         glyph encoding clarifcations/iana-esque spec
+            format specifiers?
             duplicate dict keys,hex parsing, xml/json?
 
         under the scenes - request by request
@@ -106,8 +107,8 @@ todo documentation:
 
 
 todo code
-    handler/mapper/router ? in resource 
-    Handler.call()?
+    possible: move handler to a seperate file?
+    refactor:Handler.call()?
         clean up handler logic - should use a default handler or the one given.
         rather than if_safe, etc. ?
         subclass handler?

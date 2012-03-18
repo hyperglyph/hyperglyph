@@ -26,7 +26,8 @@ from .data import CONTENT_TYPE, dump, parse, get, node, form, link, utcnow
 from .resource.base import safe, inline, redirect
 from .resource.transient import TransientResource
 from .resource.persistent import PersistentResource
-from .server import Router, Server
+from .resource.router import Router
+from .server import  Server
 
 __all__ = [
     'CONTENT_TYPE','Server','redirect',
