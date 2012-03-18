@@ -280,7 +280,7 @@ class VerbTest(ServerTest):
         self.assertEqual(result.zero(), 0)
         result = result.make()
 
-class FunctiontTest(ServerTest):
+class FunctionTest(ServerTest):
 
     def router(self):
         m = glyph.Router()
@@ -299,5 +299,27 @@ class FunctiontTest(ServerTest):
         root = glyph.get(self.endpoint.url)
         self.assertEqual(root.foo(1,1), 2)
         self.assertEqual(root.bar(1,1), 1)
+
+class FunctionTest(ServerTest):
+
+    def router(self):
+        m = glyph.Router()
+
+        @m.add()
+        @glyph.safe()
+        def bar():
+            return 123
+
+        @m.add()
+        @glyph.redirect()
+        def foo():
+            return bar
+
+
+        return m
+
+    def testCase(self):
+        root = glyph.get(self.endpoint.url)
+        self.assertEqual(root.foo(), 123)
 if __name__ == '__main__':
     unittest2.main()
