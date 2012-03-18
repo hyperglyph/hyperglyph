@@ -300,7 +300,7 @@ class FunctionTest(ServerTest):
         self.assertEqual(root.foo(1,1), 2)
         self.assertEqual(root.bar(1,1), 1)
 
-class FunctionTest(ServerTest):
+class FunctionRedirectTest(ServerTest):
 
     def router(self):
         m = glyph.Router()
