@@ -77,13 +77,13 @@ class BaseMapper(object):
 
 class ClassMapper(BaseMapper):
     def handle(self,request, router):
-        path = request.path[1:].split('/')
+        path = request.path.split(self.prefix)[1]
         verb = request.method.upper()
 
         try:
-            if len(path) > 1: 
+            if path:
                 # if we are mapping to an instance
-                attr_name = path[1] if path[1] else verb
+                attr_name = path[1:] if path [1:]  else verb
                 args = self.parse_query(request.query_string)
                 obj = self.get_instance(args)
 

@@ -105,9 +105,12 @@ todo documentation:
             yes - hyperlinks, hateoas, caching
             no - non standard mime type, ad-hoc interfaces 
 
-
-todo code
     possible: move handler to a seperate file?
+    fixed bug with function lookup - no longer assumes baseresource 
+
+    prefix handling - strip prefix in mapper before checking rather than assuming second part ?
+todo code:
+
     refactor:Handler.call()?
         clean up handler logic - should use a default handler or the one given.
         rather than if_safe, etc. ?
