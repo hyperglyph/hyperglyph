@@ -23,7 +23,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 from .data import CONTENT_TYPE, dump, parse, get, node, form, link, utcnow
-from .resource.base import safe, inline, redirect
+from .resource.handler import safe, inline, redirect
 from .resource.transient import TransientResource
 from .resource.persistent import PersistentResource
 from .resource.router import Router

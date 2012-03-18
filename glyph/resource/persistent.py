@@ -1,6 +1,7 @@
 from uuid import uuid4 
 
-from .base import ClassMapper, BaseResource, redirect
+from .base import ClassMapper, BaseResource
+from .handler import redirect
 
 class PersistentMapper(ClassMapper):  
     def __init__(self, prefix, res):

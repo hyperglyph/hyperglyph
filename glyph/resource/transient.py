@@ -7,7 +7,8 @@ when you link to a resource instance, the link contains the state of the resourc
 encoded in the query string
 
 """
-from .base import ClassMapper, BaseResource, redirect
+from .base import ClassMapper, BaseResource
+from .handler import redirect
 from ..data import methodargs
             
 class TransientMapper(ClassMapper):  
