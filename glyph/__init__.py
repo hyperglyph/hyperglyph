@@ -22,7 +22,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
 
-from .data import CONTENT_TYPE, dump, parse, get, node, form, link
+from .data import CONTENT_TYPE, dump, parse, get, node, form, link, utcnow
 from .resource.base import safe, inline, redirect
 from .resource.transient import TransientResource
 from .resource.persistent import PersistentResource
@@ -30,9 +30,10 @@ from .server import Router, Server
 
 __all__ = [
     'CONTENT_TYPE','Server','redirect',
-    'get', 'Router','Resource','r', 'safe', 'inline'
+    'get', 'Router','Resource','r', 'safe', 'inline', 'utcnow',
     'parse','dump','node','form','link',
     'TransientResource', 'PersistentResource',
 ]
 
 r = Resource = TransientResource
+

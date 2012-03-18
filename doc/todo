@@ -106,6 +106,24 @@ todo documentation:
 
 
 todo code
+    handler/mapper/router ? in resource 
+    Handler.call()?
+        clean up handler logic - should use a default handler or the one given.
+        rather than if_safe, etc. ?
+        subclass handler?
+            use a different handler for different logic, over switch case dispatch
+            a post handler, etc.
+        how to compose with accept/redirect?
+            split properties into redirect/content_type stuff 
+
+    werkzeug:
+        accept() cache_control() data structures?
+        etag generation - sha4 of context 
+        make_conditonal on get/etc - precondition failed on all others
+
+    options support ?
+        def OPTIONS in mapper, options handling in Handler
+
     http compliance:
         set cache-control, expires, etags headers on get 
             use make_conditional - ignore steve about 'argle bargle saves recomputation'

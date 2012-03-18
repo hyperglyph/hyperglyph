@@ -1,7 +1,5 @@
 import unittest2
 import glyph
-import datetime
-from pytz import utc
 
 
 
@@ -18,7 +16,7 @@ class Test(unittest2.TestCase):
             True,
             False,
             {'a':1},
-            datetime.datetime.utcnow().replace(tzinfo=utc),
+            glyph.utcnow(),
         ]
         for c in cases:
             self.assertEqual(c, glyph.parse(glyph.dump(c)))

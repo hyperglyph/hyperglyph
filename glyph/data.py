@@ -1,9 +1,14 @@
 from urlparse import urljoin
+import datetime
+
+from pytz import utc
 
 from .encoding import Encoder, CONTENT_TYPE
 
 
-HEADERS={'Accept': CONTENT_TYPE, 'Content-Type': CONTENT_TYPE}
+def utcnow():
+    datetime.datetime.utcnow().replace(tzinfo=utc)
+
 
 def node(name, attributes, children=None):
     return Node(name, attributes, children)
@@ -49,6 +54,7 @@ def get(url, args=None,headers=None):
     return  fetch('GET', url, args, '', headers)
 
 
+HEADERS={'Accept': CONTENT_TYPE, 'Content-Type': CONTENT_TYPE}
 try:
     import requests
     session = requests.session()
