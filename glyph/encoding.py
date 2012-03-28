@@ -49,7 +49,7 @@ DTM='d'
 
 DICT='D'
 LIST='L'
-END='E'
+END_COL='E'
 
 TRUE='T'
 FALSE='F'
@@ -64,7 +64,7 @@ HEADERS={'Accept': CONTENT_TYPE, 'Content-Type': CONTENT_TYPE}
 
 
 identity = lambda x:x
-def _read_num(fh, term, parse):
+def _read_until(fh, term, parse):
     c = fh.read(1)
     buf=StringIO()
     while c != term:
@@ -141,22 +141,27 @@ class Encoder(object):
             buf.write("%d"%len(obj))
             buf.write(BLOB_SEP)
             buf.write(obj)
+        elif isinstance(obj, set):
+            buf.write(SET)
+            for x in obj:
+                self._dump(x, buf, resolver)
+            buf.write(END_COL)
         elif hasattr(obj, 'iteritems'):
             buf.write(DICT)
             for k in sorted(obj.keys()): # always sorted, so can compare serialized
                 v=obj[k]
                 self._dump(k, buf, resolver)
                 self._dump(v, buf, resolver)
-            buf.write(END)
+            buf.write(END_COL)
         elif hasattr(obj, '__iter__'):
             buf.write(LIST)
             for x in obj:
                 self._dump(x, buf, resolver)
-            buf.write(END)
+            buf.write(END_COL)
         elif isinstance(obj, (int, long)):
             buf.write(NUM)
             buf.write(str(obj))
-            buf.write(END)
+            buf.write(END_COL)
         elif isinstance(obj, float):
             buf.write(FLT)
             obj= float.hex(obj)
@@ -179,24 +184,24 @@ class Encoder(object):
         elif c == FALSE:
             return False
         if c == STR or c == UNI:
-            l = _read_num(fh, BLOB_SEP, parse=int)[0]
+            l = _read_until(fh, BLOB_SEP, parse=int)[0]
             buf= fh.read(l)
             if c == UNI:
                 buf=buf.decode(UNICODE_CHARSET)
             return buf
 
         elif c == NUM:
-            return _read_num(fh, END, parse=int)[0]
+            return _read_until(fh, END_COL, parse=int)[0]
 
         elif c == FLT:
-            flt_len = _read_num(fh, BLOB_SEP, parse=int)[0]
+            flt_len = _read_until(fh, BLOB_SEP, parse=int)[0]
             buf= fh.read(flt_len)
             return float.fromhex(buf)
 
         elif c == LIST:
             first = read_first(fh)
             out = []
-            while first != END:
+            while first != END_COL:
                 out.append(self._read_one(fh, first, resolver))
                 first = read_first(fh)
             return out
@@ -204,7 +209,7 @@ class Encoder(object):
         elif c == DICT:
             first = read_first(fh)
             out = {}
-            while first != END:
+            while first != END_COL:
                 f = self._read_one(fh, first, resolver)
                 second = read_first(fh)
                 g = self._read_one(fh, second, resolver)
