@@ -9,27 +9,37 @@ CONTENT_TYPE='application/vnd.glyph'
 """
 glyph is a serialization format roughly based around bencoding
 
-    json like vocabulary
-        unicode -> u<len>:<utf-8 string>
-        dict -> d<key><value><key><value>....e
-        list -> l<item><item><item><item>....e
-        float -> f<len>:<float in hex>
+
+    strings!:
+        unicode -> u <byte len> \x0a <utf-8 string>
+        byte str -> s <byte len> \x0a  <byte string>
+
+    numbers:
+        datetime -> d %Y-%m-%dT%H:%M:%S.%f \x0a
+        num -> i <number> \x0a
+        float -> f <float in hex> \x0a
+
+    collections:
+        dict -> D <key> <value> <key> <value>....E
+            no duplicates allowed, in asc sorted order by key
+        list -> L <item> <item> <item> <item>....E
+            
+        set  -> S <item> <item> <item> <item>....E
+            no duplicates, in asc sorted order
+
     additonal datatypes:
-        num -> i<number>e
-        byte str -> s<len>:<string>
         true -> T
         false -> F
         none -> N
-        datetime -> D%Y-%m-%dT%H:%M:%S.%f
 
 
     xml like vocabulary
-        node -> N<name item><attr item><children item>
+        node -> X<name item><attr item><children item>
             an object with a name, attributes and children
                 attributes is nominally a dict.
                 children nominally list
             think html5 microdata like
-        ext -> X<item><item><item>
+        ext -> Y<item><item><item>
             like a node, but contains url, method, possibly form values.
 
     todo: timezones, periods?
@@ -61,18 +71,20 @@ EXT='Y'
 
 
 
-HEADERS={'Accept': CONTENT_TYPE, 'Content-Type': CONTENT_TYPE}
-
-
 identity = lambda x:x
-def _read_until(fh, term, parse):
-    c = fh.read(1)
-    buf=StringIO()
-    while c != term:
-        buf.write(c)
+def _read_until(fh, term, parse=identity):
+    if term == '\n':
+        line = fh.readline()
+        d, c = parse(line[:-1]), line[-1]
+    else:
         c = fh.read(1)
-    d = parse(buf.getvalue())
+        buf=StringIO()
+        while c != term:
+            buf.write(c)
+            c = fh.read(1)
+        d = parse(buf.getvalue())
     return d, c
+
 def read_first(fh):
     c = fh.read(1)
     while c in ('\n',' ','\t'):
@@ -88,6 +100,11 @@ class wrapped(object):
 
     def read(self,n):
         r= self.fh.read(n)
+        self.buf.write(r)
+        return r
+
+    def readline(self):
+        r= self.fh.readline()
         self.buf.write(r)
         return r
 
@@ -151,7 +168,7 @@ class Encoder(object):
         
         elif isinstance(obj, set):
             buf.write(SET)
-            for x in obj:
+            for x in sorted(obj):
                 self._dump(x, buf, resolver)
             buf.write(END_SET)
         elif hasattr(obj, 'iteritems'):
@@ -161,6 +178,7 @@ class Encoder(object):
                 self._dump(k, buf, resolver)
                 self._dump(v, buf, resolver)
             buf.write(END_DICT)
+
         elif hasattr(obj, '__iter__'):
             buf.write(LIST)
             for x in obj:
@@ -207,7 +225,11 @@ class Encoder(object):
             first = read_first(fh)
             out = set()
             while first != END_SET:
-                out.add(self._read_one(fh, first, resolver))
+                item = self._read_one(fh, first, resolver)
+                if item not in out:
+                    out.add(item)
+                else:
+                    raise StandardError('duplicate key')
                 first = read_first(fh)
             return out
 
