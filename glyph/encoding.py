@@ -34,14 +34,6 @@ glyph is a serialization format roughly based around bencoding
 
     todo: timezones, periods?
 
-    >>> dump([ 1, "2", {3:4}] )
-    'li1es1:2di3ei4eee'
-    >>> parse('li1es1:2di3ei4eee')
-    [1, '2', {3: 4}]
-    >>> parse('li1es1:2di3ei4eee')
-    [1, '2', {3: 4}]
-    >>> parse('lD2001-02-03T04:05:06.070000e')
-    [datetime.datetime(2001, 2, 3, 4, 5, 6, 70000, tzinfo=<UTC>)]
 
 """
 
@@ -49,21 +41,22 @@ UNICODE_CHARSET="utf-8"
 
 STR='s'
 UNI='u'
-BLOB_SEP=':'
+BLOB_SEP='\x0a'
 
 FLT='f'
 NUM='i'
-DICT='d'
-LIST='l'
-DTM='D'
-END='e'
+DTM='d'
+
+DICT='D'
+LIST='L'
+END='E'
 
 TRUE='T'
 FALSE='F'
 NONE='N'
 
-NODE='x'
-EXT='X'
+NODE='X'
+EXT='Y'
 
 
 
