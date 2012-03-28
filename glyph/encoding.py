@@ -41,7 +41,7 @@ UNICODE_CHARSET="utf-8"
 
 STR='s'
 UNI='u'
-BLOB_SEP='\x0a'
+END_ITEM='\x0a'
 
 FLT='f'
 NUM='i'
@@ -49,7 +49,8 @@ DTM='d'
 
 DICT='D'
 LIST='L'
-END_COL='E'
+SET='S'
+END_DICT = END_LIST = END_SET ='E'
 
 TRUE='T'
 FALSE='F'
@@ -113,10 +114,13 @@ class Encoder(object):
     def _dump(self, obj, buf, resolver):
         if obj is True:
             buf.write(TRUE)
+
         elif obj is False:
             buf.write(FALSE)
+        
         elif obj is None:
             buf.write(NONE)
+        
         elif isinstance(obj, (self.extension,)):
             buf.write(EXT)
             name, attributes, content = obj.__getstate__()
@@ -124,50 +128,53 @@ class Encoder(object):
             self._dump(name, buf, resolver)
             self._dump(attributes, buf, resolver)
             self._dump(content, buf, resolver)
+        
         elif isinstance(obj, (self.node,)):
             buf.write(NODE)
             name, attributes, content = obj.__getstate__()
             self._dump(name, buf, resolver)
             self._dump(attributes, buf, resolver)
             self._dump(content, buf, resolver)
+        
         elif isinstance(obj, (str, buffer)):
             buf.write(STR)
             buf.write("%d"%len(obj))
-            buf.write(BLOB_SEP)
+            buf.write(END_ITEM)
             buf.write(obj)
+        
         elif isinstance(obj, unicode):
             buf.write(UNI)
             obj = obj.encode(UNICODE_CHARSET)
             buf.write("%d"%len(obj))
-            buf.write(BLOB_SEP)
+            buf.write(END_ITEM)
             buf.write(obj)
+        
         elif isinstance(obj, set):
             buf.write(SET)
             for x in obj:
                 self._dump(x, buf, resolver)
-            buf.write(END_COL)
+            buf.write(END_SET)
         elif hasattr(obj, 'iteritems'):
             buf.write(DICT)
             for k in sorted(obj.keys()): # always sorted, so can compare serialized
                 v=obj[k]
                 self._dump(k, buf, resolver)
                 self._dump(v, buf, resolver)
-            buf.write(END_COL)
+            buf.write(END_DICT)
         elif hasattr(obj, '__iter__'):
             buf.write(LIST)
             for x in obj:
                 self._dump(x, buf, resolver)
-            buf.write(END_COL)
+            buf.write(END_LIST)
         elif isinstance(obj, (int, long)):
             buf.write(NUM)
             buf.write(str(obj))
-            buf.write(END_COL)
+            buf.write(END_ITEM)
         elif isinstance(obj, float):
             buf.write(FLT)
             obj= float.hex(obj)
-            buf.write("%d"%len(obj))
-            buf.write(BLOB_SEP)
             buf.write(obj)
+            buf.write(END_ITEM)
         elif isinstance(obj, datetime):
             buf.write(DTM)
             obj = obj.astimezone(utc)
@@ -184,24 +191,30 @@ class Encoder(object):
         elif c == FALSE:
             return False
         if c == STR or c == UNI:
-            l = _read_until(fh, BLOB_SEP, parse=int)[0]
+            l = _read_until(fh, END_ITEM, parse=int)[0]
             buf= fh.read(l)
             if c == UNI:
                 buf=buf.decode(UNICODE_CHARSET)
             return buf
 
         elif c == NUM:
-            return _read_until(fh, END_COL, parse=int)[0]
+            return _read_until(fh, END_ITEM, parse=int)[0]
 
         elif c == FLT:
-            flt_len = _read_until(fh, BLOB_SEP, parse=int)[0]
-            buf= fh.read(flt_len)
-            return float.fromhex(buf)
+            return _read_until(fh, END_ITEM, parse=float.fromhex)[0]
+
+        elif c == SET:
+            first = read_first(fh)
+            out = set()
+            while first != END_SET:
+                out.add(self._read_one(fh, first, resolver))
+                first = read_first(fh)
+            return out
 
         elif c == LIST:
             first = read_first(fh)
             out = []
-            while first != END_COL:
+            while first != END_LIST:
                 out.append(self._read_one(fh, first, resolver))
                 first = read_first(fh)
             return out
@@ -209,7 +222,7 @@ class Encoder(object):
         elif c == DICT:
             first = read_first(fh)
             out = {}
-            while first != END_COL:
+            while first != END_DICT:
                 f = self._read_one(fh, first, resolver)
                 second = read_first(fh)
                 g = self._read_one(fh, second, resolver)

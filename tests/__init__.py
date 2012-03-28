@@ -16,6 +16,7 @@ class Test(unittest2.TestCase):
             True,
             False,
             {'a':1},
+            set([1,2,3]),
             glyph.utcnow(),
         ]
         for c in cases:
