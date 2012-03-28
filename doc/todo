@@ -111,6 +111,14 @@ todo documentation:
     prefix handling - strip prefix in mapper before checking rather than assuming second part ?
 todo code:
 
+
+    default GET/index handles properites - i.e treats them like instance values (obv!)
+
+    abandon home brew embrace html5+microdata 
+        - allows googling,
+        - import schemas ?
+    but.... typing of results ....?
+
     refactor:Handler.call()?
         clean up handler logic - should use a default handler or the one given.
         rather than if_safe, etc. ?
