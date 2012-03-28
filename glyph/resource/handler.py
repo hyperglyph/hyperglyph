@@ -104,8 +104,12 @@ def make_controls(resource):
     for m in dir(resource.__class__):
         if not m.startswith('_') and m not in VERBS and m != 'index':
             cls_attr = getattr(resource.__class__ ,m)
-            if callable(cls_attr):
-                ins_attr = getattr(resource,m)
+            ins_attr = getattr(resource,m)
+
+
+            if isinstance(cls_attr, property):
+                forms[m] = ins_attr
+            elif callable(cls_attr):
                 if hasattr(ins_attr, 'func_code'):
                     forms[m] = Handler.make_link(ins_attr)
 

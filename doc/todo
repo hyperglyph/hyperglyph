@@ -109,15 +109,11 @@ todo documentation:
     fixed bug with function lookup - no longer assumes baseresource 
 
     prefix handling - strip prefix in mapper before checking rather than assuming second part ?
+
 todo code:
 
 
     default GET/index handles properites - i.e treats them like instance values (obv!)
-
-    abandon home brew embrace html5+microdata 
-        - allows googling,
-        - import schemas ?
-    but.... typing of results ....?
 
     refactor:Handler.call()?
         clean up handler logic - should use a default handler or the one given.
@@ -147,6 +143,11 @@ todo code:
             @accept(...,q=), @content_type()
         missing header on 403: allow: on 403 ?
         OPTIONS/HEAD/PUT/DELETE handling ?
+
+    abandon home brew embrace html5+microdata 
+        - allows googling,
+        - import schemas ?
+        but.... typing of results ....?
 
     javascript interface? browser interface thinking?
         option a) xhtml + namespaces
