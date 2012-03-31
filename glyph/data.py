@@ -51,7 +51,7 @@ def funcargs(m):
 def get(url, args=None,headers=None):
     if hasattr(url, 'url'):
         url = url.url()
-    return  fetch('GET', url, args, '', headers)
+    return  fetch('GET', url, args, None, headers)
 
 
 HEADERS={'Accept': CONTENT_TYPE, 'Content-Type': CONTENT_TYPE}
@@ -87,13 +87,15 @@ except:
                 traceback.print_exc()
                 raise StandardError(e)
 
-def fetch(method, url, args=None,data="", headers=None):
+def fetch(method, url, args=None,data=None, headers=None):
     if headers is None:
         headers = {}
     headers.update(HEADERS)
     if args is None:
         args = {}
-    result = session.request(method, url, params=args, data=dump(data), headers=headers, allow_redirects=False)
+    if data is not None:
+        data=dump(data)
+    result = session.request(method, url, params=args, data=data, headers=headers, allow_redirects=False)
     def join(u):
         return urljoin(result.url, u)
     if result.status_code == 303: # See Other
