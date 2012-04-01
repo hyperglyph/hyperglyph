@@ -322,5 +322,23 @@ class FunctionRedirectTest(ServerTest):
     def testCase(self):
         root = glyph.get(self.endpoint.url)
         self.assertEqual(root.foo(), 123)
+
+class PropertyAsInstanceValue(ServerTest):
+
+    def router(self):
+        m = glyph.Router()
+
+        @m.default()
+        class R(glyph.Resource):
+            @property
+            def foo(self):
+                return 123
+
+
+        return m
+
+    def testCase(self):
+        root = glyph.get(self.endpoint.url)
+        self.assertEqual(root.foo, 123)
 if __name__ == '__main__':
     unittest2.main()

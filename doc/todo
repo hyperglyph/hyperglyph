@@ -78,6 +78,8 @@ done:
     test runner 
         setup.py test target 
 
+    simplified encoding rules/format
+
 remember:
     should handle http mapping by default, verbs, urls and content_type
     should be possible to use objects outside of mapper.
@@ -110,10 +112,11 @@ todo documentation:
 
     prefix handling - strip prefix in mapper before checking rather than assuming second part ?
 
+    default GET/index handles properites - i.e treats them like instance values (obv!)
+        add test?
+
 todo code:
 
-
-    default GET/index handles properites - i.e treats them like instance values (obv!)
 
     refactor:Handler.call()?
         clean up handler logic - should use a default handler or the one given.
