@@ -2,7 +2,7 @@ glyph-rpc
 ---------
 glyph-rpc is yet another http rpc library, but it tries to exploit http rather
 than simply tunnel requests over it. glyph builds webpages out of objects, for
-computers, and as a result::
+computers, and as a result:
 
 - there is no wsdl/code generation/url construction
 - new methods and objects can be added without breaking clients
@@ -11,6 +11,7 @@ computers, and as a result::
 
 
 To show, rather than tell, let's begin with some server code::
+
     import glyph
 
     r = glyph.Router() # a wsgi application
@@ -27,6 +28,7 @@ To show, rather than tell, let's begin with some server code::
     s.join()
 
 And some client code::
+
     import glyph 
 
     server = glyph.get('http://server/')
@@ -34,24 +36,29 @@ And some client code::
     print server.hello()
 
 Adding a new function is simple::
+
     @r.add()
     def goodbye(name):
         return "Goodbye " + name
 
 And you can change the functions a little::
+
     @r.add()
     def hello(name="World"):
         return "Hello "+name
 
 Amazingly, The old client still works, without changes::
+
     print server.hello()
 
 To call new methods, you just call them::
+
     print server.hello('dave')
     print server.goodbye('dave')
 
 Functions can return lists, dicts, sets, byte strings, unicode,
 dates, booleans, ints & floats::
+
     @r.add()
     def woo():
         return [1,True, None, False, "a",u"b"]
@@ -68,12 +75,14 @@ through redirection::
             return salut
 
 The client doesn't care::
+
     greet = client.greeting()
 
     print greet()
     
 
 Glyph can map objects too::
+
     @r.add()
     @glyph.redirect()
     def find_user(name):
@@ -92,11 +101,13 @@ Glyph can map objects too::
             return database.get_bio(self.id)
 
 The client can get a User and find details::
+
     bob = server.find_user('bob')
     bob.messsage('lol', 'feels good man')
 
 Like before, new methods can be added without breaking old clients.
 unlike before, we can change object internals::
+
     @r.add()
     @glyph.redirect()
     def find_user(name):
@@ -113,10 +124,12 @@ unlike before, we can change object internals::
 
 Even though the internals have changed, the names haven't, so the client
 works as ever::
+
     bob = server.find_user('bob')
     bob.messsage('lol', 'feels good man')
 
 Underneath all this - glyph maps all of this to http::
+
     # by default, a server returns an object with a bunch
     # of methods that redirect to the mapped obejcts
 
