@@ -148,6 +148,9 @@ Underneath all this - glyph maps all of this to http::
     # each object is mapped to a url, which contains the internal state
     # of the object - i.e /User/?id=bob_id&cluster=cluster_id
 
+    # the server is stateless - a new User object is created
+    # for each request that comes in, before destroying it.
+
     # similarly, methods are mapped to a url too 
     # bob.message is a form pointing to /User/message?id=bo_id&cluster=cluster_id
     
@@ -162,4 +165,11 @@ Client code doesn't need to know how to construct requests, or store all
 of the state needed to make requests - the server tells it, rather than
 the programmer.
 
+The server is stateless - the state of the objects is encapsulated
+in the links & forms. 
 
+internals
+---------
+
+glyph on the server end has three major parts - a router, a handler, and
+a resource.

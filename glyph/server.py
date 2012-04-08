@@ -34,7 +34,7 @@ class Server(threading.Thread):
                 try:
                     name = self.server.server_name
                 except:
-                    name = 'localhost'
+                    name = '127.0.0.1'
                 s.connect((name, self.server.server_port))
                 s.send('\r\n')
                 s.close()
