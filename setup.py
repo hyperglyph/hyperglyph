@@ -10,7 +10,7 @@ setup(name='glyph-rpc',
       description='glyph-rpc is well behaved rpc over http with callbacks',
       author='tef',
       author_email='tef@twentygototen.org',
-      packages=['glyph'],
+      packages=['glyph', 'glyph.resource'],
       #scripts=glob.glob('*.py'),
       test_suite = "tests",
      )
