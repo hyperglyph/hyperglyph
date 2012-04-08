@@ -31,11 +31,7 @@ class Server(threading.Thread):
         if self.server and self.is_alive():
             try:
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                try:
-                    name = self.server.server_name
-                except:
-                    name = '127.0.0.1'
-                s.connect((name, self.server.server_port))
+                s.connect(self.server.socket.getsockname()[:2])
                 s.send('\r\n')
                 s.close()
             except IOError:
