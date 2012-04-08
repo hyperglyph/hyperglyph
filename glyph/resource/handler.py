@@ -3,6 +3,7 @@ import types
 from werkzeug.wrappers import Response
 from werkzeug.exceptions import HTTPException, NotFound, BadRequest, NotImplemented, MethodNotAllowed
 from werkzeug.utils import redirect as Redirect
+from werkzeug.datastructures import ResponseCacheControl
 
 from ..data import CONTENT_TYPE, dump, parse, get, form, link, node, embed, ismethod, methodargs
 
@@ -15,15 +16,19 @@ class Handler(object):
     INLINE=False
     EXPIRES=False
     REDIRECT=None
+    CACHE=ResponseCacheControl()
+
     def __init__(self, handler=None):
         if handler:
             self.safe=handler.safe
             self.inline=handler.inline
             self.expires=handler.expires
+            self.cache=handler.cache
         else:
             self.safe=self.SAFE
             self.inline=self.INLINE
             self.redirect=self.REDIRECT
+            self.cache=self.CACHE
 
     @staticmethod
     def parse(resource, data):

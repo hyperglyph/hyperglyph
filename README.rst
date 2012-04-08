@@ -1,120 +1,152 @@
 glyph-rpc
 ---------
-it is like json-rpc with callbacks.
+glyph-rpc makes minature websites for your objects, so you can grow your api
+like you grow a website:
 
-glyph is a client and server library for getting an object from a server,
-and calling methods on it using the callbacks provided by the server.
-the server offers objects over http, where the url describes the resource 
-and its state, and GETing an object returns any contents & callbacks for methods
-
-glyph uses urls internally to track the state between requests, but
-the server is free to change the mapping without breaking the client.
-this allows glyph to provide duck-typing: clients do not care *what* 
-kind of object is returned, as long as it has the right named methods.
-
-as a result, glyph allows you to grow your api like you grow a website.
-
+- new methods and objects can be added without breaking clients
 - glyph services can redirect/link to other services on other hosts
-- new methods and resources can be added without breaking clients
 - glyph can take advantage of http tools like caches and load-balancers
 
-glyph tries to exploit http rather than simply tunnel requests over it.
+glyph-rpc tries to exploit http rather than simply tunnel requests over it.
 
-overview
---------
-
-* simple echo server code, running it
-* connecting with the client, calling a method
-* inspecting the contents of the reply
-
-* urls are object id's - used to create/find resources at server
-* callbacks are links and forms, 
-
-* how it works: router, mapper, resource
-    - router
-        attach resource classes to url prefixes
-        on request, finds resource and its mapper
-        uses the mapper to handle the request
-    - mappers
-        maps http <-> resource class
-        url query string is the resource state
-        make a resource to handle this request,
-        and dispatch to a method
-        adds callbacks to 
-    - resources
-        have an index() method that returns contents
-        are created per request - represent a handle
-        to some state at the server.
-
-* configuration server?
-
-serialization
--------------
-the serialization format is an extension of bencoding (from bittorrent). 
-it is not language specific, json-alike with a few more convieniences.
-
-historical reasons mandated the support of bytestrings & unicode data, 
-and existing formats (xml/json) required clumsy workarounds. it works
-but i'm not proud to reinvent another wheel.
-
-
-json like vocabulary
-    - unicode -> u<len bytes>:<utf-8 string>
-    - dict -> d<key><value><key><value>....e - sorted ascending by key
-    - list -> l<item><item><item><item>....e
-    - float -> f<len>:<float in hex - c99 hexadecimal literal format>
-    - int -> i<number as text>e
-    - true -> T
-    - false -> F
-    - none -> N
-additonal datatypes
-    - byte str -> s<len bytes>:<string>
-    - datetime -> D%Y-%m-%dT%H:%M:%S.%f
-xml like vocabulary
-    - node -> N<name item><attr item><children item>
-      an object with a name, attributes and children
-      attributes is nominally a dict.  children nominally list
-    - extension -> X<item><item><item>
-      like a node, but contains hyperlinks.
-
-todo: timezones, periods?
-todo: standard behaviour on duplicate keys
-
-expect some tweaks
-
-history
+example
 -------
-glyph evolved from trying to connect processes together, after some bad experiences
-with message queues exploding. http was known and loved throughout the company, 
-and yet another ad-hoc rpc system was born.  
 
-in the beginning, there was JSON and POST, and it mostly worked with the notable exception of UnicodeDecodeError.
-it didn't last very long. 8-bit data was a hard requirement, and so bencoding was used instead, with
-a small change to handle utf-8 data as well as bytes.
+The server:
+    import glyph
 
-we had a simple server stub that bound methods to urls and client code would call POST(url, {args}).
-and we passed a bunch of urls around to sub-processes in order for them to report things. 
-although we had not hard coded urls into the system, the api was still rigid. adding a new method
-required passing in yet another url, or crafting urls per-request with client side logic. 
+    r = glyph.Router() # a wsgi application
 
-instead of passing around urls and writing stubs to use them each time, we figured we could pass around links and forms,
-which would *know* how to call the api, and it would fetch these *from* the api server itself.
-the urls contain enough information to make the call on the server end and are opaque to the client.
+    @r.add()
+    def hello()
+        return "Hello World"
 
-we've needed to change the api numerous times since then. adding new methods doesn't break old clients.
-adding new state to the server doesn't break clients. using links and forms to interact with services is pleasant to
-use for the client, and flexible for the server.
+    s = glyph.Server(r)
+    s.start()
 
-of all the terrible code i've written, this worked out pretty well so far.
+The client:
+    import glyph
+
+    server = glyph.get('http://server/')
+
+    print server.hello()
+
+There is no stub for the client, just the library. 
+
+Adding a new function is simple:
+    @r.add()
+    def goodbye(name):
+        return "Goodbye " + name
+
+Or change the functions a little:
+    @r.add()
+    def hello(name="World"):
+        return "Hello "+name
+
+The client still works, without changes:
+    print server.hello()
+
+with very little changes to call new methods:
+    print server.hello('dave')
+    print server.goodbye('dave')
+
+functions can return lists, dicts, sets, byte strings, unicode,
+dates, booleans, ints & floats:
+    @r.add()
+    def woo():
+        return [1,True, None, False, "a",u"b"]
+
+functions can even return other functions that are mapped,
+through redirection:
+
+    @r.add()
+    @glyph.redirect()
+    def greeting(lang="en"):
+        if lang == "en":
+            return hello
+
+the client doesn't care: 
+    greet = client.greeting()
+
+    print greet()
+    
+
+glyph can map objects too:
+    @r.add()
+    @glyph.redirect()
+    def find_user(name):
+        user_id = database.find_user(name)
+        return User(user_id)
+
+    @r.add()
+    class User(glyph.Resource):
+        def __init__(self, id):
+            self.id = id
+
+        def message(self, subject, body):
+            database.send_message(self.id, subject, body)
+
+        def bio(self):
+            return database.get_bio(self.id)
+
+and the client can get a User and find details:
+    bob = server.find_user('bob')
+    bob.messsage('lol', 'feels good man')
+
+like before, new methods can be added without breaking old clients.
+unlike before, we can change object internals:
+
+    @r.add()
+    @glyph.redirect()
+    def find_user(name):
+        user_id, shard = database.find_user(name)
+        return User(user_id, shard)
+
+    @r.add()
+    class User(glyph.Resource):
+        def __init__(self, id, shard):
+            self.id = id
+            self.shard = shard
+
+        ...
+
+Even though the internals have changed, the names haven't, so the client
+works as ever:
+
+    bob = server.find_user('bob')
+    bob.messsage('lol', 'feels good man')
+
+underneath all this - glyph maps all of this to http:
+    # by default, a server returns an object with a bunch
+    # of methods that redirect to the mapped obejcts
+
+    server = glyph.get('http://server/')
+
+    # in this case, it will have an attribute 'find_user'
+    # find user is a special sort of object - a form
+    # it has a url, method and arguments attached.
 
 
-status
-------
+    # when we call server.find_user(...), it submits that form
+    # find_user redirects to a url for User(bob_id, cluster_id)
+    
+    bob = server.find_user('bob')
 
-notable omissions:
-    html/json/xml output
-    content type overriding
-    authentication handling
+    # each object is mapped to a url, which contains the internal state
+    # of the object - i.e /User/?id=bob_id&cluster=cluster_id
 
+    # similarly, methods are mapped to a url too 
+    # bob.message is a form pointing to /User/message?id=bo_id&cluster=cluster_id
+    
+    bob.messsage('lol', 'feels good man')
+
+
+although glyph maps urls to objects on the server side, these urls are
+opaque to the client - the server is free to change them to point to
+other objects, or to add new internal state without breaking the client.
+
+Client code doesn't need to know how to construct requests, or store all 
+of the state needed to make requests - the server tells it, rather than
+the programmer.
 
 

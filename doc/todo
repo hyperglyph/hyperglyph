@@ -134,6 +134,7 @@ todo code:
 
     options support ?
         def OPTIONS in mapper, options handling in Handler
+        although roy thinks it is is pretty useless.
 
     http compliance:
         set cache-control, expires, etags headers on get 
@@ -204,6 +205,9 @@ todo code:
                 or x-www-urlencoding/form encoding?
 
 to think?
+
+    uri templates
+
     mapper:
         transients
             - shouldn't post to create? form should use get?

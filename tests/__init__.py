@@ -3,7 +3,7 @@ import glyph
 
 
 
-class Test(unittest2.TestCase):
+class EncodingTest(unittest2.TestCase):
     def testCase(self):
         cases = [
             1,
