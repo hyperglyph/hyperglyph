@@ -1,18 +1,16 @@
 glyph-rpc
 ---------
-glyph-rpc makes minature websites for your objects, so you can grow your api
-like you grow a website:
+glyph-rpc is yet another http rpc library, but it tries to exploit http rather
+than simply tunnel requests over it. glyph builds webpages out of objects, for
+computers, and as a result::
 
+- there is no wsdl/code generation/url construction
 - new methods and objects can be added without breaking clients
 - glyph services can redirect/link to other services on other hosts
 - glyph can take advantage of http tools like caches and load-balancers
 
-glyph-rpc tries to exploit http rather than simply tunnel requests over it.
 
-example
--------
-
-The server:
+To show, rather than tell, let's begin with some server code::
     import glyph
 
     r = glyph.Router() # a wsgi application
@@ -21,57 +19,61 @@ The server:
     def hello()
         return "Hello World"
 
-    s = glyph.Server(r)
+    # and a http server running in a thread
+    s = glyph.Server(r) 
     s.start()
 
-The client:
-    import glyph
+    print s.url
+    s.join()
+
+And some client code::
+    import glyph 
 
     server = glyph.get('http://server/')
 
     print server.hello()
 
-There is no stub for the client, just the library. 
-
-Adding a new function is simple:
+Adding a new function is simple::
     @r.add()
     def goodbye(name):
         return "Goodbye " + name
 
-Or change the functions a little:
+And you can change the functions a little::
     @r.add()
     def hello(name="World"):
         return "Hello "+name
 
-The client still works, without changes:
+Amazingly, The old client still works, without changes::
     print server.hello()
 
-with very little changes to call new methods:
+To call new methods, you just call them::
     print server.hello('dave')
     print server.goodbye('dave')
 
-functions can return lists, dicts, sets, byte strings, unicode,
-dates, booleans, ints & floats:
+Functions can return lists, dicts, sets, byte strings, unicode,
+dates, booleans, ints & floats::
     @r.add()
     def woo():
         return [1,True, None, False, "a",u"b"]
 
-functions can even return other functions that are mapped,
-through redirection:
+Functions can even return other functions that are mapped,
+through redirection::
 
     @r.add()
     @glyph.redirect()
     def greeting(lang="en"):
         if lang == "en":
             return hello
+        elif lang = 'fr':
+            return salut
 
-the client doesn't care: 
+The client doesn't care::
     greet = client.greeting()
 
     print greet()
     
 
-glyph can map objects too:
+Glyph can map objects too::
     @r.add()
     @glyph.redirect()
     def find_user(name):
@@ -89,13 +91,12 @@ glyph can map objects too:
         def bio(self):
             return database.get_bio(self.id)
 
-and the client can get a User and find details:
+The client can get a User and find details::
     bob = server.find_user('bob')
     bob.messsage('lol', 'feels good man')
 
-like before, new methods can be added without breaking old clients.
-unlike before, we can change object internals:
-
+Like before, new methods can be added without breaking old clients.
+unlike before, we can change object internals::
     @r.add()
     @glyph.redirect()
     def find_user(name):
@@ -111,12 +112,11 @@ unlike before, we can change object internals:
         ...
 
 Even though the internals have changed, the names haven't, so the client
-works as ever:
-
+works as ever::
     bob = server.find_user('bob')
     bob.messsage('lol', 'feels good man')
 
-underneath all this - glyph maps all of this to http:
+Underneath all this - glyph maps all of this to http::
     # by default, a server returns an object with a bunch
     # of methods that redirect to the mapped obejcts
 
@@ -141,7 +141,7 @@ underneath all this - glyph maps all of this to http:
     bob.messsage('lol', 'feels good man')
 
 
-although glyph maps urls to objects on the server side, these urls are
+Although glyph maps urls to objects on the server side, these urls are
 opaque to the client - the server is free to change them to point to
 other objects, or to add new internal state without breaking the client.
 
