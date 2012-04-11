@@ -171,5 +171,12 @@ in the links & forms.
 internals
 ---------
 
-glyph on the server end has three major parts - a router, a handler, and
+glyph on the server end has four  major parts - a router, a mapper, a handler, and
 a resource.
+
+router - looks at url prefix, finds a resource class to use
+mapper - associated with a class, it creates an instance to use
+handler - given an instance, handles mapping the deserialization and serialization of the request
+resource - the bit that actually services the request
+
+
