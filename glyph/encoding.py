@@ -1,5 +1,5 @@
 from urlparse import urljoin
-from StringIO import StringIO
+from cStringIO import StringIO
 from datetime import datetime
 
 from pytz import utc
