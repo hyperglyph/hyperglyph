@@ -11,11 +11,11 @@ glyph is a serialization format roughly based around bencoding
 
 
     strings!:
-        unicode -> u <byte len> \x0a <utf-8 string>
-        byte str -> b <byte len> \x0a  <byte string>
+        utf-8 string -> u <byte len> \x0a <utf-8 string>
+        byte string -> b <byte len> \x0a  <byte string>
 
     numbers:
-        datetime -> d %Y-%m-%dT%H:%M:%S.%f \x0a
+        utc datetime -> d %Y-%m-%dT%H:%M:%S.%fZ \x0a
         num -> i <number> \x0a
         float -> f <float in hex> \x0a
 
@@ -32,6 +32,11 @@ glyph is a serialization format roughly based around bencoding
         false -> F
         none -> N
 
+
+    tolerates useless whitespace between tokens,
+    and in some cases between prefix and content 
+
+    i.e where it doesn't change semantics and can be safely ignored
 
     xml like vocabulary
         node -> X<name item><attr item><children item>
@@ -196,7 +201,7 @@ class Encoder(object):
         elif isinstance(obj, datetime):
             buf.write(DTM)
             obj = obj.astimezone(utc)
-            buf.write(obj.strftime("%Y-%m-%dT%H:%M:%S.%f"))
+            buf.write(obj.strftime("%Y-%m-%dT%H:%M:%S.%fZ"))
         else:
             raise StandardError('cant encode', obj)
 
@@ -273,7 +278,7 @@ class Encoder(object):
             return ext
         elif c == DTM:
             datestring = fh.read(26)
-            dtm = datetime.strptime(datestring, "%Y-%m-%dT%H:%M:%S.%f").replace(tzinfo=utc)
+            dtm = datetime.strptime(datestring, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=utc)
             return dtm
         elif c not in ('', ):
             raise StandardError('decoding err', c)
