@@ -12,7 +12,7 @@ glyph is a serialization format roughly based around bencoding
 
     strings!:
         unicode -> u <byte len> \x0a <utf-8 string>
-        byte str -> s <byte len> \x0a  <byte string>
+        byte str -> b <byte len> \x0a  <byte string>
 
     numbers:
         datetime -> d %Y-%m-%dT%H:%M:%S.%f \x0a
@@ -49,7 +49,7 @@ glyph is a serialization format roughly based around bencoding
 
 UNICODE_CHARSET="utf-8"
 
-STR='s'
+BSTR='b'
 UNI='u'
 END_ITEM='\x0a'
 
@@ -154,7 +154,7 @@ class Encoder(object):
             self._dump(content, buf, resolver)
         
         elif isinstance(obj, (str, buffer)):
-            buf.write(STR)
+            buf.write(BSTR)
             buf.write("%d"%len(obj))
             buf.write(END_ITEM)
             buf.write(obj)
@@ -208,7 +208,7 @@ class Encoder(object):
             return True
         elif c == FALSE:
             return False
-        if c == STR or c == UNI:
+        if c == BSTR or c == UNI:
             l = _read_until(fh, END_ITEM, parse=int)[0]
             buf= fh.read(l)
             if c == UNI:
