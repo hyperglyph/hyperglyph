@@ -57,6 +57,8 @@ with support for hypermedia types (links, forms).
     currently the following extensions are defined:
         link, form and embed.
 
+        all dictionary keys *should* be utf-8
+
         link:   
             name is "link"
             attr is a dict, containing the following keys:
@@ -85,6 +87,10 @@ with support for hypermedia types (links, forms).
         
 
     notes:
+        utf-8 vs bytestrings in dictionary keys/values
+        is a hard one.
+
+        i'm working on it
                 
 
     whitespace/newlines

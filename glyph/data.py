@@ -22,16 +22,13 @@ def form(url, method='POST',values=None):
         elif callable(url):
             values = funcargs(url)
 
-    return Extension.__make__('form', {'method':method, 'url':url}, values)
+    return Extension.__make__(u'form', {u'method':method, u'url':url}, values)
 
 def link(url, method='GET'):
-    return Extension.__make__('link', {'method':method, 'url':url}, None)
+    return Extension.__make__(u'link', {u'method':method, u'url':url}, None)
 
 def embed(url, content, method='GET'):
-    return Extension.__make__('embed', {'method':method, 'url':url}, content)
-
-def prop(url):
-    return Extension.__make__('property', {'url':url}, [])
+    return Extension.__make__(u'embed', {u'method':method, u'url':url}, content)
 
 
 # move to inspect ?
@@ -49,7 +46,7 @@ def funcargs(m):
 
 
 def get(url, args=None,headers=None):
-    if hasattr(url, 'url'):
+    if hasattr(url, u'url'):
         url = url.url()
     return  fetch('GET', url, args, None, headers)
 
@@ -171,7 +168,7 @@ class Extension(Node):
 @Extension.register('form')
 class Form(Extension):
     def __call__(self, *args, **kwargs):
-        url = self._attributes['url']
+        url = self._attributes[u'url']
         data = {}
         if self._content:
             names = self._content[:]
@@ -187,22 +184,22 @@ class Form(Extension):
             else:
                 raise StandardError('unknown argument')
 
-        return fetch(self._attributes.get('method','GET'),url, data=data)
+        return fetch(self._attributes.get(u'method','GET'),url, data=data)
 
     def resolve(self, resolver):
-        self._attributes['url'] = resolver(self._attributes['url'])
+        self._attributes[u'url'] = resolver(self._attributes[u'url'])
 
 @Extension.register('link')
 class Link(Extension):
     def __call__(self, *args, **kwargs):
-        url = self._attributes['url']
-        return fetch(self._attributes.get('method','GET'),url)
+        url = self._attributes[u'url']
+        return fetch(self._attributes.get(u'method','GET'),url)
 
     def url(self):
-        return self._attributes['url']
+        return self._attributes[u'url']
         
     def resolve(self, resolver):
-        self._attributes['url'] = resolver(self._attributes['url'])
+        self._attributes[u'url'] = resolver(self._attributes[u'url'])
 
 
 @Extension.register('embed')
@@ -211,10 +208,10 @@ class Embed(Extension):
         return self._content
 
     def url(self):
-        return self._attributes['url']
+        return self._attributes[u'url']
         
     def resolve(self, resolver):
-        self._attributes['url'] = resolver(self._attributes['url'])
+        self._attributes[u'url'] = resolver(self._attributes[u'url'])
 
 _encoder = Encoder(node=Node, extension=Extension)
 
