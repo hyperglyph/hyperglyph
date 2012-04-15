@@ -8,6 +8,7 @@ CONTENT_TYPE='application/vnd.glyph'
 
 """
 glyph is a serialization format roughly based around bencoding
+with support for hypermedia types (links, forms).
 
 
     strings!:
@@ -16,36 +17,89 @@ glyph is a serialization format roughly based around bencoding
 
     numbers:
         utc datetime -> d %Y-%m-%dT%H:%M:%S.%fZ \x0a
+            note: currently only UTC times supported,
+                  so all datetimes must end with Z
+
         num -> i <number> \x0a
+            arbitrary precision whole number
+
         float -> f <float in hex> \x0a
+            float or double - the hex format is from
+            c99 
+            
 
     collections:
-        dict -> D <key> <value> <key> <value>....E
-            no duplicates allowed, in asc sorted order by key
         list -> L <item> <item> <item> <item>....E
             
-        set  -> S <item> <item> <item> <item>....E
-            no duplicates, in asc sorted order
+        dict -> D <key> <value> <key> <value>....E
+            no duplicates allowed
 
-    additonal datatypes:
+        set  -> S <item> <item> <item> <item>....E
+            no duplicates
+
+
+    singleton datatypes:
         true -> T
         false -> F
         none -> N
 
-
-    tolerates useless whitespace between tokens,
-    and in some cases between prefix and content 
-
-    i.e where it doesn't change semantics and can be safely ignored
-
-    xml like vocabulary
+    xml like three item tuples (name, attributes, children)
         node -> X<name item><attr item><children item>
             an object with a name, attributes and children
                 attributes is nominally a dict.
                 children nominally list
             think html5 microdata like
+
+    hypermedia types/extensions: 
         ext -> Y<item><item><item>
             like a node, but contains url, method, possibly form values.
+
+    currently the following extensions are defined:
+        link, form and embed.
+
+        link:   
+            name is "link"
+            attr is a dict, containing the following keys:
+                url, method
+                
+            children is None
+
+        form:   
+            name is "form"
+            attr is a dict, containing the following keys:
+                url, method
+                
+            children is currently a list of names
+            for the form to submit
+
+            currently to submit a form, a dictionary is sent back
+
+        embed
+            name is "embed"
+            attr is a dict, containing the following keys:
+                url, method
+                
+            children is the object that would be returned
+            from fetching that link
+
+        
+
+    notes:
+                
+
+    whitespace/newlines
+        parser can ignore whitespace when it is safe to do so
+        parser can treat CRLF as LF
+
+
+    unordered collections:
+        for the unordered collections, it is recommended
+        to order them in some way, such that the serializing
+        is consistent within the library, i.e
+
+            dump(dict) equals dump(parse(dump(dict)))
+
+        but the ordering is ignored when reading.
 
     todo: timezones, periods?
 
