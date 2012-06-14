@@ -340,6 +340,7 @@ class PropertyAsInstanceValue(ServerTest):
     def testCase(self):
         root = glyph.get(self.endpoint.url)
         self.assertEqual(root.foo, 123)
+
 class Inline(ServerTest):
     def setUp(self):
         ServerTest.setUp(self)
@@ -352,7 +353,7 @@ class Inline(ServerTest):
 
         @m.add()
         def unit():
-            return Other(-1)
+            return pair
 
         @m.add()
         class Other(glyph.r):
@@ -363,11 +364,10 @@ class Inline(ServerTest):
     def testCase(self):
         index = glyph.get(self.endpoint.url)
 
-        a,b = index.pair()
+
+        a,b = index.unit()()
         self.assertEqual(a.v, 0)
         self.assertEqual(b.v, 1)
 
-        c = index.unit()
-        self.assertEqual(c.v, -1)
 if __name__ == '__main__':
     unittest2.main()
