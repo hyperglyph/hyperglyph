@@ -5,7 +5,7 @@ from werkzeug.exceptions import HTTPException, NotFound, BadRequest, NotImplemen
 from werkzeug.utils import redirect as Redirect
 from werkzeug.datastructures import ResponseCacheControl
 
-from ..data import CONTENT_TYPE, dump, parse, get, form, link, node, embed, ismethod, methodargs
+from ..data import CONTENT_TYPE, dump, parse, get, form, link, node, embedlink,  ismethod, methodargs
 
 VERBS = set(("GET", "POST", "PUT","DELETE","PATCH",))
 class Handler(object):   
@@ -13,7 +13,7 @@ class Handler(object):
         to determine how to handle requests
     """
     SAFE=False
-    INLINE=False
+    EMBED=False
     EXPIRES=False
     REDIRECT=None
     CACHE=ResponseCacheControl()
@@ -21,12 +21,12 @@ class Handler(object):
     def __init__(self, handler=None):
         if handler:
             self.safe=handler.safe
-            self.inline=handler.inline
+            self.embed=handler.embed
             self.expires=handler.expires
             self.cache=handler.cache
         else:
             self.safe=self.SAFE
-            self.inline=self.INLINE
+            self.embed=self.EMBED
             self.redirect=self.REDIRECT
             self.cache=self.CACHE
 
@@ -48,11 +48,11 @@ class Handler(object):
             return cls.SAFE
 
     @classmethod
-    def is_inline(cls, m):
+    def is_embed(cls, m):
         try:
-            return m.__glyph_method__.inline
+            return m.__glyph_method__.embed
         except StandardError:
-            return cls.INLINE
+            return cls.EMBED
 
     @classmethod
     def is_redirect(cls, m):
@@ -68,8 +68,8 @@ class Handler(object):
     @classmethod
     def make_link(cls, m):
         if cls.is_safe(m):
-            if cls.is_inline(m):
-                return embed(m,content=m())
+            if cls.is_embed(m):
+                return embedlink(m,content=m())
             else:
                 return link(m)
         else:
@@ -136,14 +136,14 @@ def redirect(code=303):
         return fn
     return _decorate
 
-def safe(inline=False):
+def safe(embed=False):
     def _decorate(fn):
         m = make_handler(fn)
         m.safe=True
-        m.inline=inline
+        m.embed=embed
         return fn
     return _decorate
 
-def inline():
-    return safe(inline=True)
+def embed():
+    return safe(embed=True)
 

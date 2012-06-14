@@ -80,6 +80,20 @@ done:
 
     simplified encoding rules/format
 
+    serializing
+        return foo
+            turns into a form/link for foo
+        return Task
+            turns into a form for Task
+        return Task()
+            turns into Task().GET()
+
+        return Task().bar
+            turns into a form
+
+    decided to keep redirect as an opt in
+        can use to redirect to urls
+
 remember:
     should handle http mapping by default, verbs, urls and content_type
     should be possible to use objects outside of mapper.
@@ -117,16 +131,6 @@ todo documentation:
 
 todo code:
 
-    serializing
-        return foo
-            turns into a form/link for foo
-        return Task
-            turns into a form for Task
-        return Task()
-            turns into Task().GET()
-
-        return Task().bar
-            turns into a form
 
     refactor:Handler.call()?
         clean up handler logic - should use a default handler or the one given.
@@ -158,62 +162,6 @@ todo code:
         missing header on 403: allow: on 403 ?
         OPTIONS/HEAD/PUT/DELETE handling ?
 
-    abandon home brew embrace html5+microdata 
-        - allows googling,
-        - import schemas ?
-        but.... typing of results ....?
-
-    javascript interface? browser interface thinking?
-        option a) xhtml + namespaces
-            works in lynx
-        option b) xml + xslt 
-            doesn't work in lynx
-        option c) static site + javascript rpc ?
-            doesn't work in lynx.
-        danger: cross site request forgery?
-
-        xhtml5 w microdata or xml w namespaces?
-
-    decorators chains:
-        rel attribute on methods? 
-        @glyph.handler(rel='....')
-        def foo()
-            ....
-
-        @glyph.cache(max_age=....)
-        resource last modified property ?
-
-
-    glyph json/xml/xhtml/xhtml5?
-        glyph.get/fetch supports other media types
-        beef out form type?  hidden inputs ? type arguments 
-        document media type:
-            should add/draft them
-                make a spec, get the vendor tag registered
-            rules for forms, embeds?
-        new data types: charset handling ? timezones? time periods ?
-
-        format changes ? 
-            [] {} U<len>: l<arbitrary>
-
-        application/vnd.glyph+json vnd.glyph+xml
-            map glyph types to xhtml/json
-                {'__glyph': embedded object } 
-            escape sequence:
-                {'__glyph__foo' : object } -> mapped to {'__glyphfoo'}
-                    so __glyph becomes __glyph__, __glyph__ becomes, ___glyph____
-            serializing! lxml!
-        xml:
-            resource type (like link,etc has a href, but is default page container)o
-            use data uri + octet-stream for str data, 
-
-            xhtml: use a glyph namespace to annotate links/objects
-                glyph:type"link"? 
-            or write an xml format and include xslt transformation
-                possibly better and simpler.
-                can also add script to reformat requests ? 
-                or x-www-urlencoding/form encoding?
-
     hypermedia factors?
         links/url templates
         i.e what should a form/get do etc
@@ -221,7 +169,7 @@ todo code:
 
 to think?
 
-    uri templates
+    uri templates for get args
 
     mapper:
         transients
@@ -293,5 +241,63 @@ to think?
     ruby, js - object style
     cgi/php: create foo.php for each resource, use links.
     0mq transport :v websocket upgrades to get a bi-di socket :v
-    routing: use werkzeug rules inside router
-        nope - does arg parsing
+
+
+alternate encoding thoughts:
+
+    abandon home brew embrace html5+microdata 
+        - allows googling,
+        - import schemas ?
+        but.... typing of results ....?
+
+    javascript interface? browser interface thinking?
+        option a) xhtml + namespaces
+            works in lynx
+        option b) xml + xslt 
+            doesn't work in lynx
+        option c) static site + javascript rpc ?
+            doesn't work in lynx.
+        danger: cross site request forgery?
+
+        xhtml5 w microdata or xml w namespaces?
+
+    decorators chains:
+        rel attribute on methods? 
+        @glyph.handler(rel='....')
+        def foo()
+            ....
+
+        @glyph.cache(max_age=....)
+        resource last modified property ?
+
+
+    glyph json/xml/xhtml/xhtml5?
+        glyph.get/fetch supports other media types
+        beef out form type?  hidden inputs ? type arguments 
+        document media type:
+            should add/draft them
+                make a spec, get the vendor tag registered
+            rules for forms, embeds?
+        new data types: charset handling ? timezones? time periods ?
+
+        format changes ? 
+            [] {} U<len>: l<arbitrary>
+
+        application/vnd.glyph+json vnd.glyph+xml
+            map glyph types to xhtml/json
+                {'__glyph': embedded object } 
+            escape sequence:
+                {'__glyph__foo' : object } -> mapped to {'__glyphfoo'}
+                    so __glyph becomes __glyph__, __glyph__ becomes, ___glyph____
+            serializing! lxml!
+        xml:
+            resource type (like link,etc has a href, but is default page container)o
+            use data uri + octet-stream for str data, 
+
+            xhtml: use a glyph namespace to annotate links/objects
+                glyph:type"link"? 
+            or write an xml format and include xslt transformation
+                possibly better and simpler.
+                can also add script to reformat requests ? 
+                or x-www-urlencoding/form encoding?
+

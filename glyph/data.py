@@ -27,7 +27,7 @@ def form(url, method=u'POST',values=None):
 def link(url, method='GET'):
     return Extension.__make__(u'link', {u'method':method, u'url':url}, None)
 
-def embed(url, content, method=u'GET'):
+def embedlink(url, content, method=u'GET'):
     return Extension.__make__(u'embed', {u'method':method, u'url':url}, content)
 
 

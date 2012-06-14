@@ -153,7 +153,7 @@ class LinkEmbedTest(ServerTest):
         class Test(glyph.r):
             def __init__(self, _value=0):
                 self._value = int(_value)
-            @glyph.inline()
+            @glyph.embed()
             def value(self):
                 return self._value
 
@@ -186,7 +186,7 @@ class FormObjectTest(ServerTest):
             def __init__(self, _value=0):
                 self._value = int(_value)
 
-            @glyph.inline()
+            @glyph.embed()
             def value(self):
                 return self._value
 
@@ -215,7 +215,7 @@ class PersistentObjectTest(ServerTest):
             def __init__(self, _value=0):
                 self._value = int(_value)
 
-            @glyph.inline()
+            @glyph.embed()
             def value(self):
                 return self._value
 
@@ -242,7 +242,7 @@ class DefaultPersistentObjectTest(ServerTest):
             def __init__(self, _value=0):
                 self._value = int(_value)
 
-            @glyph.inline()
+            @glyph.embed()
             def value(self):
                 return self._value
 

@@ -22,8 +22,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
 
-from .data import CONTENT_TYPE, dump, parse, get, node, form, link, utcnow
-from .resource.handler import safe, inline, redirect
+from .data import CONTENT_TYPE, dump, parse, get, node, form, link, utcnow, embedlink
+from .resource.handler import safe, embed, redirect
 from .resource.transient import TransientResource
 from .resource.persistent import PersistentResource
 from .resource.router import Router
@@ -31,8 +31,8 @@ from .server import  Server
 
 __all__ = [
     'CONTENT_TYPE','Server','redirect',
-    'get', 'Router','Resource','r', 'safe', 'inline', 'utcnow',
-    'parse','dump','node','form','link',
+    'get', 'Router','Resource','r', 'safe', 'embed', 'utcnow',
+    'parse','dump','node','form','link','embedlink',
     'TransientResource', 'PersistentResource',
 ]
 
