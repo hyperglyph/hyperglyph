@@ -78,11 +78,11 @@ class Router(object):
 
     def url(self, r):
         if isinstance(r, basestring):
-            return r
+            return unicode(r)
 
         mapper = self.resource_mapper(r)
         if mapper:
-            return mapper.url(r)
+            return unicode(mapper.url(r))
 
         raise LookupError('no url for',r )
 

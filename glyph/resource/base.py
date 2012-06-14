@@ -120,11 +120,11 @@ class ClassMapper(BaseMapper):
             can be a resource class, instance or method
         """
         if isinstance(r, self.res):
-            return "/%s/?%s"%(self.prefix, self.dump_query(self.get_repr(r)))
+            return u"/%s/?%s"%(self.prefix, self.dump_query(self.get_repr(r)))
         elif isinstance(r, type) and issubclass(r, self.res):
-                return '/%s'%self.prefix
+                return u'/%s'%self.prefix
         elif ismethod(r, self.res):
-                return "/%s/%s?%s"%(self.prefix, r.im_func.__name__, self.dump_query(self.get_repr(r.im_self)))
+                return u"/%s/%s?%s"%(self.prefix, r.im_func.__name__, self.dump_query(self.get_repr(r.im_self)))
         else:
             return BaseMapper.url(self, r)
 

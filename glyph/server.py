@@ -21,7 +21,7 @@ class Server(threading.Thread):
 
     @property
     def url(self):
-        return 'http%s://%s:%d/'%(('s' if self.server.ssl_context else ''), self.server.server_name, self.server.server_port)
+        return u'http%s://%s:%d/'%(('s' if self.server.ssl_context else ''), self.server.server_name, self.server.server_port)
 
     def run(self):
         self.server.serve_forever()
