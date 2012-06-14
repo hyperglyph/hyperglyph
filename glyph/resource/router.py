@@ -5,7 +5,7 @@ from werkzeug.wrappers import Request, Response
 from werkzeug.exceptions import HTTPException, NotFound, BadRequest, NotImplemented, MethodNotAllowed
 
 
-from .base import BaseMapper, BaseResource, get_mapper
+from .base import BaseResource, BaseMapper, get_mapper
 from .handler import Handler, safe
 from .transient import TransientResource
 from ..data import ismethod
@@ -33,7 +33,7 @@ class Router(object):
             if request.path == '/':
                 response = Redirect(self.url(self.default_resource), code=303)
             else:
-                response = self.find_mapper(request.path).handle(request, self)
+                response = self.url_mapper(request.path).handle(request, self)
 
         except (StopIteration, GeneratorExit, SystemExit, KeyboardInterrupt):
             raise
@@ -46,7 +46,7 @@ class Router(object):
         return response(environ, start_response)
 
 
-    def find_mapper(self, path):
+    def url_mapper(self, path):
         try:
             path= path[1:].split('/')
             return  self.routes[path[0]]
@@ -60,16 +60,29 @@ class Router(object):
         self.mappers[obj] = mapper
         return obj
 
+    def resource_mapper(self, r):
+        if isinstance(r, BaseResource):
+            return self.mappers[r.__class__]
+        elif ismethod(r, BaseResource):
+            return self.mappers[r.im_class]
+        elif r in self.mappers:
+            return self.mappers[r]
+
+    def inline(self, r):
+        m = self.resource_mapper(r)
+        if m:
+            return m.inline(r)
+
+        raise StandardError()
+        
 
     def url(self, r):
         if isinstance(r, basestring):
             return r
-        elif isinstance(r, BaseResource):
-            return self.mappers[r.__class__].url(r)
-        elif ismethod(r, BaseResource):
-            return self.mappers[r.im_class].url(r)
-        elif r in self.mappers:
-            return self.mappers[r].url(r)
+
+        mapper = self.resource_mapper(r)
+        if mapper:
+            return mapper.url(r)
 
         raise LookupError('no url for',r )
 

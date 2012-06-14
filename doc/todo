@@ -117,6 +117,16 @@ todo documentation:
 
 todo code:
 
+    serializing
+        return foo
+            turns into a form/link for foo
+        return Task
+            turns into a form for Task
+        return Task()
+            turns into Task().GET()
+
+        return Task().bar
+            turns into a form
 
     refactor:Handler.call()?
         clean up handler logic - should use a default handler or the one given.
@@ -203,6 +213,11 @@ todo code:
                 possibly better and simpler.
                 can also add script to reformat requests ? 
                 or x-www-urlencoding/form encoding?
+
+    hypermedia factors?
+        links/url templates
+        i.e what should a form/get do etc
+
 
 to think?
 

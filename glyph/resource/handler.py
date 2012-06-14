@@ -35,8 +35,8 @@ class Handler(object):
         return parse(data)
     
     @staticmethod
-    def dump(resource, data, resolver):
-        return CONTENT_TYPE, dump(data, resolver)
+    def dump(resource, data, resolver, inline):
+        return CONTENT_TYPE, dump(data, resolver,inline)
 
     @classmethod
     def is_safe(cls, m):
@@ -75,6 +75,7 @@ class Handler(object):
         else:
             return form(m)
 
+
     @classmethod
     def call(cls, attr, request, router):
         verb = request.method
@@ -101,8 +102,9 @@ class Handler(object):
                 else:
                     return Redirect(url, code=cls.redirect_code(attr))
 
-            content_type, result = cls.dump(attr, result, router.url)
+            content_type, result = cls.dump(attr, result, router.url, router.inline)
             return Response(result, content_type=content_type)
+
 
 def make_controls(resource):
     forms = {}

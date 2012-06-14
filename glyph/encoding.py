@@ -137,6 +137,10 @@ EXT='Y'
 
 
 identity = lambda x:x
+
+def fail():
+    raise StandardError()
+
 def _read_until(fh, term, parse=identity):
     if term == '\n':
         line = fh.readline()
@@ -183,9 +187,9 @@ class Encoder(object):
         self.node = node
         self.extension = extension
 
-    def dump(self, obj, resolver=identity):
+    def dump(self, obj, resolver=identity, inline=fail):
         buf = StringIO()
-        self._dump(obj, buf, resolver)
+        self._dump(obj, buf, resolver, inline)
         return buf.getvalue()
 
     def parse(self, s, resolver=identity):
@@ -193,7 +197,7 @@ class Encoder(object):
         return self.read(buf, resolver)
 
 
-    def _dump(self, obj, buf, resolver):
+    def _dump(self, obj, buf, resolver, inline):
         if obj is True:
             buf.write(TRUE)
 
@@ -207,16 +211,16 @@ class Encoder(object):
             buf.write(EXT)
             name, attributes, content = obj.__getstate__()
             obj.resolve(resolver)
-            self._dump(name, buf, resolver)
-            self._dump(attributes, buf, resolver)
-            self._dump(content, buf, resolver)
+            self._dump(name, buf, resolver, inline)
+            self._dump(attributes, buf, resolver, inline)
+            self._dump(content, buf, resolver, inline)
         
         elif isinstance(obj, (self.node,)):
             buf.write(NODE)
             name, attributes, content = obj.__getstate__()
-            self._dump(name, buf, resolver)
-            self._dump(attributes, buf, resolver)
-            self._dump(content, buf, resolver)
+            self._dump(name, buf, resolver, inline)
+            self._dump(attributes, buf, resolver, inline)
+            self._dump(content, buf, resolver, inline)
         
         elif isinstance(obj, (str, buffer)):
             buf.write(BSTR)
@@ -234,20 +238,20 @@ class Encoder(object):
         elif isinstance(obj, set):
             buf.write(SET)
             for x in sorted(obj):
-                self._dump(x, buf, resolver)
+                self._dump(x, buf, resolver, inline)
             buf.write(END_SET)
         elif hasattr(obj, 'iteritems'):
             buf.write(DICT)
             for k in sorted(obj.keys()): # always sorted, so can compare serialized
                 v=obj[k]
-                self._dump(k, buf, resolver)
-                self._dump(v, buf, resolver)
+                self._dump(k, buf, resolver, inline)
+                self._dump(v, buf, resolver, inline)
             buf.write(END_DICT)
 
         elif hasattr(obj, '__iter__'):
             buf.write(LIST)
             for x in obj:
-                self._dump(x, buf, resolver)
+                self._dump(x, buf, resolver, inline)
             buf.write(END_LIST)
         elif isinstance(obj, (int, long)):
             buf.write(NUM)
@@ -263,7 +267,7 @@ class Encoder(object):
             obj = obj.astimezone(utc)
             buf.write(obj.strftime("%Y-%m-%dT%H:%M:%S.%fZ"))
         else:
-            raise StandardError('cant encode', obj)
+            self._dump(inline(obj), buf, resolver, inline)
 
 
     def _read_one(self, fh, c, resolver):

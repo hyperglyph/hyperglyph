@@ -64,6 +64,9 @@ class BaseMapper(object):
     def handle(self,request, router):
         return Handler.call(self.res, request, router)
 
+    def inline(self,resource):
+        return Handler.make_link(resource)
+
     def url(self, r):
         """ return a url string that reflects this resource:
             can be a resource class, instance or method
@@ -99,11 +102,19 @@ class ClassMapper(BaseMapper):
 
         return Handler.call(attr, request, router)
 
+    def inline(self,resource):
+        if isinstance(resource, BaseResource):
+            return resource.GET()
+        else:
+            return Handler.make_link(resource)
+
+
     def default_method(self, verb):
         try:
             return getattr(self, verb)
         except:
             raise MethodNotAllowed()
+
     def url(self, r):
         """ return a url string that reflects this resource:
             can be a resource class, instance or method
