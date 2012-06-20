@@ -73,6 +73,14 @@ end
 
 # node, extension
 
+class Node
+
+end
+
+class Extension < Node
+
+end
+
 
 
 module Glyph
