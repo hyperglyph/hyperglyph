@@ -1,6 +1,7 @@
 require 'strscan'
 require 'set'
 require 'date'
+require 'stringio'
 
 class Integer
   def to_glyph
@@ -12,6 +13,13 @@ class String
   def to_glyph
     # assume in utf-8 wat
     "u#{self.length}\n#{self}"
+  end
+end
+
+class StringIO
+  def to_glyph
+    # assume  bytestrings what
+    "b#{self.string.length}\n#{self.string}"
   end
 end
 
@@ -63,11 +71,6 @@ class DateTime
   end
 end
 
-
-# bytestring b len \n <bytes>
-#   how to tell difference? maybe bytestrings are stringio?
-
-# float f <hex> \n
 # node, extension
 
 
@@ -107,6 +110,11 @@ module Glyph
       str = scanner.peek(num)
       scanner.pos+=num
       str
+    when ?b
+      num = scanner.scan_until(/\n/).chop.to_i
+      str = scanner.peek(num)
+      scanner.pos+=num
+      StringIO.new(str)
     when ?D
       dict = {}
       until scanner.scan(/E/)
@@ -134,6 +142,9 @@ module Glyph
     end
   end
 
+
+  # i am a terrible programmer and I should be ashamed.
+  #
   def self.from_hexfloat(s)
     # todo , nan, inf
     r = /(-?)0x([0-9a-fA-F]+)p(-?[0-9a-fA-F]+)/
@@ -198,4 +209,8 @@ p Glyph.load([1,"2",true, false, nil, {"a" => 1}, s].to_glyph)
 
 p Glyph.load(DateTime.now.to_glyph)
 p Glyph.load((1.5).to_glyph)
+s = StringIO.new
+s.write("butts")
+p Glyph.load(s.to_glyph).string
+
 
