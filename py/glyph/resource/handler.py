@@ -113,6 +113,7 @@ def make_controls(resource):
             cls_attr = getattr(resource.__class__ ,m)
             ins_attr = getattr(resource,m)
 
+            m = unicode(m)
 
             if isinstance(cls_attr, property):
                 # just inline the property

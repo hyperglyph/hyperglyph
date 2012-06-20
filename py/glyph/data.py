@@ -11,7 +11,7 @@ def utcnow():
 
 
 def node(name, attributes, children=None):
-    return Node(name, attributes, children)
+    return Node(unicode(name), attributes, children)
 
 def form(url, method=u'POST',values=None):
     if values is None:
@@ -21,6 +21,8 @@ def form(url, method=u'POST',values=None):
             values = methodargs(url.__init__)
         elif callable(url):
             values = funcargs(url)
+
+    values = [unicode(v) for v in values]
 
     return Extension.__make__(u'form', {u'method':method, u'url':url}, values)
 

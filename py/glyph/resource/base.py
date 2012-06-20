@@ -24,10 +24,10 @@ class BaseResource(object):
         page = dict()
         page.update(make_controls(self))
         page.update(self.index())
-        return node(self.__class__.__name__, attributes=page)
+        return node(unicode(self.__class__.__name__), attributes=page)
 
     def index(self):
-        return dict((k,v) for k,v in self.__dict__.items() if not k.startswith('_'))
+        return dict((unicode(k),v) for k,v in self.__dict__.items() if not k.startswith('_'))
 
 def get_mapper(obj, name):
     """ return the mapper for this object, with a given name"""
@@ -98,6 +98,8 @@ class ClassMapper(BaseMapper):
                 attr = self.default_method(verb)
 
         except StandardError:
+            import traceback
+            traceback.print_exc()
             raise BadRequest()
 
         return Handler.call(attr, request, router)

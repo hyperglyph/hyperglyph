@@ -16,7 +16,7 @@ from ..data import ismethod
 def make_default(router):
     class __default__(TransientResource):
         def index(self):
-            return dict((r.__name__, Handler.make_link(r)) for r in router.mappers if r is not self.__class__) 
+            return dict((unicode(r.__name__), Handler.make_link(r)) for r in router.mappers if r is not self.__class__) 
     return __default__
 class Router(object):
     def __init__(self):
@@ -38,6 +38,8 @@ class Router(object):
         except (StopIteration, GeneratorExit, SystemExit, KeyboardInterrupt):
             raise
         except HTTPException as r:
+            import traceback;
+            traceback.print_exc()
             response = r
         except Exception as e:
             import traceback;

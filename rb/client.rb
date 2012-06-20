@@ -1,10 +1,18 @@
 require "glyph"
 s = Glyph.open(ARGV[0])
-print "out "
+puts "out "
 p s
 
-q= s.queue('butt')
-p q
+puts ''
 
+puts 'fetching queue'
+q= s.queue('butt')
+puts 'got queue'
+p q
+puts ''
+
+puts 'pushing'
 q.push('butts')
+
+
 p q.pop()

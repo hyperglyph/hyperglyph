@@ -18,7 +18,8 @@ end
 class String
   def to_glyph
     # assume in utf-8 wat
-    "u#{self.length}\n#{self}"
+    u = self.encode('utf-8')
+    "u#{u.bytesize}\n#{u}"
   end
 end
 
@@ -78,31 +79,97 @@ class DateTime
 end
 
 # node, extension
+class Node
+  def initialize(name, attrs, children)
+    @name = name
+    @attrs = attrs
+    @children = children
+  end
+  def to_glyph
+    "X#{@name.to_glyph}#{@attrs.to_glyph}#{@children.to_glyph}"
+  end
+  def method_missing(method, *args, &block)
+      attr= @attrs[method.to_s]
+      p @attrs['queue']
+      if attr and attr.respond_to?(:call)
+        puts 'call', method, args, attr
+        return attr.call(*args, &block)
+      else  
+        puts 'none'
+        return attr
+      end
+  end
 
+  def [](item)
+    return @children[item]
+  end
+end
 
+class Extension < Node
+  def self.make(name, attrs, children)
+    return case name
+      when "form"
+        return Form.new(name, attrs, children)
+      when "link"
+        return Link.new(name, attrs, children)
+      when "embed"
+        return Embed.new(name, attrs, children)
+      else
+        return Extension.new(name,attrs, children)
+    end
+  end
+
+  def resolve url
+    @attrs['url']=URI.join(url,@attrs['url']).to_s
+  end
+
+  def to_glyph
+    "H#{@name.to_glyph}#{@attrs.to_glyph}#{@children.to_glyph}"
+  end
+end
+
+class Form < Extension
+  def call(*args, &block)
+    args = Hash[@children.zip(args)]
+    puts 'butts', args
+    ret = Glyph.fetch(@attrs['method'], @attrs['url'], args)
+    if block
+      block.call(ret)
+    else
+      ret
+    end
+  end
+end
+
+class Link < Extension
+  def call(*args, &block)
+    ret = Glyph.fetch(@attrs['method'], @attrs['url'], nil)
+    if block
+      block.call(ret)
+    else
+      ret
+    end
+  end
+end
+  
+class Embed < Extension
+  def call(*args, &block)
+    if block
+      block.call(@children)
+    else
+      @children
+    end
+  end
+end
 
 module Glyph
   CONTENT_TYPE = "application/vnd.glyph"
 
+  class FetchError < StandardError
+  end
   class DecodeError < StandardError
   end
 
-  class Node
-    def initialize(name, attrs, children)
-      @name = name
-      @attrs = attrs
-      @children = children
-    end
-    def to_glyph
-      "X#{@name.to_glyph}#{@attrs.to_glyph}#{@children.to_glyph}"
-    end
-  end
-
-  class Extension < Node
-    def to_glyph
-      "H#{@name.to_glyph}#{@attrs.to_glyph}#{@children.to_glyph}"
-    end
-  end
 
   def self.open(url) 
     fetch("GET", url, nil)
@@ -116,7 +183,7 @@ module Glyph
       when "get"
          Net::HTTP::Get.new(uri.path)
       else
-        raise Glyph::FetchException, 'baws'
+        raise Glyph::FetchError, 'baws'
     end
     if method.downcase == "post"
       req.body = dump(data)
@@ -132,13 +199,14 @@ module Glyph
 
       case res
         when Net::HTTPSuccess
-          return Glyph.load(res.body)
+          scanner = StringScanner.new(res.body)
+          return Glyph.parse(scanner, uri.to_s)
         when Net::HTTPRedirection
           p res['location']
           uri = URI.join(uri.to_s, res['location'])
           req = Net::HTTP::Get.new(uri.path)
         else
-          raise Glyph::FetchException, 'baws'
+          raise Glyph::FetchError, res
       end
     end
   end
@@ -149,10 +217,10 @@ module Glyph
   
   def self.load(str)
     scanner = StringScanner.new(str)
-    return parse(scanner)
+    return parse(scanner, "")
   end
 
-  def self.parse(scanner)
+  def self.parse(scanner, url)
     return case scanner.scan(/\w/)[-1]
     when ?T
       true
@@ -183,8 +251,8 @@ module Glyph
       dict = {}
       until scanner.scan(/E/)
 
-        key = parse(scanner)
-        val = parse(scanner)
+        key = parse(scanner, url)
+        val = parse(scanner, url)
         dict[key]=val
       end
       dict
@@ -192,26 +260,27 @@ module Glyph
     when ?L
       lst = []
       until scanner.scan(/E/)
-        lst.push(parse(scanner))
+        lst.push(parse(scanner, url))
       end
       lst
     when ?S
       lst = Set.new
       until scanner.scan(/E/)
-        lst.add(parse(scanner))
+        lst.add(parse(scanner, url))
       end
       lst
     when ?X
-      name = parse(scanner)
-      attrs = parse(scanner)
-      children = parse(scanner)
+      name = parse(scanner, url)
+      attrs = parse(scanner, url)
+      children = parse(scanner, url)
       n = Node.new(name, attrs, children)
       n
     when ?H
-      name = parse(scanner)
-      attrs = parse(scanner)
-      children = parse(scanner)
-      e = Extension.new(name, attrs, children)
+      name = parse(scanner, url)
+      attrs = parse(scanner, url)
+      children = parse(scanner, url)
+      e = Extension.make(name, attrs, children)
+      e.resolve(url)
       e
     else
       raise Glyph::DecodeError, "baws"

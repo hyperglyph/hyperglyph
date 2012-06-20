@@ -8,15 +8,10 @@ def server():
     m = glyph.Router()
 
     # these are created on each request
-    @m.default()
-    class Broker(glyph.r):
-        @glyph.redirect()
-        def queue(self, name):
-            Queue(name)
 
     # the url parameters are used to construct them
     @m.add()
-    class Queue(glyph.r):
+    class queue(glyph.r):
         def __init__(self, name):
             self.name = name
         def push(self, msg):
@@ -28,7 +23,7 @@ def server():
             if self.name in queues:
                 return queues[self.name].popleft()
 
-    s = glyph.Server(m)
+    s = glyph.Server(m, port=12344)
     s.start()
     print s.url
     try:
