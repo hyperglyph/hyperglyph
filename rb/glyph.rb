@@ -121,9 +121,9 @@ module Glyph
       end
 
       case res
-        when Net::HTTPSuccess:
+        when Net::HTTPSuccess
           return Glyph.parse(res.body)
-        when Net::HTTPRedirection:
+        when Net::HTTPRedirection
           uri = URI.join(uri, res['location'])
           req = Net::HTTP::Get.new(uri.path)
         else
