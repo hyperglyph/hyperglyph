@@ -51,7 +51,7 @@ with support for hypermedia types (links, forms).
             think html5 microdata like
 
     hypermedia types/extensions: 
-        ext -> Y<item><item><item>
+        ext -> H<item><item><item>
             like a node, but contains url, method, possibly form values.
 
     currently the following extensions are defined:
@@ -132,7 +132,7 @@ FALSE='F'
 NONE='N'
 
 NODE='X'
-EXT='Y'
+EXT='H'
 
 
 

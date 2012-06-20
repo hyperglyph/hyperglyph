@@ -115,8 +115,10 @@ def make_controls(resource):
 
 
             if isinstance(cls_attr, property):
+                # just inline the property
                 forms[m] = ins_attr
             elif callable(cls_attr):
+                # but if it is a method or similar, make a link/form
                 if hasattr(ins_attr, 'func_code'):
                     forms[m] = Handler.make_link(ins_attr)
 

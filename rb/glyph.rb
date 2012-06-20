@@ -2,6 +2,8 @@ require 'strscan'
 require 'set'
 require 'date'
 require 'stringio'
+require 'net/http'
+require 'uri'
 
 class Integer
   def to_glyph
@@ -74,17 +76,60 @@ end
 # node, extension
 
 class Node
-
+  def initialize(name, attrs, children)
+    @name = name
+    @attrs = attrs
+    @children = children
+  end
+  def to_glyph
+    "X#{@name.to_glyph}#{@attrs.to_glyph}#{@children.to_glyph}"
+  end
 end
 
 class Extension < Node
-
+  def to_glyph
+    "H#{@name.to_glyph}#{@attrs.to_glyph}#{@children.to_glyph}"
+  end
 end
 
 
 
 module Glyph
+  CONTENT_TYPE = "application/vnd.glyph"
+
   class DecodeError < StandardError
+  end
+
+  def self.fetch(method, url, data)
+    uri = URI(url)
+    req = case method.downcase
+      when "post"
+         Net::HTTP::Post.new(uri.path)
+      when "get"
+         Net::HTTP::Get.new(uri.path)
+      else
+        raise Glyph::FetchException, 'baws'
+    end
+    if method.downcase == "post"
+      req.body = dump(data)
+      req.content_type = CONTENT_TYPE
+    end
+
+    while true 
+      res = Net::HTTP.start(uri.hostname, uri.port) do |s|
+        s.request(req)
+      end
+
+      case res
+        when Net::HTTPSuccess:
+          return Glyph.parse(res.body)
+        when Net::HTTPRedirection:
+          uri = URI.join(uri, res['location'])
+          req = Net::HTTP::Get.new(uri.path)
+        else
+          raise Glyph::FetchException, 'baws'
+      end
+    end
   end
 
   def self.dump(o)
@@ -145,6 +190,16 @@ module Glyph
         lst.add(parse(scanner))
       end
       lst
+    when ?X
+      name = parse(scanner)
+      attrs = parse(scanner)
+      children = parse(scanner)
+      Node(name, attrs, children)
+    when ?H
+      name = parse(scanner)
+      attrs = parse(scanner)
+      children = parse(scanner)
+      Extension(name, attrs, children)
     else
       raise Glyph::DecodeError, "baws"
     end
