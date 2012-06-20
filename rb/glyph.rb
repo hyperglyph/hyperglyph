@@ -5,6 +5,10 @@ require 'stringio'
 require 'net/http'
 require 'uri'
 
+# ruby1.9 or death!
+
+# this feels wrong and dirty.
+
 class Integer
   def to_glyph
     "i#{self}\n"
@@ -75,29 +79,33 @@ end
 
 # node, extension
 
-class Node
-  def initialize(name, attrs, children)
-    @name = name
-    @attrs = attrs
-    @children = children
-  end
-  def to_glyph
-    "X#{@name.to_glyph}#{@attrs.to_glyph}#{@children.to_glyph}"
-  end
-end
-
-class Extension < Node
-  def to_glyph
-    "H#{@name.to_glyph}#{@attrs.to_glyph}#{@children.to_glyph}"
-  end
-end
-
 
 
 module Glyph
   CONTENT_TYPE = "application/vnd.glyph"
 
   class DecodeError < StandardError
+  end
+
+  class Node
+    def initialize(name, attrs, children)
+      @name = name
+      @attrs = attrs
+      @children = children
+    end
+    def to_glyph
+      "X#{@name.to_glyph}#{@attrs.to_glyph}#{@children.to_glyph}"
+    end
+  end
+
+  class Extension < Node
+    def to_glyph
+      "H#{@name.to_glyph}#{@attrs.to_glyph}#{@children.to_glyph}"
+    end
+  end
+
+  def self.open(url) 
+    fetch("GET", url, nil)
   end
 
   def self.fetch(method, url, data)
@@ -116,15 +124,18 @@ module Glyph
     end
 
     while true 
-      res = Net::HTTP.start(uri.hostname, uri.port) do |s|
+      print 'fetch '
+      p uri
+      res = Net::HTTP.start(uri.host, uri.port) do |s|
         s.request(req)
       end
 
       case res
         when Net::HTTPSuccess
-          return Glyph.parse(res.body)
+          return Glyph.load(res.body)
         when Net::HTTPRedirection
-          uri = URI.join(uri, res['location'])
+          p res['location']
+          uri = URI.join(uri.to_s, res['location'])
           req = Net::HTTP::Get.new(uri.path)
         else
           raise Glyph::FetchException, 'baws'
@@ -194,12 +205,14 @@ module Glyph
       name = parse(scanner)
       attrs = parse(scanner)
       children = parse(scanner)
-      Node(name, attrs, children)
+      n = Node.new(name, attrs, children)
+      n
     when ?H
       name = parse(scanner)
       attrs = parse(scanner)
       children = parse(scanner)
-      Extension(name, attrs, children)
+      e = Extension.new(name, attrs, children)
+      e
     else
       raise Glyph::DecodeError, "baws"
     end
@@ -210,6 +223,7 @@ module Glyph
   #
   def self.from_hexfloat(s)
     # todo , nan, inf
+    p s
     r = /(-?)0x([0-9a-fA-F]+)p(-?[0-9a-fA-F]+)/
     m = r.match s
 
@@ -219,12 +233,12 @@ module Glyph
 
     sign =  sign == "-" ? 128 :0
     exponent = (exponent+1023) <<4
-    exponent = [exponent].pack('n')
+    exponent = [exponent].pack('n').bytes.to_a
 
     mantissa_t = mantissa >> 32;
     mantissa_b = mantissa & (2**32-1)
 
-    mantissa = [mantissa_t, mantissa_b].pack('NN')
+    mantissa = [mantissa_t, mantissa_b].pack('NN').bytes.to_a
 
     bits = [
       sign | exponent[0],
@@ -240,9 +254,9 @@ module Glyph
 
   def self.to_hexfloat(f)
       # todo nan, inf handling?
-      bits = [f].pack("G")
-      sign = -1*(bits[0]&128).to_i 
-      sign = 1 if sign > -1 
+      bits = [f].pack("G").bytes.to_a
+      sign = (bits[0]&128).to_i 
+      sign = sign == 128? "-" : ""  
       exponent = ((bits[0]&127)<<4) + ((bits[1]&240)>>4) - 1023
       mantissa = 1
       mantissa += (bits[1]&15)<<48
@@ -252,28 +266,31 @@ module Glyph
       mantissa += (bits[5]<<16) 
       mantissa += (bits[6]<<8)
       mantissa += bits[7]
-      return "0x#{(sign*mantissa).to_s(16)}p#{exponent.to_s(16)}"
+      return "#{sign}0x#{mantissa.to_s(16)}p#{exponent.to_s(16)}"
   end
 
 end
 
-p "abc".to_glyph
-p 123.to_glyph
-p [1,2,3].to_glyph
 
-p "\n"; 
+def test()
+  p "abc".to_glyph
+  p 123.to_glyph
+  p [1,2,3].to_glyph
 
-p Glyph.load("abc".to_glyph)
-p Glyph.load(123.to_glyph)
-p Glyph.load([1,2,3].to_glyph)
-s=Set.new
-s.add("1")
-p Glyph.load([1,"2",true, false, nil, {"a" => 1}, s].to_glyph)
+  p "\n"; 
 
-p Glyph.load(DateTime.now.to_glyph)
-p Glyph.load((1.5).to_glyph)
-s = StringIO.new
-s.write("butts")
-p Glyph.load(s.to_glyph).string
+  p Glyph.load("abc".to_glyph)
+  p Glyph.load(123.to_glyph)
+  p Glyph.load([1,2,3].to_glyph)
+  s=Set.new
+  s.add("1")
+  p Glyph.load([1,"2",true, false, nil, {"a" => 1}, s].to_glyph)
+
+  p Glyph.load(DateTime.now.to_glyph)
+  p Glyph.load((1.5).to_glyph)
+  s = StringIO.new
+  s.write("butts")
+  p Glyph.load(s.to_glyph).string
 
 
+end
