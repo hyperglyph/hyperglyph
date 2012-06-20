@@ -1,5 +1,6 @@
 require 'strscan'
 require 'set'
+require 'date'
 
 class Integer
   def to_glyph
@@ -56,16 +57,20 @@ class NilClass
   end
 end
 
+class DateTime
+  def to_glyph
+    "d#{strftime("%FT%TZ")}\n"
+  end
+end
+
 
 # bytestring b len \n <bytes>
-# how to tell difference? maybe bytestrings are stringio
-# float f <hex> \n
+#   how to tell difference? maybe bytestrings are stringio?
 
-# set S..E
+# float f <hex> \n
 
 # datetime d <utc>Z \n
 
-# true, false, none
 
 # node, extension
 
@@ -95,6 +100,9 @@ module Glyph
     when ?i
       num = scanner.scan_until(/\n/)
       num.chop.to_i
+    when ?d
+      dt = scanner.scan_until(/\n/)
+      DateTime.parse(dt)
     when ?f
       raise Glyph::DecodeError, 'baws'
     when ?u
@@ -143,4 +151,6 @@ p Glyph.load([1,2,3].to_glyph)
 s=Set.new
 s.add("1")
 p Glyph.load([1,"2",true, false, nil, {"a" => 1}, s].to_glyph)
+
+p Glyph.load(DateTime.now.to_glyph)
 
