@@ -4,6 +4,10 @@ import glob
 
 from setuptools import setup
 
+import os.path, os
+
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 setup(name='glyph-rpc',
       version='0.1-20120614',
       license="MIT License",
