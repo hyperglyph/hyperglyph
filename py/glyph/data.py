@@ -22,7 +22,8 @@ def form(url, method=u'POST',values=None):
         elif callable(url):
             values = funcargs(url)
 
-    values = [unicode(v) for v in values]
+    if values is not None:
+        values = [unicode(v) for v in values]
 
     return Extension.__make__(u'form', {u'method':method, u'url':url}, values)
 
