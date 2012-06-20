@@ -90,12 +90,9 @@ class Node
   end
   def method_missing(method, *args, &block)
       attr= @attrs[method.to_s]
-      p @attrs['queue']
       if attr and attr.respond_to?(:call)
-        puts 'call', method, args, attr
         return attr.call(*args, &block)
       else  
-        puts 'none'
         return attr
       end
   end
@@ -130,8 +127,7 @@ end
 
 class Form < Extension
   def call(*args, &block)
-    args = Hash[@children.zip(args)]
-    puts 'butts', args
+    args = @children? Hash[@children.zip(args)] : {}
     ret = Glyph.fetch(@attrs['method'], @attrs['url'], args)
     if block
       block.call(ret)
@@ -179,9 +175,11 @@ module Glyph
     uri = URI(url)
     req = case method.downcase
       when "post"
-         Net::HTTP::Post.new(uri.path)
+        path = (uri.query) ? "#{uri.path}?#{uri.query}" : uri.path
+        Net::HTTP::Post.new(path)
       when "get"
-         Net::HTTP::Get.new(uri.path)
+        path = (uri.query) ? "#{uri.path}?#{uri.query}" : uri.path
+        Net::HTTP::Get.new(path)
       else
         raise Glyph::FetchError, 'baws'
     end
@@ -191,20 +189,20 @@ module Glyph
     end
 
     while true 
-      print 'fetch '
-      p uri
       res = Net::HTTP.start(uri.host, uri.port) do |s|
         s.request(req)
       end
 
       case res
+        when Net::HTTPNoContent
+          return nil
         when Net::HTTPSuccess
           scanner = StringScanner.new(res.body)
           return Glyph.parse(scanner, uri.to_s)
         when Net::HTTPRedirection
-          p res['location']
           uri = URI.join(uri.to_s, res['location'])
-          req = Net::HTTP::Get.new(uri.path)
+          path = (uri.query) ? "#{uri.path}?#{uri.query}" : uri.path
+          req = Net::HTTP::Get.new(path)
         else
           raise Glyph::FetchError, res
       end
@@ -292,7 +290,6 @@ module Glyph
   #
   def self.from_hexfloat(s)
     # todo , nan, inf
-    p s
     r = /(-?)0x([0-9a-fA-F]+)p(-?[0-9a-fA-F]+)/
     m = r.match s
 
