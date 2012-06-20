@@ -17,7 +17,7 @@ end
 
 class Float
   def to_glyph
-    raise Glyph::EncodeError 'baws'
+    "f#{Glyph.to_hexfloat(self)}\n"
   end
 end
 
@@ -68,10 +68,6 @@ end
 #   how to tell difference? maybe bytestrings are stringio?
 
 # float f <hex> \n
-
-# datetime d <utc>Z \n
-
-
 # node, extension
 
 
@@ -104,7 +100,8 @@ module Glyph
       dt = scanner.scan_until(/\n/)
       DateTime.parse(dt)
     when ?f
-      raise Glyph::DecodeError, 'baws'
+      num = scanner.scan_until(/\n/)
+      Glyph.from_hexfloat(num.chop)
     when ?u
       num = scanner.scan_until(/\n/).chop.to_i
       str = scanner.peek(num)
@@ -135,8 +132,55 @@ module Glyph
     else
       raise Glyph::DecodeError, "baws"
     end
-
   end
+
+  def self.from_hexfloat(s)
+    # todo , nan, inf
+    r = /(-?)0x([0-9a-fA-F]+)p(-?[0-9a-fA-F]+)/
+    m = r.match s
+
+    sign = m[1]
+    mantissa = m[2].to_i(16)
+    exponent = m[3].to_i(16)
+
+    sign =  sign == "-" ? 128 :0
+    exponent = (exponent+1023) <<4
+    exponent = [exponent].pack('n')
+
+    mantissa_t = mantissa >> 32;
+    mantissa_b = mantissa & (2**32-1)
+
+    mantissa = [mantissa_t, mantissa_b].pack('NN')
+
+    bits = [
+      sign | exponent[0],
+      exponent[1] | mantissa[1],
+      mantissa[2],
+      mantissa[3],
+      mantissa[4],
+      mantissa[5],
+      mantissa[6],
+      mantissa[7],
+    ].map {|x| x.chr}.join.unpack('G')[0]
+  end
+
+  def self.to_hexfloat(f)
+      # todo nan, inf handling?
+      bits = [f].pack("G")
+      sign = -1*(bits[0]&128).to_i 
+      sign = 1 if sign > -1 
+      exponent = ((bits[0]&127)<<4) + ((bits[1]&240)>>4) - 1023
+      mantissa = 1
+      mantissa += (bits[1]&15)<<48
+      mantissa += (bits[2]<<40)
+      mantissa += (bits[3]<<32)
+      mantissa += (bits[4]<<24) 
+      mantissa += (bits[5]<<16) 
+      mantissa += (bits[6]<<8)
+      mantissa += bits[7]
+      return "0x#{(sign*mantissa).to_s(16)}p#{exponent.to_s(16)}"
+  end
+
 end
 
 p "abc".to_glyph
@@ -153,4 +197,5 @@ s.add("1")
 p Glyph.load([1,"2",true, false, nil, {"a" => 1}, s].to_glyph)
 
 p Glyph.load(DateTime.now.to_glyph)
+p Glyph.load((1.5).to_glyph)
 
