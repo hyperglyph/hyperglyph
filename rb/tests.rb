@@ -1,4 +1,4 @@
-require "glyph"
+require "glyph.rb"
 require "date"
 require "stringio"
 require "test/unit"
