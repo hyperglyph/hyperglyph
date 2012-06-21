@@ -4,5 +4,5 @@ python_test: py/
 	python py/setup.py test
 
 ruby_test: rb/
-	cd rb && ruby1.9 tests.rb
+	cd rb && ruby tests.rb
 
