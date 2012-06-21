@@ -266,6 +266,7 @@ class Encoder(object):
             buf.write(DTM)
             obj = obj.astimezone(utc)
             buf.write(obj.strftime("%Y-%m-%dT%H:%M:%S.%fZ"))
+            buf.write(END_ITEM)
         else:
             self._dump(inline(obj), buf, resolver, inline)
 
@@ -341,8 +342,8 @@ class Encoder(object):
             ext.resolve(resolver)
             return ext
         elif c == DTM:
-            datestring = fh.read(26)
-            dtm = datetime.strptime(datestring, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=utc)
+            datestring =  _read_until(fh, END_ITEM)[0]
+            dtm = datetime.strptime(datestring[:-1], "%Y-%m-%dT%H:%M:%S.%f").replace(tzinfo=utc)
             return dtm
         elif c not in ('', ):
             raise StandardError('decoding err', c)

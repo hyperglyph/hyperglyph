@@ -300,6 +300,7 @@ module Glyph
     sign =  sign == "-" ? 128 :0
     exponent = (exponent+1023) <<4
     exponent = [exponent].pack('n').bytes.to_a
+    mantissa -=1
 
     mantissa_t = mantissa >> 32;
     mantissa_b = mantissa & (2**32-1)
@@ -338,25 +339,3 @@ module Glyph
 end
 
 
-def test()
-  p "abc".to_glyph
-  p 123.to_glyph
-  p [1,2,3].to_glyph
-
-  p "\n"; 
-
-  p Glyph.load("abc".to_glyph)
-  p Glyph.load(123.to_glyph)
-  p Glyph.load([1,2,3].to_glyph)
-  s=Set.new
-  s.add("1")
-  p Glyph.load([1,"2",true, false, nil, {"a" => 1}, s].to_glyph)
-
-  p Glyph.load(DateTime.now.to_glyph)
-  p Glyph.load((1.5).to_glyph)
-  s = StringIO.new
-  s.write("butts")
-  p Glyph.load(s.to_glyph).string
-
-
-end
