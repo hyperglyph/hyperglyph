@@ -7,7 +7,7 @@ from .encoding import Encoder, CONTENT_TYPE
 
 
 def utcnow():
-    datetime.datetime.utcnow().replace(tzinfo=utc)
+    return datetime.datetime.utcnow().replace(tzinfo=utc)
 
 
 def node(name, attributes, children=None):
