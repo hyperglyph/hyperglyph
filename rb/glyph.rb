@@ -74,9 +74,16 @@ end
 
 class DateTime
   def to_glyph
-    "d#{strftime("%FT%TZ")}\n"
+    "d#{strftime("%FT%T.%NZ")}\n"
   end
 end
+
+class Time
+  def to_glyph
+    "d#{strftime("%FT%T.%LZ")}\n"
+  end
+end
+
 
 # node, extension
 class Node
@@ -231,7 +238,7 @@ module Glyph
       num.chop.to_i
     when ?d
       dt = scanner.scan_until(/\n/)
-      DateTime.parse(dt)
+      DateTime.strptime(dt, "%FT%T.%L%Z")
     when ?f
       num = scanner.scan_until(/\n/)
       Glyph.from_hexfloat(num.chop)

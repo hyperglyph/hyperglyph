@@ -17,10 +17,10 @@ class EncodeTest < Test::Unit::TestCase
     assert_encode([1,2,3,"123"])
     assert_encode(s)
 
-    d= DateTime.now()
+    d= DateTime.now.new_offset(0)
     assert_encode(d)
     s = StringIO.new
     s.write("butts")
-    assert_encode(s)
+    assert_equal(s.string, Glyph.load(s.to_glyph).string)
   end
 end
