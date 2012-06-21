@@ -1,303 +1,67 @@
-done:
-    move to wsgi, requests. move to params as constructor; mapper; transient objects; silent server; make_server ssl args; carry over args to werzkeug; form bug; documentation; removed prints; split out into parts; price checker skeleton;
-    refactor:
-        moved to werkzeug exceptions
-        change from Mapper <-> Resources
-        to Router <-> Mapper <-> User Objects
+encoding:
+	remove newlines in query args?
+caching
+	caching headers added to responses
+	@cache(max_age=....)
+	change url schema to avoid ?
 
-    nope: mapper should only take named resources - unnamed ones can be mapped ad-hoc
-        rationale: hard to do properly with linking, embedding, etc. 
-    done: router should ask resources to urlify themselves?
-        mapper now handles this outside router
+forms/links
+	type args?
 
-    worker queue example
+	url templates
+	destroy H<name> i.e no difference between link/form?
 
-    refactoring:
-        transientmapper/basemapper - transient mapper handles state transfer
-        page/index - split inspection out into different bits.
-
-    ResourceMethod added for safe, inlining
-        safe get linked, unsafe get forms, inlines get embed
-
-    after removing index method, use in real world demanded it back
-        it's nice - you can now override methods
-        that broke though as it got passed back in
-
-    renaming done
-    query args now encoded too - because it's nice not to have to cast.
-
-    @glyph.redirect()
-        a decorator, makes the function do the redirect from return value
-
-    glyph.form(Resource) should work 
-        methodargs for class 
-        POST to a Resouce.index should redirect to the instance
-        glyph.get(url/link/page?, options) etc?
-            glyph.url(object) returns the url as a string
-
-    moved stuff around, added docstrings
-    moved parsing handling into mapper & resourcemethod
-    creating objects different from lookup
-    persistent mapping proof of concept
-    index creation moved to resourcemethod (noice!)
-    throw correct http exceptions, remove bare excepts
-    resourcemethod takes another as constructor
-    using werkzeug.utils.redirect(location, code=302)
-    optional requests dependency
-    reject dupe keys
-    moved shit around
-        encoder now takes type arguments, nicer seperation
-
-    glyph.client, server, model, encoding
-        encoding uses dep injection.
-        model has constructors, link etc ?
-
-    rmethod has make_forms now
-
-    resource has POST, GET methods
-    mapper has POST, GET methods
-    mapper maps class to /Foo, instance to /Foo/ 
-        now call mapper for /Foo, instance for /Foo/
-    eliminated create_resource as a side effect
-    router has a default instance to redirect too (allows persistent to be default)
-    redirect takes a code argument
-    more tests
-    resourcemethod.call
-    moving shit around again.
-    fix requests raising error
-    ignore whitespace in decoding 
-    default resource returns index
-    204 - no content on none ?
-    FunctionMapper
-        Split out BaseMapper into ResourceMapper 
-        add FunctionMapper - does Handler.call(fn)
-        handling functions ? 
-            methodargs? funcargs?
-            use handler  to dispatch:
-                default a post mapper ?
-    test runner 
-        setup.py test target 
-
-    simplified encoding rules/format
-
-    serializing
-        return foo
-            turns into a form/link for foo
-        return Task
-            turns into a form for Task
-        return Task()
-            turns into Task().GET()
-
-        return Task().bar
-            turns into a form
-
-    decided to keep redirect as an opt in
-        can use to redirect to urls
-
-remember:
-    should handle http mapping by default, verbs, urls and content_type
-    should be possible to use objects outside of mapper.
-    http ignorant not agnostic (don't need to know http semantics to use it, but can override)
-
-todo documentation:
-
-        glyph encoding clarifcations/iana-esque spec
-            format specifiers?
-            duplicate dict keys,hex parsing, xml/json?
-
-        under the scenes - request by request
-            worked repl example
-            flask/glyph.document style server
-        richardson maturtiry model
-
-        tutoriala?
-            build a server, use a client
-            add methods, change methods.
-        cookbook?
-            examples/pricechecker/ add loadbalancers, test caching, sharding version too
-
-        explain: is it rest?
-            put vs post essentially - hypermedia forms vs resources with verbs
-            yes - hyperlinks, hateoas, caching
-            no - non standard mime type, ad-hoc interfaces 
-
-    possible: move handler to a seperate file?
-    fixed bug with function lookup - no longer assumes baseresource 
-
-    prefix handling - strip prefix in mapper before checking rather than assuming second part ?
-
-    default GET/index handles properites - i.e treats them like instance values (obv!)
-        add test?
-
-todo code:
+classes/resources
+	use a different encoding for them?
+	rather than possible subelements, they have a url
+	children is a dict?
+	remove all instance vars from dict?
+	have to expose it through @embed?
 
 
-    refactor:Handler.call()?
-        clean up handler logic - should use a default handler or the one given.
-        rather than if_safe, etc. ?
-        subclass handler?
-            use a different handler for different logic, over switch case dispatch
-            a post handler, etc.
-        how to compose with accept/redirect?
-            split properties into redirect/content_type stuff 
+datatypes/collections
+	some languages only have a table type?
+	(it's ok json does this too)
 
-    werkzeug:
-        accept() cache_control() data structures?
-        etag generation - sha4 of context 
-        make_conditonal on get/etc - precondition failed on all others
 
-    options support ?
-        def OPTIONS in mapper, options handling in Handler
-        although roy thinks it is is pretty useless.
 
-    http compliance:
-        set cache-control, expires, etags headers on get 
-            use make_conditional - ignore steve about 'argle bargle saves recomputation'
-            weak/strong etags?
-            Handler. make_etag? add_headers? make_response?
-        cache control - max age, can store, revalidate?
-            caching on embeds?
-        resource handles/parses accept/content-type header
-            @accept(...,q=), @content_type()
-        missing header on 403: allow: on 403 ?
-        OPTIONS/HEAD/PUT/DELETE handling ?
-
-    hypermedia factors?
-        links/url templates
-        i.e what should a form/get do etc
-
+js
+	browser impl?
 
 to think?
 
-    uri templates for get args
+	Glyph.refresh?
 
-    mapper:
-        transients
-            - shouldn't post to create? form should use get?
-            - attr on resource ?
+	uri templates for get args
 
-    gzip encoding :v
-        gzip middleware?
-    argle bargel transactions:
+	argle bargel transactions:
 
-        @foo.if_none_match() .... ?
-        @foo.last_modified()
+		@foo.if_none_match() .... ?
+		@foo.last_modified()
 
-    persistent mapper: managing objects/deleting them
+	collections:
+		like an embed/property, but behaves with the __getitem__ calls ?
+		think about interface for pagination/mapping to an infinite scroll, etc.
+		inlining - behaves like a link, isn't.
+		cursor/resultset behavior?
 
-    glyph.get(url, accept='....') handling different content-types 
-        url in page object?
-        if unhandledd:
-            throw result(content_type, content), decoded if text/*
+	snapshoting:
+		crawling an api? glyph.crawl(page) returns all links() ?
 
-    auto link resources ?  handle: return [Resource(), ....]
-        callback from router turns resources into links/forms/etc?
-        possible: handles unknown types with callback
+	api versioning?
 
-    collections:
-        like an embed/property, but behaves with the __getitem__ calls ?
-        think about interface for pagination/mapping to an infinite scroll, etc.
-        inlining - behaves like a link, isn't.
-        cursor/resultset behavior?
+	transactions?
+		preconditions/postconditions on forms
 
-    snapshoting:
-        crawling an api? glyph.crawl(page) returns all links() ?
+	demos:
+		heroku/appengine ?
+		examples for a talk?
+		atom pub mail server?  mail store? forum queue/broker(herp?)
+			use preconditions to do transactional semantics?
+		tekpub/ 
+			http://wekeroad.com/2012/03/03/moving-the-philosophy-into-machinery/
 
-    api versioning?
-        possibly: map default to /v0/ , default takes a version arg? breaks url mapping :v
-        possibly: / returns 300 if multiple versions, link header? rel=...
+	true rest - generating mime types from objects
+	jquery plugin?
 
-    @property ?
-        should index them ? hard to link - link with extra methods?
-
-    properties of resources:
-        things that apply to resources, but are not serialized as the state
-        e.g timestamps, versions
-        want to be able to say @glyph.version()/if not modified, etc
-        on forms, etc?
-
-    transactions?
-        preconditions/postconditions on forms
-
-    demos:
-        heroku/appengine ?
-        examples for a talk?
-        atom pub mail server?  mail store? forum queue/broker(herp?)
-            use preconditions to do transactional semantics?
-        tekpub/ 
-            http://wekeroad.com/2012/03/03/moving-the-philosophy-into-machinery/
-
-    scraper pool ?
-        sharding, load balancing, caching, extending
-
-    true rest - generating mime types from objects
-
-    snmp? crawling
-    twitter api - last-modified embedding hack
-            use embedded for all new items, links for all client is expected to have already
-    db cursors alike for collections ? pagination
-
-    jquery plugin?
-    ruby, js - object style
-    cgi/php: create foo.php for each resource, use links.
-    0mq transport :v websocket upgrades to get a bi-di socket :v
-
-
-alternate encoding thoughts:
-
-    abandon home brew embrace html5+microdata 
-        - allows googling,
-        - import schemas ?
-        but.... typing of results ....?
-
-    javascript interface? browser interface thinking?
-        option a) xhtml + namespaces
-            works in lynx
-        option b) xml + xslt 
-            doesn't work in lynx
-        option c) static site + javascript rpc ?
-            doesn't work in lynx.
-        danger: cross site request forgery?
-
-        xhtml5 w microdata or xml w namespaces?
-
-    decorators chains:
-        rel attribute on methods? 
-        @glyph.handler(rel='....')
-        def foo()
-            ....
-
-        @glyph.cache(max_age=....)
-        resource last modified property ?
-
-
-    glyph json/xml/xhtml/xhtml5?
-        glyph.get/fetch supports other media types
-        beef out form type?  hidden inputs ? type arguments 
-        document media type:
-            should add/draft them
-                make a spec, get the vendor tag registered
-            rules for forms, embeds?
-        new data types: charset handling ? timezones? time periods ?
-
-        format changes ? 
-            [] {} U<len>: l<arbitrary>
-
-        application/vnd.glyph+json vnd.glyph+xml
-            map glyph types to xhtml/json
-                {'__glyph': embedded object } 
-            escape sequence:
-                {'__glyph__foo' : object } -> mapped to {'__glyphfoo'}
-                    so __glyph becomes __glyph__, __glyph__ becomes, ___glyph____
-            serializing! lxml!
-        xml:
-            resource type (like link,etc has a href, but is default page container)o
-            use data uri + octet-stream for str data, 
-
-            xhtml: use a glyph namespace to annotate links/objects
-                glyph:type"link"? 
-            or write an xml format and include xslt transformation
-                possibly better and simpler.
-                can also add script to reformat requests ? 
-                or x-www-urlencoding/form encoding?
 

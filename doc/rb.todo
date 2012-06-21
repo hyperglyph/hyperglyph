@@ -1,0 +1,14 @@
+done:
+	client form, link, embed
+
+todo:
+	more tests!
+	requires server somewhat.
+
+	maybe: remove monkeypatching objects. it's rude
+	bytearray fallback in encoding of strings.
+
+server side stuff/mapping
+	need to work out
+	how to get object instance vars
+	and arguments to methods
