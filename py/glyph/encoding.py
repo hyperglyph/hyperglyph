@@ -1,6 +1,6 @@
 from urlparse import urljoin
 from cStringIO import StringIO
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from pytz import utc
 
@@ -343,8 +343,16 @@ class Encoder(object):
             return ext
         elif c == DTM:
             datestring =  _read_until(fh, END_ITEM)[0]
-            dtm = datetime.strptime(datestring[:-1], "%Y-%m-%dT%H:%M:%S.%f").replace(tzinfo=utc)
-            return dtm
+            if datestring[-1].lower() == 'z':
+                if '.' in datestring:
+                    datestring, sec = datestring[:-1].split('.')
+                    date = datetime.strptime(datestring, "%Y-%m-%dT%H:%M:%S").replace(tzinfo=utc)
+                    sec = float("0."+sec)
+                    return date + timedelta(seconds=sec)
+                else:
+                    return datetime.strptime(datestring, "%Y-%m-%dT%H:%M:%S").replace(tzinfo=utc)
+
+            raise StandardError('decoding date err', datestring)
         elif c not in ('', ):
             raise StandardError('decoding err', c)
         raise EOFError()
