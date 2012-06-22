@@ -174,12 +174,6 @@ class FormObjectTest(ServerTest):
 
     def router(self):
         m = glyph.Router()
-        @m.default()
-        class Root(glyph.r):
-            def index(self):
-                return dict(
-                    test = glyph.form(Test)
-                )
 
         @m.add()
         class Test(glyph.r):
@@ -194,43 +188,38 @@ class FormObjectTest(ServerTest):
 
     def testCase(self):
         root = glyph.get(self.endpoint.url)
-        result = root.test(0)
+        result = root.Test(0)
         self.assertEqual(result.value(), 0)
-        result = root.test(2)
+        result = root.Test(2)
         self.assertEqual(result.value(), 2)
 
 class PersistentObjectTest(ServerTest):
 
     def router(self):
         m = glyph.Router()
-        @m.default()
-        class Root(glyph.r):
-            def index(self):
-                return dict(
-                    test = glyph.form(Test)
-                )
 
         @m.add()
         class Test(glyph.PersistentResource):
             def __init__(self, _value=0):
                 self._value = int(_value)
 
-            @glyph.embed()
+            @property
+            def self(self):
+                return glyph.link(self)
+            
+            @property
             def value(self):
                 return self._value
-
-            def index(self):
-                return {'self': glyph.link(self)}
 
 
         return m
 
     def testCase(self):
         root = glyph.get(self.endpoint.url)
-        result_a = root.test(0)
-        self.assertEqual(result_a.value(), 0)
-        result_b = root.test(0)
-        self.assertEqual(result_b.value(), 0)
+        result_a = root.Test(0)
+        self.assertEqual(result_a.value, 0)
+        result_b = root.Test(0)
+        self.assertEqual(result_b.value, 0)
         self.assertNotEqual(result_a.self.url(), result_b.self.url())
 
 class DefaultPersistentObjectTest(ServerTest):
@@ -250,8 +239,9 @@ class DefaultPersistentObjectTest(ServerTest):
             def make(self, value):
                 return Test(value)
 
-            def index(self):
-                return {'self': glyph.link(self)}
+            @property
+            def self(self):
+                return glyph.link(self)
 
 
         return m
@@ -272,14 +262,14 @@ class VerbTest(ServerTest):
             def POST(self):   
                 return 0
 
-            def index(self):
+            def GET(self):
                 return {'make':glyph.form(Test), 'zero': glyph.form(self)}
         return m
 
     def testCase(self):
         result = glyph.get(self.endpoint.url)
-        self.assertEqual(result.zero(), 0)
-        result = result.make()
+        self.assertEqual(result['zero'](), 0)
+        result = result['make']()
 
 class FunctionTest(ServerTest):
 

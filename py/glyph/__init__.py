@@ -26,6 +26,7 @@ from .data import CONTENT_TYPE, dump, parse, get, node, form, link, utcnow, embe
 from .resource.handler import safe, embed, redirect
 from .resource.transient import TransientResource
 from .resource.persistent import PersistentResource
+from .resource.base import ClassMapper
 from .resource.router import Router
 from .server import  Server
 
@@ -34,6 +35,7 @@ __all__ = [
     'get', 'Router','Resource','r', 'safe', 'embed', 'utcnow',
     'parse','dump','node','form','link','embedlink',
     'TransientResource', 'PersistentResource',
+    'ClassMapper',
 ]
 
 r = Resource = TransientResource

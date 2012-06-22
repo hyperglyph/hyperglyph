@@ -7,16 +7,20 @@ from werkzeug.exceptions import HTTPException, NotFound, BadRequest, NotImplemen
 
 from .base import BaseResource, BaseMapper, get_mapper
 from .handler import Handler, safe
-from .transient import TransientResource
+from .transient import TransientResource, TransientMapper
 from ..data import ismethod
 
 
         
 
 def make_default(router):
+    class _mapper(TransientMapper):
+        def index(self,resource):
+            return dict((unicode(r.__name__), Handler.make_link(r)) for r in router.mappers if r is not resource.__class__) 
+
     class __default__(TransientResource):
-        def index(self):
-            return dict((unicode(r.__name__), Handler.make_link(r)) for r in router.mappers if r is not self.__class__) 
+        __glyph__ = _mapper
+
     return __default__
 class Router(object):
     def __init__(self):

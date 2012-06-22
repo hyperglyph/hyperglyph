@@ -7,7 +7,6 @@ from werkzeug.datastructures import ResponseCacheControl
 
 from ..data import CONTENT_TYPE, dump, parse, get, form, link, node, embedlink,  ismethod, methodargs
 
-VERBS = set(("GET", "POST", "PUT","DELETE","PATCH",))
 class Handler(object):   
     """ Represents the capabilities of methods on resources, used by the mapper
         to determine how to handle requests
@@ -105,25 +104,6 @@ class Handler(object):
             content_type, result = cls.dump(attr, result, router.url, router.inline)
             return Response(result, content_type=content_type)
 
-
-def make_controls(resource):
-    forms = {}
-    for m in dir(resource.__class__):
-        if not m.startswith('_') and m not in VERBS and m != 'index':
-            cls_attr = getattr(resource.__class__ ,m)
-            ins_attr = getattr(resource,m)
-
-            m = unicode(m)
-
-            if isinstance(cls_attr, property):
-                # just inline the property
-                forms[m] = ins_attr
-            elif callable(cls_attr):
-                # but if it is a method or similar, make a link/form
-                if hasattr(ins_attr, 'func_code'):
-                    forms[m] = Handler.make_link(ins_attr)
-
-    return forms
 
 
 def make_handler(fn):

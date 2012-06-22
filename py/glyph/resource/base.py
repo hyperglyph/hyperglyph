@@ -9,7 +9,28 @@ from werkzeug.utils import redirect as Redirect
 
 from ..data import CONTENT_TYPE, dump, parse, get, form, link, robj, embedlink, ismethod, methodargs
 
-from .handler import Handler, make_controls
+VERBS = set(("GET", "POST", "PUT","DELETE","PATCH",))
+from .handler import Handler
+
+def make_controls(resource):
+    forms = {}
+    for m in dir(resource.__class__):
+        if not m.startswith('_') and m not in VERBS and m != 'index':
+            cls_attr = getattr(resource.__class__ ,m)
+            ins_attr = getattr(resource,m)
+
+            m = unicode(m)
+
+            if isinstance(cls_attr, property):
+                # just inline the property
+                forms[m] = ins_attr
+            elif callable(cls_attr):
+                # but if it is a method or similar, make a link/form
+                if hasattr(ins_attr, 'func_code'):
+                    forms[m] = Handler.make_link(ins_attr)
+
+    return forms
+
 
 class BaseResource(object):
     """ An abstract resource to be served. Contains a mapper attribute __glyph__,
@@ -18,17 +39,7 @@ class BaseResource(object):
     __glyph__ = None
 
     def GET(self):
-        """ Generate a glyph-node that contains 
-            the object attributes and methods
-        """
-        page = dict()
-        page.update(make_controls(self))
-        page.update(self.index())
-        return robj(self, page)
-
-    def index(self):
-        return dict((unicode(k),v) for k,v in self.__dict__.items() if not k.startswith('_'))
-
+        return self
 def get_mapper(obj, name):
     """ return the mapper for this object, with a given name"""
     if hasattr(obj, '__glyph__') and issubclass(obj.__glyph__, BaseMapper):
@@ -106,9 +117,21 @@ class ClassMapper(BaseMapper):
 
     def inline(self,resource):
         if isinstance(resource, BaseResource):
-            return resource.GET()
+            return self.inline_resource(resource)
         else:
             return Handler.make_link(resource)
+
+        """ Generate a glyph-node that contains 
+            the object attributes and methods
+        """
+    def inline_resource(self, resource):
+        page = dict()
+        page.update(make_controls(resource))
+        page.update(self.index(resource))
+        return robj(resource, page)
+
+    def index(self, resource):
+        return dict((unicode(k),v) for k,v in resource.__dict__.items() if not k.startswith('_'))
 
 
     def default_method(self, verb):
