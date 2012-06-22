@@ -67,10 +67,8 @@ dates, booleans, ints & floats::
         return [1,True, None, False, "a",u"b"]
 
 Functions can even return other functions that are mapped,
-through redirection::
 
     @r.add()
-    @glyph.redirect()
     def greeting(lang="en"):
         if lang == "en":
             return hello
