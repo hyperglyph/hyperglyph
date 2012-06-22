@@ -2,6 +2,8 @@ glyph is a serialization format roughly based around bencoding
 with support for hypermedia types (links, forms).
 
 
+
+
 	strings!:
 		utf-8 string -> u <byte len> \x0a <utf-8 string>
 	bytes!
@@ -48,7 +50,7 @@ with support for hypermedia types (links, forms).
 			like a node, but contains url, method, possibly form values.
 
 	currently the following extensions are defined:
-		link, form and embed.
+		resource, link, form and embed
 
 		all dictionary keys *should* be utf-8
 

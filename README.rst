@@ -1,5 +1,8 @@
 glyph-rpc
 ---------
+glyph-rpc is still under development. the underlying serialization format is 
+currently unstable.
+
 glyph-rpc is yet another http rpc library, but it tries to exploit http rather
 than simply tunnel requests over it. glyph builds webpages out of objects, for
 computers, and as a result:
