@@ -7,7 +7,7 @@ from werkzeug.wrappers import Request, Response
 from werkzeug.exceptions import HTTPException, NotFound, BadRequest, NotImplemented, MethodNotAllowed
 from werkzeug.utils import redirect as Redirect
 
-from ..data import CONTENT_TYPE, dump, parse, get, form, link, node, embedlink, ismethod, methodargs
+from ..data import CONTENT_TYPE, dump, parse, get, form, link, robj, embedlink, ismethod, methodargs
 
 from .handler import Handler, make_controls
 
@@ -24,7 +24,7 @@ class BaseResource(object):
         page = dict()
         page.update(make_controls(self))
         page.update(self.index())
-        return node(unicode(self.__class__.__name__), attributes=page)
+        return robj(self, page)
 
     def index(self):
         return dict((unicode(k),v) for k,v in self.__dict__.items() if not k.startswith('_'))

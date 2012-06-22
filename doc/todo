@@ -24,6 +24,64 @@ datatypes/collections
 	(it's ok json does this too)
 
 
+inlining/embedding:
+	basically, how should @glyph.embed() work
+	given in ruby it won't make a difference because
+	a.foo is a.foo()
+
+	suggestion:
+		objects do not have uncallable children
+		glyph.embed() makes sense when you have properties
+
+	also, now you can inline objects in responses automatically
+		return self, blah, y
+	how about 
+		classes should be able to say 'inline me',
+		or don't inline me in responses
+		instead of inling methods as faux GET()
+		return an item that acts like a real embed
+
+	also:
+		return self.foo - how should this work?
+
+	suggestion:
+		link type
+			has url (template?), optional method, possible arg template
+		resource type:
+			has url, possible links
+
+			if  no links, will fetch & cache copy?
+		behaves in-line/so no fetching
+
+		node type - xml catchall? needed? extension type.
+
+
+		resources cache themselves?
+
+	basically:
+		instances are serialized to embeds
+		
+	
+	ruby:
+		obj contains
+			name, attrs, chidlren
+		attrs contains a url, last modified etc
+		(puts reference to self in, then resolved.)
+
+		children is a dict of stuff/forms
+
+		ruby does o['name'].call('blah')
+		never re
+		o.name is a shoorthand for foo.call? 
+
+		python foo.name is shorthand for foo['name']
+		don't expose attrs.
+
+		works for javascript too. nice.
+		obj can optionaly autorefresh.
+
+		obj with empty children ? nah.stick with link/embed./
+
 
 js
 	browser impl?

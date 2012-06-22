@@ -210,7 +210,7 @@ class Encoder(object):
         elif isinstance(obj, (self.extension,)):
             buf.write(EXT)
             name, attributes, content = obj.__getstate__()
-            obj.resolve(resolver)
+            obj.__resolve__(resolver)
             self._dump(name, buf, resolver, inline)
             self._dump(attributes, buf, resolver, inline)
             self._dump(content, buf, resolver, inline)
@@ -339,7 +339,7 @@ class Encoder(object):
             first = read_first(fh)
             content = self._read_one(fh, first, resolver)
             ext= self.extension.__make__(name, attr, content)
-            ext.resolve(resolver)
+            ext.__resolve__(resolver)
             return ext
         elif c == DTM:
             datestring =  _read_until(fh, END_ITEM)[0]

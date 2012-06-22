@@ -10,8 +10,11 @@ def utcnow():
     return datetime.datetime.utcnow().replace(tzinfo=utc)
 
 
-def node(name, attributes, children=None):
-    return Node(unicode(name), attributes, children)
+def node(name, attributes, content=None):
+    return Node(unicode(name), attributes, content)
+
+def robj(obj, contents):
+    return Extension.__make__(u'resource', {u'name':unicode(obj.__class__.__name__), u'url': obj}, contents)
 
 def form(url, method=u'POST',values=None):
     if values is None:
@@ -25,7 +28,7 @@ def form(url, method=u'POST',values=None):
     if values is not None:
         values = [unicode(v) for v in values]
 
-    return Extension.__make__(u'form', {u'method':method, u'url':url}, values)
+    return Extension.__make__(u'form', {u'method':method, u'url':url, u'values':values}, None)
 
 def link(url, method='GET'):
     return Extension.__make__(u'link', {u'method':method, u'url':url}, None)
@@ -45,8 +48,6 @@ def methodargs(m):
 
 def funcargs(m):
     return m.func_code.co_varnames[:]
-
-
 
 def get(url, args=None,headers=None):
     if hasattr(url, u'url'):
@@ -132,7 +133,7 @@ class Node(object):
 
     def __getattr__(self, name):
         try:
-            return self._attributes[name]
+            return self._content[name]
         except KeyError:
             raise AttributeError(name)
 
@@ -165,7 +166,7 @@ class Extension(Node):
     def __repr__(self):
         return '<ext:%s %s %s>'%(self._name, repr(self._attributes), repr(self._content))
 
-    def resolve(self, resolver):
+    def __resolve__(self, resolver):
         pass
 
 @Extension.register('form')
@@ -173,9 +174,8 @@ class Form(Extension):
     def __call__(self, *args, **kwargs):
         url = self._attributes[u'url']
         data = {}
-        if self._content:
-            names = self._content[:]
-
+        names = self._attributes[u'values']
+        if names:
             for n,v in zip(names, args):
                 data[n] = v
         elif args:
@@ -189,7 +189,7 @@ class Form(Extension):
 
         return fetch(self._attributes.get(u'method',u'POST'),url, data=data)
 
-    def resolve(self, resolver):
+    def __resolve__(self, resolver):
         self._attributes[u'url'] = unicode(resolver(self._attributes[u'url']))
 
 @Extension.register('link')
@@ -201,7 +201,7 @@ class Link(Extension):
     def url(self):
         return self._attributes[u'url']
         
-    def resolve(self, resolver):
+    def __resolve__(self, resolver):
         self._attributes[u'url'] = unicode(resolver(self._attributes[u'url']))
 
 
@@ -213,8 +213,15 @@ class Embed(Extension):
     def url(self):
         return self._attributes[u'url']
         
-    def resolve(self, resolver):
+    def __resolve__(self, resolver):
         self._attributes[u'url'] = unicode(resolver(self._attributes[u'url']))
+
+@Extension.register('resource')
+class Resource(Extension):
+        
+    def __resolve__(self, resolver):
+        self._attributes[u'url'] = unicode(resolver(self._attributes[u'url']))
+
 
 _encoder = Encoder(node=Node, extension=Extension)
 

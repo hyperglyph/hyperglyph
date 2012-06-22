@@ -87,39 +87,39 @@ end
 
 # node, extension
 class Node
-  def initialize(name, attrs, children)
+  def initialize(name, attrs, content)
     @name = name
     @attrs = attrs
-    @children = children
+    @content = content
   end
   def to_glyph
-    "X#{@name.to_glyph}#{@attrs.to_glyph}#{@children.to_glyph}"
+    "X#{@name.to_glyph}#{@attrs.to_glyph}#{@content.to_glyph}"
   end
   def method_missing(method, *args, &block)
-      attr= @attrs[method.to_s]
+      attr= @content[method.to_s]
       if attr and attr.respond_to?(:call)
         return attr.call(*args, &block)
-      else  
-        return attr
+      else
+        super(method, *args, &block)
       end
   end
 
   def [](item)
-    return @children[item]
+    return @content[item]
   end
 end
 
 class Extension < Node
-  def self.make(name, attrs, children)
+  def self.make(name, attrs, content)
     return case name
       when "form"
-        return Form.new(name, attrs, children)
+        return Form.new(name, attrs, content)
       when "link"
-        return Link.new(name, attrs, children)
+        return Link.new(name, attrs, content)
       when "embed"
-        return Embed.new(name, attrs, children)
+        return Embed.new(name, attrs, content)
       else
-        return Extension.new(name,attrs, children)
+        return Extension.new(name,attrs, content)
     end
   end
 
@@ -128,13 +128,13 @@ class Extension < Node
   end
 
   def to_glyph
-    "H#{@name.to_glyph}#{@attrs.to_glyph}#{@children.to_glyph}"
+    "H#{@name.to_glyph}#{@attrs.to_glyph}#{@content.to_glyph}"
   end
 end
 
 class Form < Extension
   def call(*args, &block)
-    args = @children? Hash[@children.zip(args)] : {}
+    args = @attrs['values']? Hash[@attrs['values'].zip(args)] : {}
     ret = Glyph.fetch(@attrs['method'], @attrs['url'], args)
     if block
       block.call(ret)
@@ -158,9 +158,9 @@ end
 class Embed < Extension
   def call(*args, &block)
     if block
-      block.call(@children)
+      block.call(@content)
     else
-      @children
+      @content
     end
   end
 end
@@ -277,14 +277,14 @@ module Glyph
     when ?X
       name = parse(scanner, url)
       attrs = parse(scanner, url)
-      children = parse(scanner, url)
-      n = Node.new(name, attrs, children)
+      content = parse(scanner, url)
+      n = Node.new(name, attrs, content)
       n
     when ?H
       name = parse(scanner, url)
       attrs = parse(scanner, url)
-      children = parse(scanner, url)
-      e = Extension.make(name, attrs, children)
+      content = parse(scanner, url)
+      e = Extension.make(name, attrs, content)
       e.resolve(url)
       e
     else

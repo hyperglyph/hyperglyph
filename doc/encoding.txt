@@ -36,15 +36,15 @@ with support for hypermedia types (links, forms).
 		false -> F
 		none -> N
 
-	xml like three item tuples (name, attributes, children)
-		node -> X<name item><attr item><children item>
-			an object with a name, attributes and children
+	xml like three item tuples (name, attributes, content)
+		node -> X<name item><attr item><content item>
+			an object with a name, attributes and content
 				attributes is nominally a dict.
-				children nominally list
+				content nominally list
 			think html5 microdata like
 
 	hypermedia types/extensions: 
-		ext -> H<name item><attr item><children item>
+		ext -> H<name item><attr item><content item>
 			like a node, but contains url, method, possibly form values.
 
 	currently the following extensions are defined:
@@ -57,14 +57,14 @@ with support for hypermedia types (links, forms).
 			attr is a dict, containing the following keys:
 				url, method
 				
-			children is None
+			content is None
 
 		form:   
 			name is "form"
 			attr is a dict, containing the following keys:
 				url, method
 				
-			children is currently a list of names
+			content is currently a list of names
 			for the form to submit
 
 			currently to submit a form, a dictionary is sent back
@@ -74,16 +74,22 @@ with support for hypermedia types (links, forms).
 			attr is a dict, containing the following keys:
 				url, method
 				
-			children is the object that would be returned
+			content is the object that would be returned
 			from fetching that link
 
 		
+		resource
+			name is "resource"
+			attr is a dict, containing the following keys:
+				url
+
+			content is a dict of resource attributes
+				often forms
+				
 
 	notes:
-		utf-8 vs bytestrings in dictionary keys/values
-		is a hard one.
-
-		i'm working on it
+		all strings are in utf-8.
+		should be no bytestrings in dicts?
 				
 
 	whitespace/newlines
