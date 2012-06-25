@@ -3,7 +3,7 @@
     
     running time 20 minutes
     need to do a timecheck
-
+    
     a talk on web-like approach to rpc, for ruby and python.
     
     section titles won't be read out loud, may appear
@@ -14,6 +14,7 @@ restful-rpc, or how I learned to love the hypermedia
 
 
 SLIDE::
+
     *blank -or- talk title*
 
 .. 
@@ -23,6 +24,7 @@ SLIDE::
 hi, my name is tef, and I am a python programmer.
 
 SLIDE::
+
     @iamtef
 
 (don't tell anyone, but i've been learning ruby while no-one's been looking)
@@ -43,6 +45,7 @@ it does this by being a lot more like a web site than a web service.
 it's made my job suck less, and I hope it can make your job suck less too.
 
 SLIDE::
+
     http://www.hanzoarchives.com
     http://github.com/tef/glyph-rpc
     http://travis-ci.org/tef/glyph-rpc
@@ -56,6 +59,7 @@ nobody knows the trouble i've seen
 ----------------------------------
 
 SLIDE::
+
     *blank*
 
 
@@ -78,6 +82,7 @@ report them and move onto the next task.
 If *I* was doing it without RPC, all on the same machine, it would probably look a lot like this:
 
 SLIDE::
+
     def process(queue):
         task = queue.next_task()
         for url in crawl(task.url):
@@ -87,6 +92,7 @@ SLIDE::
 If *you* were doing it without RPC, it would probably look a lot more like this:
 
 SLIDE::
+
     def process(queue)
       task = queue.next_task
       crawl(task.url).each do |url|
@@ -188,6 +194,7 @@ Unfortunately as the product grew, so did the network code.
 And then the stubs came. Thousands of them. Dirty dirty stubs.
 
 SLIDE::
+
     class Queue < Resource
       attr_accessor :worker_id
 
@@ -220,6 +227,7 @@ it adds a build step, can't infer types on its own, and rarely handles the dynam
 nature of the code.
 
 SLIDE::
+
     *blank*
 
 I was fed up. There had to be a better way.
@@ -259,6 +267,7 @@ I won't get into the encoding now, but if you think of a json like format,
 but with links and forms, you're close.
 
 SLIDE::
+
     possible: flow chart/browser screenshots
 
 Perhaps something like this:
@@ -272,6 +281,7 @@ Perhaps something like this:
 When we write this down in code, it looks pretty familiar.
 
 SLIDE::
+
     server = Glyph.get('http://local:219')
     queue = server.Queue('worker-12')
     task = queue.next_task
@@ -290,6 +300,7 @@ The client is actually screen scraping web pages.
 These pages look something like this:
 
 SLIDE::
+
     Root at /
 
     <Resource {
@@ -319,6 +330,7 @@ We can generate the website from objects too - the Queue page
 can be built from an object, and the urls can be built too.
 
 SLIDE::
+
     class Queue 
       attr_accessor :worker_id
 
@@ -334,6 +346,7 @@ into a resource, with forms mapping to the methods.
 The instance data is smuggled inside the query parameters.
 
 SLIDE::
+
     Root at /
 
     <Resource {
@@ -356,6 +369,7 @@ with the instance arguments in the query parameters, call queue.next_task,
 and serialize the response.
 
 SLIDE::
+
     class Queue 
       attr_accessor :worker_id
 
@@ -369,6 +383,7 @@ in this case, it returns a Task, which we turn into a webpage. The client
 expects three attributes, url, found_link and complete.
 
 SLIDE::
+
     Task: /Task/?worker_id=bob&id=uuid
     
     <Resource {
@@ -381,6 +396,7 @@ This page is generated from the class, like before. The instance data, and somet
 are embedded in the url, and used in form attributes.
 
 SLIDE::
+
     class Task 
       attr_accessor :worker_id, :task_id, :url
       def found_link(url)
@@ -407,6 +423,7 @@ server - and it's start page. Hypertext is what makes glyph different,
 and what allows it to map object and methods, dynamically.
 
 SLIDE::
+
     blank
 
 despite all of the underlying hypertext, at the client
@@ -434,6 +451,7 @@ are you on crack?
 It's also cross platform. The same client code in python is
 
 SLIDE::
+
     import glyph
 
     server = glyph.get('http://local:219')
@@ -447,6 +465,7 @@ SLIDE::
 And if you wanted a server, in python is
 
 SLIDE::
+
     r = glyph.Router()
     @r.add()
     class Queue(glyph.r):
@@ -468,6 +487,7 @@ SLIDE::
 
 
 SLIDE::
+
     blank
 
 glyph: good for you?
@@ -480,6 +500,7 @@ glyph made my life suck less. I could change the server as I pleased
 without breaking clients. Growing the software became a lot less painful.
 
 SLIDE::
+
     caching
     sharding
     embdedding
@@ -507,6 +528,7 @@ changed how we thought about web services.
 Writing network code still sucks, but now it sucks a lot less.
 
 SLIDE::
+
     blank
 
 The python code is relatively stable, but I've been changing things
@@ -575,6 +597,7 @@ thanks
 ------
 
 SLIDE::
+
     @mamund, @steveklabnik, @jon_moore
 
 I'd like to thank @jon_moore, @mamund, @steveklabnik for
@@ -582,6 +605,7 @@ writing some very useful things about hypermedia,
 but they're not to blame for this monstrosity.
 
 SLIDE::
+
     http://github.com/tef/glyph-rpc
 
 thank you for your time.
