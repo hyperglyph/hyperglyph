@@ -37,8 +37,12 @@ module Glyph
   class Router
     def initialize()
       @routes = {}
+      @paths = {}
       self.class.constants.each do |c|
-        @routes[c.to_s] = self.class.const_get(c)
+        name= c.to_s
+        cls = self.class.const_get(c)
+        @routes[name] = cls
+        @paths[cls] = name
       end
     end
     def to_s
@@ -78,16 +82,53 @@ module Glyph
       @routes.each do |name, cls|
         content[name] = form(cls)
       end
-      return Extension.make('resource', {'url'=>self}, content)
+      return Extension.make('resource', {'url'=>"/"}, content)
     end
 
     def POST
 
     end
-    def url(resource)
 
+    def url(resource)
+      if resource === String
+        return resource
+      elsif Method === resource
+        obj = resource.receiver
+        cls = obj.class
+        ins = {}
+        method = resource.name
+        obj.instance_variables.each do |n|
+          ins[n] = obj.instance_variable_get(n)
+        end
+        ins = dump_args(ins)
+      elsif Resource === resource
+        cls=resource.class
+        ins = {}
+        resource.instance_variables.each do |n|
+          ins[n] = resource.instance_variable_get(n)
+        end
+        method = ''
+        ins = dump_args(ins)
+      elsif resource.class == Class and resource <= Resource
+        cls = resource
+        ins = ''
+        method = ''
+      else
+        raise EncodingError,"cant find url for #{resource}"
+      end
+      
+      cls = @paths[cls]
+      ins = ins.empty? ? '' : "?#{ins}"
+      return "/#{cls}/#{method}#{ins}"
     end
 
+    def dump_args(args)
+      return URI.escape(dump(args))
+    end
+
+    def parse_args(str)
+      return load(URI.unescape(str))
+    end
     def load(str)
       Glyph::load(obj)
     end
@@ -225,7 +266,10 @@ module Glyph
 
 
   def self.dump(o)
-    if String === o
+    if Symbol === o
+      u = o.to_s.encode('utf-8')
+      "u#{u.bytesize}\n#{u}"
+    elsif String === o
       u = o.encode('utf-8')
       "u#{u.bytesize}\n#{u}"
     elsif Integer === o
@@ -250,10 +294,15 @@ module Glyph
       "d#{o.strftime("%FT%T.%NZ")}\n"
     elsif Time === o
       "d#{o.strftime("%FT%T.%LZ")}\n"
-    elsif Extention === o
-      "H#{@name.to_glyph}#{@attrs.to_glyph}#{@content.to_glyph}"
-    elsif Node === o
-      "X#{@name.to_glyph}#{@attrs.to_glyph}#{@content.to_glyph}"
+    elsif Extension === o
+      o.instance_eval {
+        # resolve 'url'
+        "H#{@name.to_glyph}#{@attrs.to_glyph}#{@content.to_glyph}"
+      }
+    elsif Node === o 
+      o.instance_eval {
+        "X#{@name.to_glyph}#{@attrs.to_glyph}#{@content.to_glyph}"
+      }
     elsif Resource === o
       raise EncodeError, 'unfinished'
     else

@@ -17,9 +17,27 @@ class Service < Glyph::Router
 
     end
   end
+
+  def self.queue
+    Queue
+  end
 end
 
 s = Service.new
+
+queue = Service.queue
+
+q = queue.new('bob')
+
+puts q.instance_variables
+puts "url for queue"
+p s.url(queue)
+puts "url for queue instance"
+p s.url(q)
+
+puts "url for queue method", q.method(:push)
+
+p s.url(q.method(:push))
 
 p s.GET
 
