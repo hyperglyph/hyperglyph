@@ -16,6 +16,8 @@ module Glyph
   end
   class DecodeError < StandardError
   end
+  class EncodeError < StandardError
+  end
 
   class Resource
     def GET
@@ -27,9 +29,11 @@ module Glyph
 
     def self.GET
     end
-
+    
     def self.POST(*args)
-      return new(*args)
+      h = Hash[args]
+      p "interim #{h}"
+      return new(*h)
     end
 
   end
@@ -48,27 +52,51 @@ module Glyph
     def to_s
       "<#{self.class.to_s} #{@routes}>"
     end
+
+    def dump_args(args)
+      return URI.escape(dump(args))
+    end
+
+    def parse_args(str)
+      return load(URI.unescape(str))
+    end
+    def load(str)
+      Glyph::load(str)
+    end
+    def dump(obj)
+      Glyph::dump(obj, self.method(:url), self.method(:inline))
+    end
       
     def call(env)
-      path = env['PATH_INFO'].split
+      path = env['PATH_INFO'].split "/"
       method = env['REQUEST_METHOD']
+      data = env['rack.input']
 
       response = nil
-      args = nil
+      path.shift
 
-      response = if path.empty?
-        if method == 'GET'
-          self.GET
-        else
-          self.POST(*args)
-        end
+      args = data ? load(data.read) : nil
+
+      if path.empty?
+        obj = self
+        methodname = method
       else
-        path.shift
         cls = @routes[path.shift]
-        if cls
+        methodname = path.shift ||  method
 
+        query = env['QUERY_STRING']
+        if cls.nil?
+          raise StandardError, "unknown url"
+        elsif query
+          query = parse_args(query)
+          obj = cls.new(*query)
+        else
+          obj = cls
         end
       end
+      p "call #{obj} #{methodname} #{args}"
+      response = obj.method(methodname).call(*args)
+      p "response #{response}"
 
       if response.nil?
         return [204, {}, []]
@@ -77,18 +105,6 @@ module Glyph
       end
     end
     
-    def GET
-      content = {}
-      @routes.each do |name, cls|
-        content[name] = form(cls)
-      end
-      return Extension.make('resource', {'url'=>"/"}, content)
-    end
-
-    def POST
-
-    end
-
     def url(resource)
       if resource === String
         return resource
@@ -108,6 +124,7 @@ module Glyph
           ins[n] = resource.instance_variable_get(n)
         end
         method = ''
+        p ins
         ins = dump_args(ins)
       elsif resource.class == Class and resource <= Resource
         cls = resource
@@ -122,19 +139,25 @@ module Glyph
       return "/#{cls}/#{method}#{ins}"
     end
 
-    def dump_args(args)
-      return URI.escape(dump(args))
-    end
 
-    def parse_args(str)
-      return load(URI.unescape(str))
-    end
-    def load(str)
-      Glyph::load(obj)
-    end
-
-    def dump(obj)
-      Glyph::dump(obj)
+    def inline(obj) 
+      if Method === obj
+        form(obj)
+      elsif Resource === obj
+        args = {}
+        methods = obj.class.instance_methods - Resource.instance_methods
+        methods.each do |m| 
+          args[m] = form(obj.method(m))
+        end
+        obj.instance_variables.each do |n|
+          args[n] = obj.instance_variable_get(n)
+        end
+        Extension.make('resource', {'url' => obj} , args)
+      elsif obj.class == Class and obj <= Resource
+        form(obj)
+      else
+        raise EncodingError,"cant inline #{obj}"
+      end
     end
 
     def form(obj) 
@@ -147,6 +170,20 @@ module Glyph
       args=args.collect {|x| x[0] == :req and x[1]}
       Extension.make('form',{'method'=>'POST', 'url'=>obj}, args)
     end
+
+    def GET
+      # default contents 
+      content = {}
+      @routes.each do |name, cls|
+        content[name] = form(cls)
+      end
+      return Extension.make('resource', {'url'=>"/"}, content)
+    end
+
+    def POST
+
+    end
+
   end
 
   def self.open(url) 
@@ -265,7 +302,10 @@ module Glyph
   end
 
 
-  def self.dump(o)
+  def self.dump(o, resolve=nil, inline=nil)
+    if Resource === o
+      o = inline.call(o)
+    end
     if Symbol === o
       u = o.to_s.encode('utf-8')
       "u#{u.bytesize}\n#{u}"
@@ -279,11 +319,11 @@ module Glyph
     elsif Float === o
       "f#{o.to_hex}\n"
     elsif Array === o
-      "L#{o.map{|o| Glyph.dump(o) }.join}E"
+      "L#{o.map{|o| Glyph.dump(o, resolve, inline) }.join}E"
     elsif Set === o
-      "S#{o.map{|o| Glyph.dump(o) }.join}E"
+      "S#{o.map{|o| Glyph.dump(o, resolve, inline) }.join}E"
     elsif Hash === o
-      "D#{o.map{|k,v| [Glyph.dump(k), Glyph.dump(v)]}.join}E"
+      "D#{o.map{|k,v| [Glyph.dump(k, resolve, inline), Glyph.dump(v, resolve, inline)]}.join}E"
     elsif TrueClass === o
       "T"
     elsif FalseClass === o
@@ -296,23 +336,21 @@ module Glyph
       "d#{o.strftime("%FT%T.%LZ")}\n"
     elsif Extension === o
       o.instance_eval {
-        # resolve 'url'
-        "H#{@name.to_glyph}#{@attrs.to_glyph}#{@content.to_glyph}"
+        @attrs['url'] = resolve.call(@attrs['url']) if not String === @attrs['url']
+        "H#{Glyph.dump(@name, resolve, inline)}#{Glyph.dump(@attrs, resolve, inline)}#{Glyph.dump(@content,resolve, inline)}"
       }
     elsif Node === o 
       o.instance_eval {
-        "X#{@name.to_glyph}#{@attrs.to_glyph}#{@content.to_glyph}"
+        "X#{Glyph.dump(@name, resolve, inline)}#{Glyph.dump(@attrs, resolve, inline)}#{Glyph.dump(@content,resolve, inline)}"
       }
-    elsif Resource === o
-      raise EncodeError, 'unfinished'
     else
-      raise EncodeError, 'unsupported'
+      raise EncodeError, "unsupported #{o}"
     end
   end
   
   def self.load(str)
     scanner = StringScanner.new(str)
-    return parse(scanner, "")
+    return parse(scanner, nil)
   end
 
   def self.parse(scanner, url)
@@ -375,7 +413,9 @@ module Glyph
       attrs = parse(scanner, url)
       content = parse(scanner, url)
       e = Extension.make(name, attrs, content)
-      e.resolve(url)
+      if url
+        e.resolve(url)
+      end
       e
     else
       raise Glyph::DecodeError, "baws"
