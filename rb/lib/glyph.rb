@@ -73,8 +73,8 @@ module Glyph
       response = nil
       path.shift
 
-      args = data ? load(data.read).map(&:last) : nil
-
+      data = data ? data.read : nil
+      args = data.empty? ? nil: load(data).map(&:last) 
       if path.empty?
         obj = self
         methodname = method
@@ -99,7 +99,7 @@ module Glyph
       if response.nil?
         return [204, {}, []]
       else
-        return [200, {'Content-Type'=>CONTENT_TYPE}, dump(response)]
+        return [200, {'Content-Type'=>CONTENT_TYPE}, [dump(response)]]
       end
     end
     
@@ -122,7 +122,6 @@ module Glyph
           ins[n] = resource.instance_variable_get(n)
         end
         method = ''
-        p ins
         ins = dump_args(ins)
       elsif resource.class == Class and resource <= Resource
         cls = resource
@@ -184,7 +183,7 @@ module Glyph
 
   end
 
-  def self.open(url) 
+  def self.get(url) 
     fetch("GET", url, nil)
   end
 
@@ -235,7 +234,8 @@ module Glyph
     def method_missing(method, *args, &block)
         attr= @content[method.to_s]
         if attr and attr.respond_to?(:call)
-          return attr.call(*args, &block)
+          r =  attr.call(*args, &block)
+          return r
         else
           super(method, *args, &block)
         end
@@ -352,7 +352,8 @@ module Glyph
   end
 
   def self.parse(scanner, url)
-    return case scanner.scan(/\w/)[-1]
+    s = scanner.scan(/\w/)[-1]
+    return case s[-1]
     when ?T
       true
     when ?F
@@ -416,7 +417,7 @@ module Glyph
       end
       e
     else
-      raise Glyph::DecodeError, "baws"
+      raise Glyph::DecodeError, "baws #{s}"
     end
   end
 

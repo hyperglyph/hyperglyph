@@ -1,11 +1,12 @@
 require "glyph"
-s = Glyph.open(ARGV[0])
+s = Glyph.get(ARGV[0])
 puts "out "
 p s
 
 puts ''
 
 puts 'fetching queue'
+
 q= s.Queue('butt')
 puts 'got queue'
 p q
