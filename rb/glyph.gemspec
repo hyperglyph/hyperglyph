@@ -6,5 +6,5 @@ Gem::Specification.new do |s|
   s.description = "http based rpc using hypermedia"
   s.authors     = ["tef"]
   s.email       = 'tef@glyph.twentygototen.org'
-  s.files       = ["glyph.rb"]
+  s.files       = ["lib/glyph.rb"]
 end

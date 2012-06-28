@@ -5,5 +5,8 @@ python_test: py/
 	python py/setup.py test
 
 ruby_test: rb/
-	${RUBY} -Irb rb/tests.rb
+	rm rb/glyph*.gem
+	cd rb && gem build glyph.gemspec
+	gem install rb/glyph*.gem
+	${RUBY}  rb/tests.rb
 
