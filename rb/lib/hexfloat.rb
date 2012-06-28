@@ -27,7 +27,7 @@ class String
       sign =  m[1] == "-" ? 128 :0
 
       exponent = subnormal ? 0 : [(exponent+1023) <<4].pack('n').bytes.to_a
-      bits = [(fractional >> 32), (mantissa & (2**32-1))].pack('NN').bytes.to_a
+      bits = [(fractional >> 32), (fractional & (2**32-1))].pack('NN').bytes.to_a
       bits[0..1] = [ sign | exponent[0], exponent[1] | bits[1] ]
 
       bits.pack('C*').unpack('G')[0]
