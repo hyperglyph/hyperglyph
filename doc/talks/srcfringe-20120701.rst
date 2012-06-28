@@ -195,7 +195,7 @@ And then the stubs came. Thousands of them. Dirty dirty stubs.
 
 SLIDE::
 
-    class Queue < Resource
+    class Queue 
       attr_accessor :worker_id
 
       def next_task
@@ -204,7 +204,7 @@ SLIDE::
       end
     end
 
-    class Task < Resource
+    class Task 
       attr_accessor :worker_id, :task_id, :url
       def found_link(url)
         http.POST(...)
@@ -331,7 +331,7 @@ can be built from an object, and the urls can be built too.
 
 SLIDE::
 
-    class Queue 
+    class Queue < Resource
       attr_accessor :worker_id
 
       def next_task
@@ -370,7 +370,7 @@ and serialize the response.
 
 SLIDE::
 
-    class Queue 
+    class Queue < Resource
       attr_accessor :worker_id
 
       def next_task
@@ -445,6 +445,7 @@ and the server is free to change them, or point to other things.
 
 hypertext gives freedom to the developer, to grow the api.
 
+hypermedia is duck typing for apis.
 are you on crack?
 -----------------
 
@@ -503,7 +504,7 @@ SLIDE::
 
     caching
     sharding
-    embdedding
+    embedding
     extending
 
 we're at the stage where we're adding caching to our services.
@@ -533,6 +534,7 @@ SLIDE::
 
 The python code is relatively stable, but I've been changing things
 as I've been porting it to ruby.
+
 
 *aside*
     It's actually my first ruby program. I wrote it instead of writing
@@ -568,7 +570,9 @@ I've talked about proxies, caches, and load balancers.
 but I'm yet to mention REST 
 
 
+REST isn't about APIS or RPC, it is about the web.
 REST is about how all those things fit together, work together. 
+
 
 Many people argue that RPC and the web are orthogonal, but I hope
 with glyph i've shown you that they are complementary.
