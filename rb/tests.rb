@@ -5,7 +5,7 @@ require "test/unit"
 
 class EncodeTest < Test::Unit::TestCase
   def assert_encode (s)
-      assert_equal(s, Glyph.load(s.to_glyph))
+      assert_equal(s, Glyph.load(Glyph.dump(s)))
   end
   def test_encode
     assert_encode(-1.729)
@@ -21,6 +21,6 @@ class EncodeTest < Test::Unit::TestCase
     assert_encode(d)
     s = StringIO.new
     s.write("butts")
-    assert_equal(s.string, Glyph.load(s.to_glyph).string)
+    assert_equal(s.string, Glyph.load(Glyph.dump(s)).string)
   end
 end

@@ -7,164 +7,8 @@ require 'uri'
 
 # ruby1.9 or death!
 
-# this feels wrong and dirty.
-
-class Integer
-  def to_glyph
-    "i#{self}\n"
-  end
-end
-
-class String
-  def to_glyph
-    # assume in utf-8 wat
-    u = self.encode('utf-8')
-    "u#{u.bytesize}\n#{u}"
-  end
-end
-
-class StringIO
-  def to_glyph
-    # assume  bytestrings what
-    "b#{self.string.length}\n#{self.string}"
-  end
-end
-
-class Float
-  def to_glyph
-    "f#{Glyph.to_hexfloat(self)}\n"
-  end
-end
-
-class Array
-  def to_glyph
-    "L#{map{|o| o.to_glyph }.join}E"
-  end
-end
-
-class Set
-  def to_glyph
-    "S#{map{|o| o.to_glyph }.join}E"
-  end
-end
-
-class Hash
-  def to_glyph
-    "D#{map{|k,v| [k.to_glyph, v.to_glyph]}.join}E"
-  end
-end
-
-class TrueClass
-  def to_glyph
-    "T"
-  end
-end
-
-class FalseClass
-  def to_glyph
-    "F"
-  end
-end
-
-class NilClass
-  def to_glyph
-    "N"
-  end
-end
-
-class DateTime
-  def to_glyph
-    "d#{strftime("%FT%T.%NZ")}\n"
-  end
-end
-
-class Time
-  def to_glyph
-    "d#{strftime("%FT%T.%LZ")}\n"
-  end
-end
-
 
 # node, extension
-class Node
-  def initialize(name, attrs, content)
-    @name = name
-    @attrs = attrs
-    @content = content
-  end
-  def to_glyph
-    "X#{@name.to_glyph}#{@attrs.to_glyph}#{@content.to_glyph}"
-  end
-  def method_missing(method, *args, &block)
-      attr= @content[method.to_s]
-      if attr and attr.respond_to?(:call)
-        return attr.call(*args, &block)
-      else
-        super(method, *args, &block)
-      end
-  end
-
-  def [](item)
-    return @content[item]
-  end
-end
-
-class Extension < Node
-  def self.make(name, attrs, content)
-    return case name
-      when "form"
-        return Form.new(name, attrs, content)
-      when "link"
-        return Link.new(name, attrs, content)
-      when "embed"
-        return Embed.new(name, attrs, content)
-      else
-        return Extension.new(name,attrs, content)
-    end
-  end
-
-  def resolve url
-    @attrs['url']=URI.join(url,@attrs['url']).to_s
-  end
-
-  def to_glyph
-    "H#{@name.to_glyph}#{@attrs.to_glyph}#{@content.to_glyph}"
-  end
-end
-
-class Form < Extension
-  def call(*args, &block)
-    args = @attrs['values']? Hash[@attrs['values'].zip(args)] : {}
-    ret = Glyph.fetch(@attrs['method'], @attrs['url'], args)
-    if block
-      block.call(ret)
-    else
-      ret
-    end
-  end
-end
-
-class Link < Extension
-  def call(*args, &block)
-    ret = Glyph.fetch(@attrs['method'], @attrs['url'], nil)
-    if block
-      block.call(ret)
-    else
-      ret
-    end
-  end
-end
-  
-class Embed < Extension
-  def call(*args, &block)
-    if block
-      block.call(@content)
-    else
-      @content
-    end
-  end
-end
-
 module Glyph
   CONTENT_TYPE = "application/vnd.glyph"
 
@@ -173,6 +17,166 @@ module Glyph
   class DecodeError < StandardError
   end
 
+  class Node
+    def initialize(name, attrs, content)
+      @name = name
+      @attrs = attrs
+      @content = content
+    end
+    def method_missing(method, *args, &block)
+        attr= @content[method.to_s]
+        if attr and attr.respond_to?(:call)
+          return attr.call(*args, &block)
+        else
+          super(method, *args, &block)
+        end
+    end
+
+    def [](item)
+      return @content[item]
+    end
+  end
+
+  class Extension < Node
+    def self.make(name, attrs, content)
+      return case name
+        when "form"
+          return Form.new(name, attrs, content)
+        when "link"
+          return Link.new(name, attrs, content)
+        when "embed"
+          return Embed.new(name, attrs, content)
+        else
+          return Extension.new(name,attrs, content)
+      end
+    end
+
+    def resolve url
+      @attrs['url']=URI.join(url,@attrs['url']).to_s
+    end
+
+  end
+
+  class Form < Extension
+    def call(*args, &block)
+      args = @attrs['values']? Hash[@attrs['values'].zip(args)] : {}
+      ret = Glyph.fetch(@attrs['method'], @attrs['url'], args)
+      if block
+        block.call(ret)
+      else
+        ret
+      end
+    end
+  end
+
+  class Link < Extension
+    def call(*args, &block)
+      ret = Glyph.fetch(@attrs['method'], @attrs['url'], nil)
+      if block
+        block.call(ret)
+      else
+        ret
+      end
+    end
+  end
+    
+  class Embed < Extension
+    def call(*args, &block)
+      if block
+        block.call(@content)
+      else
+        @content
+      end
+    end
+  end
+
+
+  class Resource
+    def GET
+        return self
+    end
+
+    def POST
+    end
+
+    def self.GET
+    end
+
+    def self.POST(*args)
+      return new(*args)
+    end
+
+  end
+
+  class Router
+    def initialize()
+      @routes = {}
+      self.class.constants.each do |c|
+        @routes[c.to_s] = self.class.const_get(c)
+      end
+    end
+    def to_s
+      "<#{self.class.to_s} #{@routes}>"
+    end
+      
+    def call(env)
+      path = env['PATH_INFO'].split
+      method = env['REQUEST_METHOD']
+
+      response = nil
+      args = nil
+
+      response = if path.empty?
+        if method == 'GET'
+          self.GET
+        else
+          self.POST(*args)
+        end
+      else
+
+      end
+
+      if response.nil?
+        return [204, {}, []]
+      else
+        return [200, {'Content-Type'=>CONTENT_TYPE}, dump(response)]
+      end
+    end
+    
+    def GET
+      content = {}
+      @routes.each do |name, cls|
+        content[name] = form(cls)
+      end
+      return Extension.make('resource', {'url'=>self}, content)
+    end
+
+    def POST
+
+    end
+    def url(resource)
+
+    end
+
+    def load(str)
+      Glyph::load(obj)
+    end
+
+    def dump(obj)
+      Glyph::dump(obj)
+    end
+
+    def form(obj) 
+      if obj.class == Class
+        args = obj.instance_method(:initialize).parameters
+      elsif obj.class == Method
+        args = obj.parameters
+      end
+
+      args=args.collect {|x| x[0] == :req and x[1]}
+      Extension.make('form',{'method'=>'POST', 'url'=>obj}, args)
+    end
+  end
 
   def self.open(url) 
     fetch("GET", url, nil)
@@ -217,7 +221,40 @@ module Glyph
   end
 
   def self.dump(o)
-    o.to_glyph
+    if String === o
+      u = o.encode('utf-8')
+      "u#{u.bytesize}\n#{u}"
+    elsif Integer === o
+      "i#{o}\n"
+    elsif StringIO === o
+      "b#{o.string.length}\n#{o.string}"
+    elsif Float === o
+      "f#{Glyph.to_hexfloat(o)}\n"
+    elsif Array === o
+      "L#{o.map{|o| Glyph.dump(o) }.join}E"
+    elsif Set === o
+      "S#{o.map{|o| Glyph.dump(o) }.join}E"
+    elsif Hash === o
+      "D#{o.map{|k,v| [Glyph.dump(k), Glyph.dump(v)]}.join}E"
+    elsif TrueClass === o
+      "T"
+    elsif FalseClass === o
+      "F"
+    elsif o.nil?
+      "N"
+    elsif DateTime === o
+      "d#{o.strftime("%FT%T.%NZ")}\n"
+    elsif Time === o
+      "d#{o.strftime("%FT%T.%LZ")}\n"
+    elsif Extention === o
+      "H#{@name.to_glyph}#{@attrs.to_glyph}#{@content.to_glyph}"
+    elsif Node === o
+      "X#{@name.to_glyph}#{@attrs.to_glyph}#{@content.to_glyph}"
+    elsif Resource === o
+      raise EncodeError, 'unfinished'
+    else
+      raise EncodeError, 'unsupported'
+    end
   end
   
   def self.load(str)
@@ -315,14 +352,10 @@ module Glyph
     mantissa = [mantissa_t, mantissa_b].pack('NN').bytes.to_a
 
     bits = [
-      sign | exponent[0],
-      exponent[1] | mantissa[1],
-      mantissa[2],
-      mantissa[3],
-      mantissa[4],
-      mantissa[5],
-      mantissa[6],
-      mantissa[7],
+      sign | exponent[0], exponent[1] | mantissa[1], 
+      mantissa[2], mantissa[3],
+      mantissa[4], mantissa[5],
+      mantissa[6], mantissa[7],
     ].map {|x| x.chr}.join.unpack('G')[0]
   end
 
@@ -341,96 +374,6 @@ module Glyph
       mantissa += (bits[6]<<8)
       mantissa += bits[7]
       return "#{sign}0x#{mantissa.to_s(16)}p#{exponent.to_s(16)}"
-  end
-
-end
-
-module Glyph
-  class Resource
-    def GET
-        return self
-    end
-
-    def POST
-    end
-
-    def self.GET
-    end
-
-    def self.POST(*args)
-      return new(*args)
-    end
-
-  end
-
-  class Router
-    def initialize()
-      @routes = {}
-      self.class.constants.each do |c|
-        @routes[c.to_s] = self.class.const_get(c)
-      end
-    end
-    def to_s
-      "<#{self.class.to_s} #{@routes}>"
-    end
-      
-    def call(env)
-      path = env['PATH_INFO'].split
-      method = env['REQUEST_METHOD']
-
-      response = nil
-      args = nil
-
-      response = if path.empty?
-        if method == 'GET'
-          self.GET
-        else
-          self.POST(*args)
-        end
-      else
-
-      end
-
-      if response == nil
-        return [204, {}, []]
-      else
-        return [200, {'Content-Type'=>CONTENT_TYPE}, dump(response)]
-      end
-    end
-    
-    def GET
-      content = {}
-      @routes.each do |name, cls|
-        content[name] = form(cls)
-      end
-      return Extension.make('resource', {'url'=>self}, content)
-    end
-
-    def POST
-
-    end
-    def url(resource)
-
-    end
-
-    def load(str)
-      Glyph::load(obj)
-    end
-
-    def dump(obj)
-      Glyph::dump(obj)
-    end
-
-    def form(obj) 
-      if obj.class == Class
-        args = obj.instance_method(:initialize).parameters
-      elsif obj.class == Method
-        args = obj.parameters
-      end
-
-      args=args.collect {|x| x[0] == :req and x[1]}
-      Extension.make('form',{'method'=>'POST', 'url'=>obj}, args)
-    end
   end
 end
 
