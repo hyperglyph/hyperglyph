@@ -17,80 +17,6 @@ module Glyph
   class DecodeError < StandardError
   end
 
-  class Node
-    def initialize(name, attrs, content)
-      @name = name
-      @attrs = attrs
-      @content = content
-    end
-    def method_missing(method, *args, &block)
-        attr= @content[method.to_s]
-        if attr and attr.respond_to?(:call)
-          return attr.call(*args, &block)
-        else
-          super(method, *args, &block)
-        end
-    end
-
-    def [](item)
-      return @content[item]
-    end
-  end
-
-  class Extension < Node
-    def self.make(name, attrs, content)
-      return case name
-        when "form"
-          return Form.new(name, attrs, content)
-        when "link"
-          return Link.new(name, attrs, content)
-        when "embed"
-          return Embed.new(name, attrs, content)
-        else
-          return Extension.new(name,attrs, content)
-      end
-    end
-
-    def resolve url
-      @attrs['url']=URI.join(url,@attrs['url']).to_s
-    end
-
-  end
-
-  class Form < Extension
-    def call(*args, &block)
-      args = @attrs['values']? Hash[@attrs['values'].zip(args)] : {}
-      ret = Glyph.fetch(@attrs['method'], @attrs['url'], args)
-      if block
-        block.call(ret)
-      else
-        ret
-      end
-    end
-  end
-
-  class Link < Extension
-    def call(*args, &block)
-      ret = Glyph.fetch(@attrs['method'], @attrs['url'], nil)
-      if block
-        block.call(ret)
-      else
-        ret
-      end
-    end
-  end
-    
-  class Embed < Extension
-    def call(*args, &block)
-      if block
-        block.call(@content)
-      else
-        @content
-      end
-    end
-  end
-
-
   class Resource
     def GET
         return self
@@ -133,7 +59,11 @@ module Glyph
           self.POST(*args)
         end
       else
+        path.shift
+        cls = @routes[path.shift]
+        if cls
 
+        end
       end
 
       if response.nil?
@@ -220,6 +150,80 @@ module Glyph
     end
   end
 
+  class Node
+    def initialize(name, attrs, content)
+      @name = name
+      @attrs = attrs
+      @content = content
+    end
+    def method_missing(method, *args, &block)
+        attr= @content[method.to_s]
+        if attr and attr.respond_to?(:call)
+          return attr.call(*args, &block)
+        else
+          super(method, *args, &block)
+        end
+    end
+
+    def [](item)
+      return @content[item]
+    end
+  end
+
+  class Extension < Node
+    def self.make(name, attrs, content)
+      return case name
+        when "form"
+          return Form.new(name, attrs, content)
+        when "link"
+          return Link.new(name, attrs, content)
+        when "embed"
+          return Embed.new(name, attrs, content)
+        else
+          return Extension.new(name,attrs, content)
+      end
+    end
+
+    def resolve url
+      @attrs['url']=URI.join(url,@attrs['url']).to_s
+    end
+
+  end
+
+  class Form < Extension
+    def call(*args, &block)
+      args = @attrs['values']? Hash[@attrs['values'].zip(args)] : {}
+      ret = Glyph.fetch(@attrs['method'], @attrs['url'], args)
+      if block
+        block.call(ret)
+      else
+        ret
+      end
+    end
+  end
+
+  class Link < Extension
+    def call(*args, &block)
+      ret = Glyph.fetch(@attrs['method'], @attrs['url'], nil)
+      if block
+        block.call(ret)
+      else
+        ret
+      end
+    end
+  end
+    
+  class Embed < Extension
+    def call(*args, &block)
+      if block
+        block.call(@content)
+      else
+        @content
+      end
+    end
+  end
+
+
   def self.dump(o)
     if String === o
       u = o.encode('utf-8')
@@ -229,7 +233,7 @@ module Glyph
     elsif StringIO === o
       "b#{o.string.length}\n#{o.string}"
     elsif Float === o
-      "f#{Glyph.to_hexfloat(o)}\n"
+      "f#{o.to_hex}\n"
     elsif Array === o
       "L#{o.map{|o| Glyph.dump(o) }.join}E"
     elsif Set === o
@@ -278,7 +282,7 @@ module Glyph
       DateTime.strptime(dt, "%FT%T.%L%Z")
     when ?f
       num = scanner.scan_until(/\n/)
-      Glyph.from_hexfloat(num.chop)
+      Float.from_hex(num.chop)
     when ?u
       num = scanner.scan_until(/\n/).chop.to_i
       str = scanner.peek(num)
@@ -329,11 +333,12 @@ module Glyph
     end
   end
 
+end
 
-  # i am a terrible programmer and I should be ashamed.
-  #
-  def self.from_hexfloat(s)
-    # todo , nan, inf
+# i am a terrible programmer and I should be ashamed.
+# todo nan, inf handling?
+class Float
+  def self.from_hex(s)
     r = /(-?)0x([0-9a-fA-F]+)p(-?[0-9a-fA-F]+)/
     m = r.match s
 
@@ -359,9 +364,8 @@ module Glyph
     ].map {|x| x.chr}.join.unpack('G')[0]
   end
 
-  def self.to_hexfloat(f)
-      # todo nan, inf handling?
-      bits = [f].pack("G").bytes.to_a
+  def to_hex
+      bits = [self].pack("G").bytes.to_a
       sign = (bits[0]&128).to_i 
       sign = sign == 128? "-" : ""  
       exponent = ((bits[0]&127)<<4) + ((bits[1]&240)>>4) - 1023
@@ -376,7 +380,6 @@ module Glyph
       return "#{sign}0x#{mantissa.to_s(16)}p#{exponent.to_s(16)}"
   end
 end
-
 
 
 
