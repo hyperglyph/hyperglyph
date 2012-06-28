@@ -74,6 +74,7 @@ module Glyph
       path.shift
 
       data = data ? data.read : nil
+  
       args = data.empty? ? nil: load(data).map(&:last) 
       if path.empty?
         obj = self
@@ -85,7 +86,7 @@ module Glyph
         query = env['QUERY_STRING']
         if cls.nil?
           raise StandardError, "unknown url"
-        elsif query
+        elsif not query.empty?
           query = parse_args(query)
           obj = cls.new(*query)
         else
@@ -109,17 +110,17 @@ module Glyph
       elsif Method === resource
         obj = resource.receiver
         cls = obj.class
-        ins = {}
+        ins = []
         method = resource.name
         obj.instance_variables.each do |n|
-          ins[n] = obj.instance_variable_get(n)
+          ins.push([n, obj.instance_variable_get(n)])
         end
         ins = dump_args(ins)
       elsif Resource === resource
         cls=resource.class
-        ins = {}
+        ins = []
         resource.instance_variables.each do |n|
-          ins[n] = resource.instance_variable_get(n)
+          ins.push([n,resource.instance_variable_get(n)])
         end
         method = ''
         ins = dump_args(ins)
@@ -165,7 +166,7 @@ module Glyph
       end
 
       args=args.collect {|x| x[0] == :req and x[1]}
-      Extension.make('form',{'method'=>'POST', 'url'=>obj}, args)
+      Extension.make('form',{'method'=>'POST', 'url'=>obj, 'values'=>args}, nil)
     end
 
     def GET
