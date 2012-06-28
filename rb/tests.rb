@@ -9,6 +9,10 @@ class EncodeTest < Test::Unit::TestCase
   end
   def test_encode
     assert_encode(-1.729)
+    assert_encode(+1.729)
+    assert_encode(+0.0)
+    assert_encode(-0.0)
+    assert_encode(2.225073858507201e-308)
     assert_encode(1337)
     assert_encode("1.0")
     s=Set.new

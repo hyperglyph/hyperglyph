@@ -428,17 +428,22 @@ end
 # todo nan, inf handling?
 class Float
   def self.from_hex(s)
-    r = /(-?)0x([0-9a-fA-F]+)p(-?[0-9a-fA-F]+)/
+    r = /(-?)0x([01]).([0-9a-fA-F]+)p(-?[0-9a-fA-F]+)/
     m = r.match s
 
     sign = m[1]
-    mantissa = m[2].to_i(16)
-    exponent = m[3].to_i(16)
+    subnormal = (m[2] == "0")
+    mantissa = m[3].to_i(16)
+    exponent = m[4].to_i(16)
 
     sign =  sign == "-" ? 128 :0
-    exponent = (exponent+1023) <<4
-    exponent = [exponent].pack('n').bytes.to_a
-    mantissa -=1
+    if subnormal
+      exponent = 0
+    else
+      exponent = (exponent+1023) <<4
+      exponent = [exponent].pack('n').bytes.to_a
+    end
+
 
     mantissa_t = mantissa >> 32;
     mantissa_b = mantissa & (2**32-1)
@@ -450,15 +455,18 @@ class Float
       mantissa[2], mantissa[3],
       mantissa[4], mantissa[5],
       mantissa[6], mantissa[7],
-    ].map {|x| x.chr}.join.unpack('G')[0]
+    ]
+    bits = bits.pack('C*').unpack('G')[0]
   end
 
   def to_hex
       bits = [self].pack("G").bytes.to_a
       sign = (bits[0]&128).to_i 
       sign = sign == 128? "-" : ""  
-      exponent = ((bits[0]&127)<<4) + ((bits[1]&240)>>4) - 1023
-      mantissa = 1
+      exponent = 0 
+      exponent += (bits[0]&127)<<4 
+      exponent += (bits[1]&240)>>4
+      mantissa =0
       mantissa += (bits[1]&15)<<48
       mantissa += (bits[2]<<40)
       mantissa += (bits[3]<<32)
@@ -466,7 +474,16 @@ class Float
       mantissa += (bits[5]<<16) 
       mantissa += (bits[6]<<8)
       mantissa += bits[7]
-      return "#{sign}0x#{mantissa.to_s(16)}p#{exponent.to_s(16)}"
+      if exponent > 0
+        exponent -=1023
+        return "#{sign}0x1.#{mantissa.to_s(16)}p#{exponent.to_s(16)}"
+      else
+        if mantissa == 0
+          return "#{sign}0x0.0p0"
+        else
+          return "#{sign}0x0.#{mantissa.to_s(16)}p-1022"
+        end
+      end
   end
 end
 
