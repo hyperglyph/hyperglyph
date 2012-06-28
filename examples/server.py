@@ -1,37 +1,32 @@
 import glyph
+import collections
 
-def server():
-    import collections
+queues = {}
 
-    queues = {}
+m = glyph.Router()
 
-    m = glyph.Router()
+@m.add()
+class Queue(glyph.r):
+    def __init__(self, name):
+        self.name = name
+    def push(self, msg):
+        if self.name not in queues:
+            queues[self.name]=collections.deque()
+        queues[self.name].appendleft(msg)
 
-    # these are created on each request
+    def pop(self):
+        if self.name in queues:
+            return queues[self.name].popleft()
 
-    # the url parameters are used to construct them
-    @m.add()
-    class Queue(glyph.r):
-        def __init__(self, name):
-            self.name = name
-        def push(self, msg):
-            if self.name not in queues:
-                queues[self.name]=collections.deque()
-            queues[self.name].appendleft(msg)
+s = glyph.Server(m, port=12344)
 
-        def pop(self):
-            if self.name in queues:
-                return queues[self.name].popleft()
+s.start()
 
-    s = glyph.Server(m, port=12344)
-    s.start()
-    print s.url
-    try:
-        while s.is_alive():
-            s.join(2)
-    finally:
-        s.stop()
+print s.url
+try:
+    while s.is_alive():
+        s.join(2)
+finally:
+    s.stop()
 
-if __name__ == '__main__':
-        server()
 
