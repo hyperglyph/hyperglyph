@@ -43,7 +43,7 @@ code, headers, data = s.call({'REQUEST_METHOD'=>'GET', 'PATH_INFO'=>'/'})
 p Glyph.load(data)
 
 #Rack::Handler::WEBrick.run(Service.new, :Port => 12344)
-b = Glyph.dump({'name'=>'butt'})
+b = Glyph.dump([['name','butt']])
 buf = StringIO.new()
 buf.write(b)
 buf.rewind

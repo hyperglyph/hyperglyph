@@ -31,9 +31,7 @@ module Glyph
     end
     
     def self.POST(*args)
-      h = Hash[args]
-      p "interim #{h}"
-      return new(*h)
+      return new(*args)
     end
 
   end
@@ -75,7 +73,7 @@ module Glyph
       response = nil
       path.shift
 
-      args = data ? load(data.read) : nil
+      args = data ? load(data.read).map(&:last) : nil
 
       if path.empty?
         obj = self
@@ -94,9 +92,9 @@ module Glyph
           obj = cls
         end
       end
-      p "call #{obj} #{methodname} #{args}"
+      #p "call #{obj} #{methodname} #{args}"
       response = obj.method(methodname).call(*args)
-      p "response #{response}"
+      #p "response #{response}"
 
       if response.nil?
         return [204, {}, []]
@@ -270,7 +268,7 @@ module Glyph
 
   class Form < Extension
     def call(*args, &block)
-      args = @attrs['values']? Hash[@attrs['values'].zip(args)] : {}
+      args = @attrs['values'] ? @attrs['values'].zip(args) : []
       ret = Glyph.fetch(@attrs['method'], @attrs['url'], args)
       if block
         block.call(ret)

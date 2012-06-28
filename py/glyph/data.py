@@ -173,17 +173,17 @@ class Extension(Node):
 class Form(Extension):
     def __call__(self, *args, **kwargs):
         url = self._attributes[u'url']
-        data = {}
+        data = []
         names = self._attributes[u'values']
         if names:
             for n,v in zip(names, args):
-                data[n] = v
+                data.append((n,v))
         elif args:
             raise StandardError('no unamed arguments')
 
         for k,v in kwargs.items():
             if k in names:
-                data[k]=v   
+                data.append((k,v))
             else:
                 raise StandardError('unknown argument')
 

@@ -82,7 +82,7 @@ class Handler(object):
             result = attr()
         elif verb == 'POST' and not cls.is_safe(attr): 
             try:
-                data = cls.parse(attr, request.data) if request.data else {}
+                data = dict(cls.parse(attr, request.data)) if request.data else {}
             except StandardError:
                 raise BadRequest()
             result =attr(**data)
