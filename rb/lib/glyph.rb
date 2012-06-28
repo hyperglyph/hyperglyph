@@ -345,4 +345,96 @@ module Glyph
 
 end
 
+module Glyph
+  class Resource
+    def GET
+        return self
+    end
+
+    def POST
+    end
+
+    def self.GET
+    end
+
+    def self.POST(*args)
+      return new(*args)
+    end
+
+  end
+
+  class Router
+    def initialize()
+      @routes = {}
+      self.class.constants.each do |c|
+        @routes[c.to_s] = self.class.const_get(c)
+      end
+    end
+    def to_s
+      "<#{self.class.to_s} #{@routes}>"
+    end
+      
+    def call(env)
+      path = env['PATH_INFO'].split
+      method = env['REQUEST_METHOD']
+
+      response = nil
+      args = nil
+
+      response = if path.empty?
+        if method == 'GET'
+          self.GET
+        else
+          self.POST(*args)
+        end
+      else
+
+      end
+
+      if response == nil
+        return [204, {}, []]
+      else
+        return [200, {'Content-Type'=>CONTENT_TYPE}, dump(response)]
+      end
+    end
+    
+    def GET
+      content = {}
+      @routes.each do |name, cls|
+        content[name] = form(cls)
+      end
+      return Extension.make('resource', {'url'=>self}, content)
+    end
+
+    def POST
+
+    end
+    def url(resource)
+
+    end
+
+    def load(str)
+      Glyph::load(obj)
+    end
+
+    def dump(obj)
+      Glyph::dump(obj)
+    end
+
+    def form(obj) 
+      if obj.class == Class
+        args = obj.instance_method(:initialize).parameters
+      elsif obj.class == Method
+        args = obj.parameters
+      end
+
+      args=args.collect {|x| x[0] == :req and x[1]}
+      Extension.make('form',{'method'=>'POST', 'url'=>obj}, args)
+    end
+  end
+end
+
+
+
+
 

@@ -11,7 +11,7 @@ def server():
 
     # the url parameters are used to construct them
     @m.add()
-    class queue(glyph.r):
+    class Queue(glyph.r):
         def __init__(self, name):
             self.name = name
         def push(self, msg):

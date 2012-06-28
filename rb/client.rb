@@ -6,7 +6,7 @@ p s
 puts ''
 
 puts 'fetching queue'
-q= s.queue('butt')
+q= s.Queue('butt')
 puts 'got queue'
 p q
 puts ''
