@@ -1,61 +1,50 @@
 # i am a terrible programmer and I should be ashamed.
 # todo nan, inf handling?
-class Float
-  def self.from_hex(s)
-    r = /(-?)0x([01]).([0-9a-fA-F]+)p(-?[0-9a-fA-F]+)/
-    m = r.match s
-
-    sign = m[1]
-    subnormal = (m[2] == "0")
-    mantissa = m[3].to_i(16)
-    exponent = m[4].to_i(16)
-
-    sign =  sign == "-" ? 128 :0
-    if subnormal
-      exponent = 0
+class String
+  def hex_to_f
+    s = self.downcase
+    if s == 'nan'
+      Float::NAN
+    elsif s.start_with? "inf"
+      Float::INFINITY
+    elsif s.start_with? "-inf"
+      -Float::INFINITY
     else
-      exponent = (exponent+1023) <<4
-      exponent = [exponent].pack('n').bytes.to_a
+      m = /(-?)0x([01]).([0-9a-f]+)p(-?[0-9a-f]+)/.match s
+
+      subnormal = (m[2] == "0")
+      mantissa = m[3].to_i(16)
+      exponent = m[4].to_i(16)
+      sign =  m[1] == "-" ? 128 :0
+
+      exponent = subnormal ? 0 : [(exponent+1023) <<4].pack('n').bytes.to_a
+      bits = [(mantissa >> 32), (mantissa & (2**32-1))].pack('NN').bytes.to_a
+      bits[0..1] = [ sign | exponent[0], exponent[1] | bits[1] ]
+
+      bits.pack('C*').unpack('G')[0]
     end
-
-
-    mantissa_t = mantissa >> 32;
-    mantissa_b = mantissa & (2**32-1)
-
-    mantissa = [mantissa_t, mantissa_b].pack('NN').bytes.to_a
-
-    bits = [
-      sign | exponent[0], exponent[1] | mantissa[1], 
-      mantissa[2], mantissa[3],
-      mantissa[4], mantissa[5],
-      mantissa[6], mantissa[7],
-    ]
-    bits = bits.pack('C*').unpack('G')[0]
   end
-
+end
+class Float
   def to_hex
-      bits = [self].pack("G").bytes.to_a
-      sign = (bits[0]&128).to_i 
-      sign = sign == 128? "-" : ""  
-      exponent = 0 
-      exponent += (bits[0]&127)<<4 
-      exponent += (bits[1]&240)>>4
-      mantissa =0
-      mantissa += (bits[1]&15)<<48
-      mantissa += (bits[2]<<40)
-      mantissa += (bits[3]<<32)
-      mantissa += (bits[4]<<24) 
-      mantissa += (bits[5]<<16) 
-      mantissa += (bits[6]<<8)
-      mantissa += bits[7]
-      if exponent > 0
-        exponent -=1023
-        return "#{sign}0x1.#{mantissa.to_s(16)}p#{exponent.to_s(16)}"
+      if nan? or self == Float::INFINITY or self == -Float::INFINITY
+        self.to_s
       else
-        if mantissa == 0
-          return "#{sign}0x0.0p0"
+        bits = [self].pack("G").bytes.to_a
+        sign = (bits[0]&128) == 128? "-" : ""  
+        bits[0]&=127
+        exponent = (bits[0..1].pack('C*').unpack('n')[0] >> 4) - 1023
+        bits[0]&=0
+        bits[1]&=15
+        mantissa = bits.pack('C*').unpack('H*').join
+        mantissa.slice! /^0+(?=[1-9]|0$)/
+
+        if exponent > -1023
+          "#{sign}0x1.#{mantissa}p#{exponent.to_s(16)}"
+        elsif mantissa == "0"
+          "#{sign}0x0.0p0"
         else
-          return "#{sign}0x0.#{mantissa.to_s(16)}p-1022"
+          "#{sign}0x0.#{mantissa}p-1022"
         end
       end
   end

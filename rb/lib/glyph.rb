@@ -371,7 +371,7 @@ module Glyph
       DateTime.strptime(dt, "%FT%T.%L%Z")
     when ?f
       num = scanner.scan_until(/\n/)
-      Float.from_hex(num.chop)
+      num.chop.hex_to_f
     when ?u
       num = scanner.scan_until(/\n/).chop.to_i
       str = scanner.peek(num)
