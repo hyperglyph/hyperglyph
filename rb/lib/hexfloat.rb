@@ -20,10 +20,10 @@ class String
     elsif s == "-inf" or s =='-infinity'
       -Float::INFINITY
     else
-      m = /(-?)0x([01]).([0-9abcdef]+)p(-?[0-9a-f]+)/.match s
+      m = /(-?)0x([01]).([0-9abcdef]+)p([+\-]?[0-9a-f]+)/.match s
 
       subnormal = (m[2] == "0")
-      fractional = m[3].to_i(16)
+      fractional = m[3].ljust(13,"0").to_i(16)
       exponent = m[4].to_i()
       sign =  m[1] == "-" ? 128 :0
 
@@ -44,13 +44,15 @@ class Float
         sign = (bits[0]&128) == 128? "-" : ""  
         exponent = 0 + ((bits[0]&127) <<4) +  ((bits[1]&240) >>4)
         fractional = sprintf "%x%02x%02x%02x%02x%02x%02x", bits[1]&15,*bits[2..7]
-        normal = exponent > 0 ? 1 : 0
-        if normal > 0
-          exponent-=1023
+        fractional.slice! /(?<!^)0+$/
+        if exponent > 0
+          exponent-=1023  
+          lead ="1"
         else # subnormal
           exponent = -1022 if fractional != "0"
+          lead = "0"
         end
-        "#{sign}0x#{normal}.#{fractional}p#{exponent}"
+        "#{sign}0x#{lead}.#{fractional}p#{exponent}"
       end
   end
 end
