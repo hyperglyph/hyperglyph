@@ -46,7 +46,7 @@ class Float
         exponent = (bits[0..1].pack('C*').unpack('n')[0] >> 4) - 1023
         bits[0]&=0
         bits[1]&=15
-        fractional = bits.pack('C*').unpack('H*').join
+        fractional = sprintf "%x%02x%02x%02x%02x%02x%02x", *bits[1..7]
         fractional.slice! /^0+(?=[1-9abcedf]|0$)/
 
         if exponent > -1023
