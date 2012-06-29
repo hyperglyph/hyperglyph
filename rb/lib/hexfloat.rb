@@ -23,7 +23,7 @@ class String
 
       subnormal = (m[2] == "0")
       fractional = m[3].to_i(16)
-      exponent = m[4].to_i(16)
+      exponent = m[4].to_i()
       sign =  m[1] == "-" ? 128 :0
 
       exponent = subnormal ? 0 : [(exponent+1023) <<4].pack('n').bytes.to_a
@@ -49,7 +49,7 @@ class Float
         fractional.slice! /^0+(?=[1-9abcedf]|0$)/
 
         if exponent > -1023
-          "#{sign}0x1.#{fractional}p#{exponent.to_s(16)}"
+          "#{sign}0x1.#{fractional}p#{exponent.to_s}"
         elsif fractional == "0"
           "#{sign}0x0.0p0"
         else
