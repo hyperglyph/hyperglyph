@@ -42,20 +42,15 @@ class Float
       else
         bits = [self].pack("G").bytes.to_a
         sign = (bits[0]&128) == 128? "-" : ""  
-        bits[0]&=127
-        exponent = (bits[0..1].pack('C*').unpack('n')[0] >> 4) - 1023
-        bits[0]&=0
-        bits[1]&=15
-        fractional = sprintf "%x%02x%02x%02x%02x%02x%02x", *bits[1..7]
-        fractional.slice! /^0+(?=[1-9abcedf]|0$)/
-
-        if exponent > -1023
-          "#{sign}0x1.#{fractional}p#{exponent.to_s}"
-        elsif fractional == "0"
-          "#{sign}0x0.0p0"
-        else
-          "#{sign}0x0.#{fractional}p-1022"
+        exponent = 0 + ((bits[0]&127) <<4) +  ((bits[1]&240) >>4)
+        fractional = sprintf "%x%02x%02x%02x%02x%02x%02x", bits[1]&15,*bits[2..7]
+        normal = exponent > 0 ? 1 : 0
+        if normal > 0
+          exponent-=1023
+        else # subnormal
+          exponent = -1022 if fractional != "0"
         end
+        "#{sign}0x#{normal}.#{fractional}p#{exponent}"
       end
   end
 end
