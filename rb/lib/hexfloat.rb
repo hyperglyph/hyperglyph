@@ -6,6 +6,7 @@
 
 # floats are <sign bit> <exponent> <fractional>
 # normal hex floats are (-)0x1.<fractional>p<exponent>
+# fractional part in hex, exponent in decimal
 # 0.0 is 0x0.0p0, -0.0 is -0x0.0p0
 # subnormals are 0x0.<fractional>p-1022
 # infinity is -inf/infinity
