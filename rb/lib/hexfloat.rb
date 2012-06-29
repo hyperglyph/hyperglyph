@@ -19,7 +19,7 @@ class String
     elsif s == "-inf" or s =='-infinity'
       -Float::INFINITY
     else
-      m = /(-?)0x([01]).([0-9a-f]+)p(-?[0-9a-f]+)/.match s
+      m = /(-?)0x([01]).([0-9abcdef]+)p(-?[0-9a-f]+)/.match s
 
       subnormal = (m[2] == "0")
       fractional = m[3].to_i(16)
@@ -46,7 +46,7 @@ class Float
         bits[0]&=0
         bits[1]&=15
         fractional = bits.pack('C*').unpack('H*').join
-        fractional.slice! /^0+(?=[1-9]|0$)/
+        fractional.slice! /^0+(?=[1-9abcedf]|0$)/
 
         if exponent > -1023
           "#{sign}0x1.#{fractional}p#{exponent.to_s(16)}"
