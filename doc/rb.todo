@@ -12,3 +12,76 @@ server side stuff/mapping
 	need to work out
 	how to get object instance vars
 	and arguments to methods
+
+
+say
+    use rack, named arguments 
+    
+
+    class Service < Router
+        class Queue < Resource
+            def initialize(worker_id)
+                @worker_id = worker_id
+            end
+            def next_task
+                uuid = "bob"
+                return Task(@worker_id, uuid)
+            end
+    end
+
+    module Router
+        def self.call(rank env)
+            parse url
+            find    class to invoke
+                invoke it, go build yourself.
+
+
+        end
+        def url()
+            find class of object/object contents
+                map it
+
+        def dump()
+
+            knows how to inline methods, classes, 
+
+        end
+        def load()
+                
+        end
+
+    end
+
+    module Resource
+        def GET
+            self
+        end
+
+        def call(env)
+            build instance if necessary from args
+            build method if necessary
+            if no method, call self.VERB
+            unpack arguments if any data
+            return dump(call(*args))
+
+        def
+        def self.GET
+
+        def self.parse_query
+
+        def self.dump_query
+
+        def self.inline
+
+        end
+
+        def to_glyph
+
+        def
+    end
+
+    module Mapper
+
+
+    end
+end

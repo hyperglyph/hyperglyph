@@ -1,5 +1,9 @@
+msgpack/json encoding formats?
+
+
 encoding:
 	remove newlines in query args?
+
 caching
 	caching headers added to responses
 	@cache(max_age=....)
@@ -25,6 +29,9 @@ datatypes/collections
 
 
 inlining/embedding:
+
+    embeds should have last_modified/caching headers?
+
 	basically, how should @glyph.embed() work
 	given in ruby it won't make a difference because
 	a.foo is a.foo()
