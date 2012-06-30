@@ -11,7 +11,12 @@
 
 restful-rpc, or how I learned to love the hypermedia
 ====================================================
-
+..
+    introduction: 
+        me, learning ruby
+        day job, github, travis
+        glyph is ducked type web stuff
+        worksforme
 
 SLIDE::
 
@@ -57,6 +62,12 @@ for letting me release this code, as well as github and travis. You're all neat.
 
 nobody knows the trouble i've seen
 ----------------------------------
+
+..
+    day job is terrible
+    rpc i.e client-server
+    what life wihout rpc looks like
+    duck typing is nice
 
 SLIDE::
 
@@ -114,6 +125,12 @@ SLIDE::
 HTTP. It's good for you
 -----------------------
 
+..
+    ugly truth of POST+json
+    other choices and nightmares
+    http, and http intermediataries
+    still ugly
+
 What we started with with looked a lot more like this:
 
 SLIDE::
@@ -166,6 +183,12 @@ That said, the resulting code wasn't so elegant, but I didn't blame HTTP.
 the ugly duckling
 -----------------
 
+..
+    the trouble with objects, urls, stubs
+    moved on, revisited after growth of stubs
+    pain of stubs, generating stubs is concrete
+    had to be a better way that didn't suck: more http
+
 SLIDE::
     *blank*
 
@@ -195,25 +218,25 @@ And then the stubs came. Thousands of them. Dirty dirty stubs.
 
 SLIDE::
 
-    class Queue 
-      attr_accessor :worker_id
+class Queue 
+  attr_accessor :worker_id
 
-      def next_task
-        task_id = http.POST(...)
-        return Task(@worker_id, task_id)
-      end
-    end
+  def next_task
+    task_id = http.POST(...)
+    return Task(@worker_id, task_id)
+  end
+end
 
-    class Task 
-      attr_accessor :worker_id, :task_id, :url
-      def found_link(url)
-        http.POST(...)
-      end
-      def complete 
-        http.POST(...)
-      end
-      ...
-    end
+class Task 
+  attr_accessor :worker_id, :task_id, :url
+  def found_link(url)
+    http.POST(...)
+  end
+  def complete 
+    http.POST(...)
+  end
+  ...
+end
 
 I'd just written code just like this server side, too. The stubs were getting everywhere.
 At least my client code now looked ok, but stubs came with their own problems.
@@ -247,6 +270,16 @@ And this is what glyph does. MORE HTTP.
 
 HTTP: Still good for you
 ------------------------
+
+..
+    h in http: web page not web service
+    a sample session/mechanized
+    client just like objects
+    queue page, is rest in links, built from object
+    urls are constructors
+    similarly for task, & object
+    glyph is a serialization format
+    rpc alike but hypertext - ducktyping, flexibility
 
 Knowing this, how do we embrace http?
 
@@ -494,6 +527,13 @@ SLIDE::
 glyph: good for you?
 --------------------
 
+..
+    glyph loves http, made things suck less
+    caching, sharding, embedding, extending
+    fixed our apis, in internal use
+    porting it to ruby, my first ruby proggram
+    demonstrates utility of hypertext
+
 You don't have to love HTTP to use glyph. Glyph loves HTTP so much
 it's going to handle turning your objects into pages and back again for you.
 
@@ -559,6 +599,17 @@ It's there in the name.
 
 yes, that's all very good but is it rest?
 -----------------------------------------
+
+..
+    talked about http et all, but not rest
+    rest is about the web not apis
+    rpc vs rest is orthogonal - can be complementary
+    we've been doing this for years with websites for humans
+    is glyph restful?
+
+
+..
+    other questions and answers - authentication,
 
 Before I end, I should really go back to the beginning.
 
