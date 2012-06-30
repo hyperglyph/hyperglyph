@@ -13,10 +13,10 @@ restful-rpc, or how I learned to love the hypermedia
 ====================================================
 ..
     introduction: 
-        me, learning ruby
-        day job, github, travis
-        glyph is ducked type web stuff
-        worksforme
+    me, learning ruby
+    day job, github, travis
+    glyph is ducked type web stuff
+    worksforme
 
 SLIDE::
 
@@ -59,6 +59,7 @@ SLIDE::
 Before I begin my story, I'd like to take this moment to thank my employer 
 for letting me release this code, as well as github and travis. You're all neat.
 
+-1min
 
 nobody knows the trouble i've seen
 ----------------------------------
@@ -132,6 +133,7 @@ HTTP. It's good for you
     still ugly
 
 What we started with with looked a lot more like this:
++3min
 
 SLIDE::
 
@@ -170,6 +172,8 @@ I still have nightmares.
     THE S STANDS FOR SIMPLE
 
 This lead to the obvious conclusion, http. our one true love.
+
++4min
 
 HTTP may not be the best protocol in the world, but it has 
 things like load balancers, proxies, and caches.  one of the
@@ -218,25 +222,25 @@ And then the stubs came. Thousands of them. Dirty dirty stubs.
 
 SLIDE::
 
-class Queue 
-  attr_accessor :worker_id
+    class Queue 
+      attr_accessor :worker_id
 
-  def next_task
-    task_id = http.POST(...)
-    return Task(@worker_id, task_id)
-  end
-end
+      def next_task
+        task_id = http.POST(...)
+        return Task(@worker_id, task_id)
+      end
+    end
 
-class Task 
-  attr_accessor :worker_id, :task_id, :url
-  def found_link(url)
-    http.POST(...)
-  end
-  def complete 
-    http.POST(...)
-  end
-  ...
-end
+    class Task 
+      attr_accessor :worker_id, :task_id, :url
+      def found_link(url)
+        http.POST(...)
+      end
+      def complete 
+        http.POST(...)
+      end
+      ...
+    end
 
 I'd just written code just like this server side, too. The stubs were getting everywhere.
 At least my client code now looked ok, but stubs came with their own problems.
@@ -294,14 +298,6 @@ What if we were to build a *web page* rather than a *web service*?
     possible slide: woah insert.
 
 
-But a web page for robots, not humans. We'll use something machine readable.
-
-I won't get into the encoding now, but if you think of a json like format,
-but with links and forms, you're close.
-
-SLIDE::
-
-    possible: flow chart/browser screenshots
 
 Perhaps something like this:
 
@@ -322,13 +318,17 @@ SLIDE::
       task.found_link(url)
     end
 
+
 The initial get of the client fetches the root page. This root
 has one attribute, Queue, which is a form to find a queue.
 
 It submits the form, to get a queue page, and in turn
 submits another form to get the next task.
 
-The client is actually screen scraping web pages.
+Although to the client, it looks like objects and methods, it's still
+a web page and forms underneath.  The client is actually screen scraping web pages.
+
+But a web page for robots, not humans. 
 
 These pages look something like this:
 
@@ -346,18 +346,12 @@ SLIDE::
         'next_task': <Form('POST','/Queue/next_task?worker_id=bob')>,
     }>
 
-Behind this there will be come code. When We first grab the root,
-we get a page object, with a Queue attribute. The form inside asks 
-for  worker_id, and provides a verb, url.
-
-When we submit this form, the server returns a Queue page. The url 
-of the queue page now contains the worker_id.
+I won't get into the encoding now, but if you think of a json like format,
+but with links and forms, you're close.
 
 Unlike before where we had to pass parameters into each subsequent request,
 the url encapsulates the state of the client.
 
-Although to the client, it looks like objects and methods, it's still
-a web page and forms underneath.
 
 We can generate the website from objects too - the Queue page
 can be built from an object, and the urls can be built too.
@@ -440,6 +434,8 @@ SLIDE::
       end
       ...
     end
+
+    ~10m
 
 Glyph is really a serialization format and supporting library. It handles turning
 objects into web pages and back again.
