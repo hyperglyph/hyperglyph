@@ -39,13 +39,21 @@ each other. there are many names and styles for this, but mostly, they suck.
 
 I wrote some code to handle the suck for me, and I got paid for doing it too.
 
-Work also have me their blessing to release it, and I'm porting it to ruby for fun.
-
-It's called glyph, and it is on github, and travis runs tests in both ruby and python.
+*aside*
+    Now when I say rpc, I really mean client-server. RPC is a pretty overloaded term, 
+    but I just mean 'I call a function over here, and get a function over there',
+    at a very primitive level. 
 
 glyph isn't like other rpc systems - it doesn't require code
 generation, it's duck typed, and it plays nicely with http. 
 it does this by being a lot more like a web site than a web service. 
+
+
+
+
+Work also have me their blessing to release it, and I'm porting it to ruby for fun.
+
+It's called glyph, and it is on github, and travis runs tests in both ruby and python.
 
 it's made my job suck less, and I hope it can make your job suck less too.
 
@@ -81,11 +89,6 @@ My day job involved writing remote procedure calls.
 
 My day job sucked.
 
-
-*aside*
-    Now when I say rpc, I really mean client-server. RPC is a pretty overloaded term, 
-    but I just mean 'I call a function over here, and get a function over there',
-    at a very primitive level. 
 
 I had some worker processes across a machine pool, and some process to manage
 their tasks. I'm simplifying, but a worker needs to fetch a task, crawl it for links,
@@ -339,7 +342,7 @@ SLIDE::
     <Resource {
         'Queue': <Form('POST', '/Queue', 'worker_id')>,
     }>
-    
+
     Queue at /Queue/?worker_id=bob
 
     <Resource {
@@ -379,7 +382,7 @@ SLIDE::
     <Resource {
         'Queue': <Form('POST', '/Queue', 'worker_id')>,
     }>
-    
+
     Queue at /Queue/?worker_id=bob
 
     <Resource {
@@ -409,6 +412,21 @@ SLIDE::
 in this case, it returns a Task, which we turn into a webpage. The client
 expects three attributes, url, found_link and complete.
 
+
+SLIDE::
+    
+    class Task 
+      attr_accessor :worker_id, :task_id, :url
+      def found_link(url)
+        db.found_link(...)
+      end
+      def complete 
+        db.complete(...)
+      end
+      ...
+    end
+
+
 SLIDE::
 
     Task: /Task/?worker_id=bob&id=uuid
@@ -421,19 +439,6 @@ SLIDE::
 
 This page is generated from the class, like before. The instance data, and sometimes method
 are embedded in the url, and used in form attributes.
-
-SLIDE::
-
-    class Task 
-      attr_accessor :worker_id, :task_id, :url
-      def found_link(url)
-        db.found_link(...)
-      end
-      def complete 
-        db.complete(...)
-      end
-      ...
-    end
 
     ~10m
 
@@ -496,24 +501,24 @@ And if you wanted a server, in python is
 
 SLIDE::
 
-    r = glyph.Router()
-    @r.add()
-    class Queue(glyph.r):
-        def __init__(self, worker_id)
-            self.worker_id = worker_ id
-        def next_task(self):
-            return Task(db.next_task(self.worker_id), worker_id)
+r = glyph.Router()
+@r.add()
+class Queue(glyph.r):
+    def __init__(self, worker_id)
+        self.worker_id = worker_ id
+    def next_task(self):
+        return Task(db.next_task(self.worker_id), worker_id)
 
-    @r.add()
-    class Task(glyph.r):
-        def __init__(self, uuid, worker_id):
-            self.uuid, self.worker_id = uuid, worker_id
+@r.add()
+class Task(glyph.r):
+    def __init__(self, uuid, worker_id):
+        self.uuid, self.worker_id = uuid, worker_id
 
-        def found_link(self, url):
-            db.found_link(uuid, worker_id, url)
+    def found_link(self, url):
+        db.found_link(uuid, worker_id, url)
 
-        def complete(self):
-            db.complete(uuid, worker_id)
+    def complete(self):
+        db.complete(uuid, worker_id)
 
 
 SLIDE::

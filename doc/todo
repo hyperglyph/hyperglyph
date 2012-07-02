@@ -1,4 +1,6 @@
 msgpack/json encoding formats?
+	json for query args perhaps?
+
 
 
 encoding:
