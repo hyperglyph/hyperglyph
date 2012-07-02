@@ -50,6 +50,7 @@ timezone support, time period support
 better form support - optional defaults.
 embed, resources have expiry information
 resources have method to refresh contents
+mime blocks? bytestrings with content-types?
 
 
 specifics

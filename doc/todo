@@ -1,21 +1,25 @@
-msgpack/json encoding formats?
-	json for query args perhaps?
-
-
-
 encoding:
-	remove newlines in query args?
+	see encoding.rst
+
+html serialization
+	javascript
+	json for query args perhaps?
+	 or form values
+	
 
 caching
 	caching headers added to responses
 	@cache(max_age=....)
 	change url schema to avoid ?
 
-forms/links
-	type args?
+	expires information in resource/embed
+	Glyph.refresh?
 
-	url templates
-	destroy H<name> i.e no difference between link/form?
+forms/links
+	type args? default values? schema
+	i expect a thing with these values
+
+	url templates for forms with GET method
 
 classes/resources
 	use a different encoding for them?
@@ -25,110 +29,15 @@ classes/resources
 	have to expose it through @embed?
 
 
-datatypes/collections
-	some languages only have a table type?
-	(it's ok json does this too)
-
-
-inlining/embedding:
-
-    embeds should have last_modified/caching headers?
-
-	basically, how should @glyph.embed() work
-	given in ruby it won't make a difference because
-	a.foo is a.foo()
-
-	suggestion:
-		objects do not have uncallable children
-		glyph.embed() makes sense when you have properties
-
-	also, now you can inline objects in responses automatically
-		return self, blah, y
-	how about 
-		classes should be able to say 'inline me',
-		or don't inline me in responses
-		instead of inling methods as faux GET()
-		return an item that acts like a real embed
-
-	also:
-		return self.foo - how should this work?
-
-	suggestion:
-		link type
-			has url (template?), optional method, possible arg template
-		resource type:
-			has url, possible links
-
-			if  no links, will fetch & cache copy?
-		behaves in-line/so no fetching
-
-		node type - xml catchall? needed? extension type.
-
-
-		resources cache themselves?
-
-	basically:
-		instances are serialized to embeds
-		
-	
-	ruby:
-		obj contains
-			name, attrs, chidlren
-		attrs contains a url, last modified etc
-		(puts reference to self in, then resolved.)
-
-		children is a dict of stuff/forms
-
-		ruby does o['name'].call('blah')
-		never re
-		o.name is a shoorthand for foo.call? 
-
-		python foo.name is shorthand for foo['name']
-		don't expose attrs.
-
-		works for javascript too. nice.
-		obj can optionaly autorefresh.
-
-		obj with empty children ? nah.stick with link/embed./
-
-
-js
-	browser impl?
-
-to think?
-
-	Glyph.refresh?
-
-	uri templates for get args
-
-	argle bargel transactions:
-
-		@foo.if_none_match() .... ?
-		@foo.last_modified()
-
-	collections:
-		like an embed/property, but behaves with the __getitem__ calls ?
-		think about interface for pagination/mapping to an infinite scroll, etc.
-		inlining - behaves like a link, isn't.
-		cursor/resultset behavior?
-
-	snapshoting:
-		crawling an api? glyph.crawl(page) returns all links() ?
-
-	api versioning?
-
-	transactions?
-		preconditions/postconditions on forms
-
-	demos:
-		heroku/appengine ?
-		examples for a talk?
-		atom pub mail server?  mail store? forum queue/broker(herp?)
-			use preconditions to do transactional semantics?
-		tekpub/ 
-			http://wekeroad.com/2012/03/03/moving-the-philosophy-into-machinery/
-
-	true rest - generating mime types from objects
+ports
+	node.js
+	erlang
 	jquery plugin?
+
+
+different transports
+	udp, openpgm, 0mq?
+
+	coap over datagram, http over streams
 
 
