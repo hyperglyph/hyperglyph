@@ -18,7 +18,7 @@ glyph supports
 -byte arrays
 -integers 
 -iso datetimes (in utc)
--doubles/floats
+-doubles/doubles
 -lists
 -sets
 -dicts
@@ -85,15 +85,15 @@ numbers:
 
 	i123\n
 
-	float -> f <float in hex> \x0a
-		float or double - the hex format is from
+	double -> f <double in hex> \x0a
+		double or double - the hex format is from
 		c99 (-)0xMANTISSAp(-)EXPONENT
 
 		i.e 0x1.ffp3, 0x0.0p0 -0x0.0p0
 
-		normal floats have mantissa of 0x1..
+		normal doubles have mantissa of 0x1..
 		subnormals have 0x0... (except 0)
-		check java Double.toHexString / python float.hex
+		check java Double.toHexString / python double.hex
 	   
 		
 
@@ -115,72 +115,71 @@ singleton datatypes:
 xml like three item tuples (name, attributes, content)
 	node -> X<name item><attr item><content item>
 		an object with a name, attributes and content
-			attributes is nominally a dict.
-			content nominally list
-		think html5 microdata like
+		attributes is nominally a dict.
+		content nominally list
 
 hypermedia types/extensions: 
 	ext -> H<name item><attr item><content item>
 		like a node, but contains url, method, possibly form values.
 
+
+extensions
+----------
+
 currently the following extensions are defined:
 	resource, link, form and embed
 
-	all dictionary keys *should* be utf-8
 
-	link:   
-		name is "link"
-		attr is a dict, containing the following keys:
-			url, method
-			
-		content is None
+link:   
 
-	form:   
-		name is "form"
-		attr is a dict, containing the following keys:
-			url, method
-			
-		content is currently a list of names
-		for the form to submit
+	name is "link"
+	attr is a dict, containing the following keys: url, method
+	content is None
 
-		currently to submit a form, a k,v list is sent back
-		as ordering is important.
+form: 
+  
+	name is "form"
+	attr is a dict, containing the following keys: url, method
+		
+	content is currently a list of names
+	for the form to submit
 
-	embed
-		name is "embed"
-		attr is a dict, containing the following keys:
-			url, method
-			
-		content is the object that would be returned
-		from fetching that link
-		i.e if you followed the link & decoded it, what would you get back
+	currently to submit a form, a k,v list is sent back
+	as ordering is important.
 
-	
-	resource
-		name is "resource"
-		attr is a dict, containing the following keys:
-			url
+embed:
 
-		content is a dict of resource attributes
-			often forms
-			
+	name is "embed"
+	attr is a dict, containing the following keys: url, method
+		
+	content is the object that would be returned
+	from fetching that link
+	i.e if you followed the link & decoded it, what would you get back
 
-notes
------
-all strings are in utf-8.
-should be no bytestrings in dicts?
+
+resource
+	name is "resource"
+	attr is a dict, containing the following keys: url
+
+	content is a dict of resource attributes
+		often forms
+		
+
+all dictionary keys *should* be utf-8
 			
 
 whitespace/newlines
 -------------------
 parser SHOULD ignore whitespace when it doesn't change
 semantics i.e
+
 	i 123 \n, i123\n, i 123\n, i123 \n, all same 
 
 includes whitespace between items
 
 parser MUST treat CRLF as LF - where LF is used
 as a terminator.
+
 	i.e i123\r\n and i123\n are the same
 
 
@@ -213,7 +212,7 @@ example dumps:
 'f-0x0.0p+0\n'
 >>> glyph.dump(2.225073858507201e-308)
 'f0x0.fffffffffffffp-1022\n'
->>> glyph.dump(float('nan'))
+>>> glyph.dump(double('nan'))
 'fnan\n'
 >>> glyph.dump([1,2,3])
 'Li1\ni2\ni3\nE'
@@ -228,3 +227,75 @@ example dumps:
 'Hu4\nformDu6\nmethodu4\nPOSTu3\nurlu4\n/urlu6\nvaluesLu3\noneu3\ntwoEEN'
 >>> glyph.dump([True, False, None])
 'LTFNE'
+
+
+a note on doubles
+-----------------
+
+decimal:  0.5d::
+
+	in network byte order
+
+	offset:    0  8  16 32 40 48 56 64
+	bytes:     3f e0 00 00 00 00 00 00
+
+
+	sign bit: bit 0
+
+	sign_bit = (byte[0] & 128) == 128   
+	sign = 0 is sign_bit is 0
+	       1 if sign_bit is 1
+
+	sign bit of 0.5 is 0x3f & 128 = 0
+
+	exponent: bits 1..12  (11 bits) as network order int 
+	instead of signed, exponent is stored as exp+1023 if exp != 0
+	
+	raw_exponent = ((byte[0] &127) << 4) + ((byte[1]&240) >> 4)
+	so raw_exponent = ((0x3f &127) << 4) + ((0xe0)>>4) = 1022
+
+	n.b if raw exponent is 0, then exponent is 0.
+	    if raw exponent is not 0, exponent is raw_exponent-1023
+
+	exponent of 0.5 is -1 (1022-1023)
+
+	fractional: bits 13..64  (52 bits) as unsigned network int
+
+	fractional = [ byte[1]&15, byte[2], ...]
+
+	fractional part of 0.5 is [0xe0&15, 0x00,0x00,...] is 0
+
+
+	so hex is <SIGN>0x1.<FRACTIONAL>p<EXPONENT> where FRACTIONAL is in hex, exponent in decimal
+	for normals.
+
+	0.5 in hex:   0x1.0000000000000p-1 
+	-0.5 in hex: -0x1.0000000000000p-1 
+
+
+subnormals
+----------
+
+for subnormals and 0, the raw exponent is 0, and so the exponent is either
+
+	0, if the fractional part is 0 
+	-1022, if the fractional part is non 0
+
+these are formatted with a leading 0, not 1
+hex is 0x0.FRACTIONALpEXPONENT where FRACTIONAL is in hex, exponent in decimal::
+
+	0.0f is  0x0.0p0
+	0.0f is -0x0.0p0
+
+a subnormal float like 2.225073858507201e-308
+is in network byte order::
+
+	offset:    0  8  16 32 40 48 56 64
+	bytes:     00 0f ff ff ff ff ff ff
+
+	raw_exponent is 0,
+	fractional is 0xfffffffffffff
+
+	hex is 0x0.fffffffffffffp-1022
+
+
