@@ -1,11 +1,11 @@
 encoding:
 	see encoding.rst
+	add data-url/mime blobs
 
-html serialization
-	javascript
-	json for query args perhaps?
-	 or form values
-	
+exceptions:
+	mapping exceptions inside the mapper to error codes
+	throwing an exception returns that error code
+	with an 'error' type (similar to 'resource')
 
 caching
 	caching headers added to responses
@@ -28,7 +28,17 @@ classes/resources
 	remove all instance vars from dict?
 	have to expose it through @embed?
 
+pagination
 
+html serialization
+	javascript
+	json for query args perhaps?
+	 or form values
+	
+	
+
+rewrite for python:
+	class mapper only needs root element, rest are ephemeral?
 ports
 	node.js
 	erlang
