@@ -1,7 +1,5 @@
 glyph-rpc
 ---------
-glyph-rpc is still under development. the underlying serialization format is 
-currently unstable.
 
 glyph-rpc is yet another http rpc library, but it tries to exploit http rather
 than simply tunnel requests over it. glyph builds webpages out of objects, for
@@ -12,6 +10,20 @@ computers, and as a result:
 - glyph services can redirect/link to other services on other hosts
 - glyph can take advantage of http tools like caches and load-balancers
 
+a talk at src fringe 2012 was given and is online: http://vimeo.com/45474360
+
+note
+----
+
+glyph-rpc is still under development. the underlying serialization format is 
+currently unstable. not recommended for public apis. after a few more ports
+the format will stabilize.
+
+example
+-------
+
+glyph-rpc is still under development. the underlying serialization format is 
+currently unstable. not recommended for public apis.
 
 To show, rather than tell, let's begin with some server code::
 
