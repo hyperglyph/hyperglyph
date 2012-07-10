@@ -51,15 +51,17 @@ data types:
 	mime blocks? bytestrings with content-types/headers, offsets?? 
 		akin to data urls?
 	represents ad-hoc responses & inling
-pagination blocks: 1-10 of n, 
-schemas:
+
+pagination in resources/collection types/ranges:
+	with i.e 1-10 of n internally, 
+
+schemas for forms:
 	better form support - optional defaults.
 
 caching/freshness:
 	embed, resources have expiry information
 	resources have method to refresh contents
 	
-
 
 specifics
 ---------
@@ -129,6 +131,9 @@ xml like three item tuples (name, attributes, content)
 hypermedia types/extensions: 
 	ext -> H<name item><attr item><content item>
 		like a node, but contains url, method, possibly form values.
+
+	unlike nodes, these have special meaning inside of glyph, and 
+	have defined behaviours
 
 
 extensions

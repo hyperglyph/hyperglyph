@@ -12,6 +12,8 @@ computers, and as a result:
 
 a talk at src fringe 2012 was given and is online: http://vimeo.com/45474360
 
+come say hello: ##glyph on freenode
+
 note
 ----
 
