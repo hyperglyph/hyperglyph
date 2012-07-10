@@ -84,7 +84,7 @@ Functions can even return other functions that are mapped::
     def greeting(lang="en"):
         if lang == "en":
             return hello
-        elif lang = 'fr':
+        elif lang == 'fr':
             return salut
 
 The client doesn't care::
