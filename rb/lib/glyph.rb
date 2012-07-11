@@ -228,12 +228,16 @@ module Glyph
     end
   end
 
-  class Node
+  class BaseNode
     def initialize(name, attrs, content)
       @name = name
       @attrs = attrs
       @content = content
     end
+  end
+
+
+  class Node < BaseNode
     def method_missing(method, *args, &block)
         attr= @content[method.to_s]
         if attr and attr.respond_to?(:call)
@@ -258,17 +262,42 @@ module Glyph
           return Link.new(name, attrs, content)
         when "embed"
           return Embed.new(name, attrs, content)
+        when "resource"
+          return ExtResource.new(name, attrs, content)
+        when "blob"
+          return Blob.new(name, attrs, content)
+        when "error"
+          return ExtError.new(name, attrs, content)
+          
         else
           return Extension.new(name,attrs, content)
       end
     end
 
+  
     def resolve url
       @attrs['url']=URI.join(url,@attrs['url']).to_s
     end
 
   end
 
+  class ExtError < Extension
+  end
+
+  class Blob < Extension
+  end
+
+  class ExtResource < Extension
+    def method_missing(method, *args, &block)
+        attr= @content[method.to_s]
+        if attr and attr.respond_to?(:call)
+          r =  attr.call(*args, &block)
+          return r
+        else
+          super(method, *args, &block)
+        end
+    end
+  end
   class Form < Extension
     def call(*args, &block)
       args = @attrs['values'] ? @attrs['values'].zip(args) : []
