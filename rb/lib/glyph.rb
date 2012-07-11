@@ -309,14 +309,14 @@ module Glyph
     end
     if Symbol === o
       u = o.to_s.encode('utf-8')
-      "u#{u.bytesize}\n#{u}"
+      "u#{u.bytesize}:#{u}"
     elsif String === o
       u = o.encode('utf-8')
-      "u#{u.bytesize}\n#{u}"
+      "u#{u.bytesize}:#{u}"
     elsif Integer === o
       "i#{o}\n"
     elsif StringIO === o
-      "b#{o.string.length}\n#{o.string}"
+      "b#{o.string.length}:#{o.string}"
     elsif Float === o
       "f#{o.to_hex}\n"
     elsif Array === o
@@ -373,12 +373,12 @@ module Glyph
       num = scanner.scan_until(/\n/)
       num.chop.hex_to_f
     when ?u
-      num = scanner.scan_until(/\n/).chop.to_i
+      num = scanner.scan_until(/:/).chop.to_i
       str = scanner.peek(num)
       scanner.pos+=num
       str
     when ?b
-      num = scanner.scan_until(/\n/).chop.to_i
+      num = scanner.scan_until(/:/).chop.to_i
       str = scanner.peek(num)
       scanner.pos+=num
       StringIO.new(str)

@@ -30,6 +30,10 @@ classes/resources
 
 pagination
 
+
+http semantics:
+	support HEAD
+
 html serialization
 	javascript
 	json for query args perhaps?

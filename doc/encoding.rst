@@ -47,6 +47,8 @@ future work
 
 data types:
 	considering ordered dictionaries, 
+
+	dicts string only & unordered.? (easier interoperability)
 	timezone support, time period support
 	mime blocks? bytestrings with content-types/headers, offsets?? 
 		akin to data urls?
@@ -71,17 +73,17 @@ with some prefix ascii character to indicate
 the type
 
 e.g
-	u5\nhello is a utf-8 string
-	b5\nworld is a byte string 
+	u5:hello is a utf-8 string
+	b5:world is a byte string 
 
 strings!:
-	utf-8 string -> u <byte len> \x0a <utf-8 string>
+	utf-8 string -> u <byte len> : <utf-8 string>
 
-	u5\nhello
+	u5:hello
 bytes!
-	byte array -> b <byte len> \x0a  <byte array>
+	byte array -> b <byte len> :  <byte array>
 
-	b5\nhello
+	b5:hello
 
 numbers:
 	utc datetime -> d %Y-%m-%dT%H:%M:%S.%fZ \x0a
@@ -212,9 +214,9 @@ example dumps:
 
 >>> import glyph
 >>> glyph.dump(u"hello, world")
-'u12\nhello, world'
+'u12:hello, world'
 >>> glyph.dump(b"hello, bytes")
-'b12\nhello, bytes'
+'b12:hello, bytes'
 >>> glyph.dump(1)
 'i1\n'
 >>> glyph.dump(-1)
@@ -235,9 +237,9 @@ example dumps:
 'Di1\ni2\ni3\ni4\nE'
 >>> glyph.dump(glyph.form('/url', values=['one', 'two'])
 ... )
-'Hu4\nformDu6\nmethodu4\nPOSTu3\nurlu4\n/urlu6\nvaluesLu3\noneu3\ntwoEEN'
+'Hu4:formDu6:methodu4:POSTu3:urlu4:/urlu6:valuesLu3:oneu3:twoEEN'
 >>> glyph.dump(glyph.form('/url', values=['one', 'two']))
-'Hu4\nformDu6\nmethodu4\nPOSTu3\nurlu4\n/urlu6\nvaluesLu3\noneu3\ntwoEEN'
+'Hu4:formDu6:methodu4:POSTu3:urlu4:/urlu6:valuesLu3:oneu3:twoEEN'
 >>> glyph.dump([True, False, None])
 'LTFNE'
 
@@ -311,4 +313,11 @@ is in network byte order::
 
 	hex is 0x0.fffffffffffffp-1022
 
+
+
+changes
+-------
+
+using unicode everywhere instead of bytestrings
+resource type, instead of node as default object type
 

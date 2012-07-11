@@ -116,6 +116,7 @@ UNICODE_CHARSET="utf-8"
 
 BSTR='b'
 UNI='u'
+LEN_SEP=':'
 END_ITEM='\x0a'
 
 FLT='f'
@@ -225,14 +226,14 @@ class Encoder(object):
         elif isinstance(obj, (str, buffer)):
             buf.write(BSTR)
             buf.write("%d"%len(obj))
-            buf.write(END_ITEM)
+            buf.write(LEN_SEP)
             buf.write(obj)
         
         elif isinstance(obj, unicode):
             buf.write(UNI)
             obj = obj.encode(UNICODE_CHARSET)
             buf.write("%d"%len(obj))
-            buf.write(END_ITEM)
+            buf.write(LEN_SEP)
             buf.write(obj)
         
         elif isinstance(obj, set):
@@ -279,7 +280,7 @@ class Encoder(object):
         elif c == FALSE:
             return False
         if c == BSTR or c == UNI:
-            l = _read_until(fh, END_ITEM, parse=int)[0]
+            l = _read_until(fh, LEN_SEP, parse=int)[0]
             buf= fh.read(l)
             if c == UNI:
                 buf=buf.decode(UNICODE_CHARSET)
