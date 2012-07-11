@@ -114,7 +114,7 @@ def fetch(method, url, args=None,data=None, headers=None):
     return data
 
 
-class Node(object):
+class BaseNode(object):
     def __init__(self, name, attributes, content):
         self._name = name
         self._attributes = attributes
@@ -127,10 +127,14 @@ class Node(object):
         self._attributes = state[1]
         self._content = state[2]
 
+    def __eq__(self, other):
+        return self._name == other._name and self._attributes == other._attributes and self._content == other._content
+
     @classmethod
     def __make__(cls, name, attributes, content):
         return cls(name,attributes, content)
 
+class Node(BaseNode):
     def __getattr__(self, name):
         try:
             return self._content[name]
@@ -140,13 +144,10 @@ class Node(object):
     def __getitem__(self, name):
         return self._content[name]
 
-    def __eq__(self, other):
-        return self._name == other._name and self._attributes == other._attributes and self._content == other._content
-
     def __repr__(self):
         return '<node:%s %s %s>'%(self._name, repr(self._attributes), repr(self._content))
 
-class Extension(Node):
+class Extension(BaseNode):
     _exts = {}
     @classmethod
     def __make__(cls, name, attributes, content):
@@ -161,7 +162,7 @@ class Extension(Node):
         return _decorator
 
     def __eq__(self, other):
-        return isinstance(other, Extension) and Node.__eq__(self, other)
+        return isinstance(other, Extension) and BaseNode.__eq__(self, other)
 
     def __repr__(self):
         return '<ext:%s %s %s>'%(self._name, repr(self._attributes), repr(self._content))
@@ -221,6 +222,22 @@ class Resource(Extension):
         
     def __resolve__(self, resolver):
         self._attributes[u'url'] = unicode(resolver(self._attributes[u'url']))
+
+    def __getattr__(self, name):
+        try:
+            return self._content[name]
+        except KeyError:
+            raise AttributeError(name)
+
+@Extension.register('error')
+class Error(Extension):
+    pass
+
+@Extension.register('blob')
+class Blob(Extension):
+    pass
+        
+
 
 
 _encoder = Encoder(node=Node, extension=Extension)
