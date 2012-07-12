@@ -1,3 +1,28 @@
+next commits:
+	add error type:
+		returns message
+
+	4xx vs 5xx determines exception thrown, client or server error
+
+	add blob type:
+		has content-type, other http headers, contents
+		remove bytestring type?
+
+	session handler injected into forms rather than being global
+		can pass in a 'null' session handler, that serializes,
+		deserializes & fetches by calling directly.
+
+	glyph from scratch:
+		implement everything by spec
+		class instead of builder for router
+		simplify mapper code, less flexible.
+
+	caching:
+		
+
+	hack: revision numbers in content-type until stable.
+
+
 encoding:
 	see encoding.rst
 	add data-url/mime blobs
@@ -54,4 +79,4 @@ different transports
 
 	coap over datagram, http over streams
 
-
+§

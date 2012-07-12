@@ -16,6 +16,7 @@ document are to be interpreted as described in [RFC2119].
 grammar
 =======
 
+
 ::
 	root :== (object whitespace*)+
 
@@ -176,6 +177,15 @@ content SHOULD be a list.
 extensions are data types with special handling, used to implement
 forms and links
 
+types/schemas
+=============
+	
+form variables currently untyped. form has a values
+attribute containing a list of string names
+
+
+proposed change to allow optional types of form arguments, including
+defaults.
 
 extensions
 ==========
@@ -199,8 +209,13 @@ resources
 errors
 ------
 
+proposed
+
 blobs
 -----
+
+proposed
+
 
 
 encoding
@@ -220,8 +235,56 @@ recovery
 
 handling resources, forms, links
 
+changes
+-------
+
+- initial use bencode
+- booleans, datetimes added
+- nil added
+- forms, links, embeds added
+- use b for bytestring instead of s
+- remove bencode ordering constraint on dictionaries
+- changed terminators/separators to '\n'
+- resources added
+- separator changed to ':' (new lines make for ugly query strings)
+
+proposed changes
+----------------
+
+- change separator back to 'e' or ';' or ','
+  - easier to read 
+
+- blob extension type - aka bytestring with headers
+  - remove bytestring entirely? (we use it, convienent for python) 
+  - use case is for inling a response that isn't glyph
+
+- error extension type
+  - similar in use to the vnd.error proposal https://github.com/blongden/vnd.error
+  - use as body content in 4xx, 5xx
+
+- order preserving dictionary type
+  - we use a list of lists for form schemas
+  - hard to represent in many languages (but python, java, ruby have this)
+  - current thinking: bad idea
+
+- restrictions on what goes in dictionaries, sets
+  - should use immutable collections? tuples?
+
+- schema/type information for forms (aka values)
+
+- caching information inside of resources	
+  resources/embeds CAN contain control headers, freshness information
+  add a glyph.refresh() call?
+
 appendices
 ==========
+
+url schema
+----------
+
+form urls are of the form /ObjectName/method?<glyph instance data>
+
+note: ? breaks squid default config for caching.
 
 caching
 -------
@@ -237,5 +300,8 @@ extension registry
 hexadecimal floating point
 --------------------------
 
+normals, subnormals
+
+nan, infinity, zero
 
 
