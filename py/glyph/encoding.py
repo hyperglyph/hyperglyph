@@ -20,7 +20,7 @@ DTM='d'
 DICT='D'
 LIST='L'
 SET='S'
-END_DICT = END_LIST = END_SET ='E'
+END_NODE = END_EXT = END_DICT = END_LIST = END_SET ='E'
 
 TRUE='T'
 FALSE='F'
@@ -51,7 +51,7 @@ def _read_until(fh, term, parse=identity):
 
 def read_first(fh):
     c = fh.read(1)
-    while c in ('\n',' ','\t'):
+    while c in ('\r','\v','\n',' ','\t'):
         c = fh.read(1)
     return c
         
@@ -109,6 +109,7 @@ class Encoder(object):
             self._dump(name, buf, resolver, inline)
             self._dump(attributes, buf, resolver, inline)
             self._dump(content, buf, resolver, inline)
+            buf.write(END_EXT)
         
         elif isinstance(obj, (self.node,)):
             buf.write(NODE)
@@ -116,6 +117,7 @@ class Encoder(object):
             self._dump(name, buf, resolver, inline)
             self._dump(attributes, buf, resolver, inline)
             self._dump(content, buf, resolver, inline)
+            buf.write(END_NODE)
         
         elif isinstance(obj, (str, buffer)):
             buf.write(BSTR)
@@ -231,6 +233,9 @@ class Encoder(object):
             attr  = self._read_one(fh, first, resolver)
             first = read_first(fh)
             content = self._read_one(fh, first, resolver)
+            first = read_first(fh)
+            if first != END_NODE:
+                    raise StandardError('NODE')
             return self.node.__make__(name, attr, content)
         elif c == EXT:
             first = read_first(fh)
@@ -239,6 +244,9 @@ class Encoder(object):
             attr  = self._read_one(fh, first, resolver)
             first = read_first(fh)
             content = self._read_one(fh, first, resolver)
+            first = read_first(fh)
+            if first != END_EXT:
+                    raise StandardError('ext')
             ext= self.extension.__make__(name, attr, content)
             ext.__resolve__(resolver)
             return ext

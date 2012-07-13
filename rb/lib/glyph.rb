@@ -367,11 +367,11 @@ module Glyph
     elsif Extension === o
       o.instance_eval {
         @attrs['url'] = resolve.call(@attrs['url']) if not String === @attrs['url']
-        "H#{Glyph.dump(@name, resolve, inline)}#{Glyph.dump(@attrs, resolve, inline)}#{Glyph.dump(@content,resolve, inline)}"
+        "H#{Glyph.dump(@name, resolve, inline)}#{Glyph.dump(@attrs, resolve, inline)}#{Glyph.dump(@content,resolve, inline)}E"
       }
     elsif Node === o 
       o.instance_eval {
-        "X#{Glyph.dump(@name, resolve, inline)}#{Glyph.dump(@attrs, resolve, inline)}#{Glyph.dump(@content,resolve, inline)}"
+        "X#{Glyph.dump(@name, resolve, inline)}#{Glyph.dump(@attrs, resolve, inline)}#{Glyph.dump(@content,resolve, inline)}E"
       }
     else
       raise EncodeError, "unsupported #{o}"
@@ -437,12 +437,14 @@ module Glyph
       name = parse(scanner, url)
       attrs = parse(scanner, url)
       content = parse(scanner, url)
+      scanner.scan(/E/)
       n = Node.new(name, attrs, content)
       n
     when ?H
       name = parse(scanner, url)
       attrs = parse(scanner, url)
       content = parse(scanner, url)
+      scanner.scan(/E/)
       e = Extension.make(name, attrs, content)
       if url
         e.resolve(url)
