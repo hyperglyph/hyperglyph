@@ -340,7 +340,7 @@ error
 -----
 
 errors provide a generic object for messages in response
-to failed requests
+to failed requests. servers MAY return them.
 
 - name 'error'
 - attributes is a dictionary with the keys 'logref', 'message'
@@ -348,8 +348,6 @@ to failed requests
 
 logref is a application specific reference for logging.
 message is a unicode string
-
-clients upon recieving 
 
 
 blob
@@ -442,6 +440,7 @@ proposed changes
 - put a ';' at the end of strings - easier to read format
 
 - unify link and embed extension
+
 
 - schema/type information for forms (aka values)
   allow better mapping 

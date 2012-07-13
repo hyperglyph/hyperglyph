@@ -36,6 +36,11 @@ def link(url, method='GET'):
 def embedlink(url, content, method=u'GET'):
     return Extension.__make__(u'embed', {u'method':method, u'url':url}, content)
 
+def error(url, reference, message):
+    return Extension.__make__(u'error', {u'logref':reference, u'message':message}, {})
+
+def blob(url, content, content_type):
+    return Extension.__make__(u'blob', {u'content-type':content_type,}, str(content))
 
 # move to inspect ?
 
@@ -231,7 +236,13 @@ class Resource(Extension):
 
 @Extension.register('error')
 class Error(Extension):
-    pass
+    @property
+    def message(self):
+        return self._attributes['message']
+
+    @property
+    def logref(self):
+        return self._attributes['logref']
 
 @Extension.register('blob')
 class Blob(Extension):
