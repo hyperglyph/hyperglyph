@@ -1,7 +1,15 @@
-glyph
-=====
+=======
+ glyph
+=======
+:Author: tef
+:Date: 2012-07-13
+:Version: 0.1
 
-glyph is a data-interchange format with hypermedia elements.
+glyph is a data-interchange format with hypermedia elements,
+which can be used to build a duck-typed client-server system. 
+
+.. contents::
+
 
 introduction
 ============
@@ -100,11 +108,8 @@ unicode
 unicode element is a utf-8 encoded string. must not include
 utf-16 surrogate pairs.
 
-.. note
-	should normalise to NFC according to rfc specs
-
-
 ::
+
 	string 	encoding
 	foo	u3:foo
 	bar	u4:bar
@@ -112,11 +117,15 @@ utf-16 surrogate pairs.
 
 	n.b length is length of bytes, not length of string
 
+PROPOSED: strings should be NFC normalized, as per some RFC I can't recall.
+especially since they are used as dictionary keys
+
 
 bytearrays
 ----------
 
 ::
+
 	bytes		encoding
 	0x31 0x32 0x33	b3:123
 
@@ -125,8 +134,8 @@ float
 
 hexadecimal floating point notation is available
 in java, c99 and python. see the appendix for how
-this represenation works
-::
+this represenation works ::
+
 	0.5	f0x1.0000000000000p-1; 
 	-0.5 	f-0x1.0000000000000p-1; 
 	inf	finf;
@@ -139,6 +148,7 @@ collections
 -----------
 
 ::
+
 	list	Li1;i2;i3;E
 	set	Si1;i2;i3;E
 	dict	Si1;i2;i3;i4;E
@@ -159,6 +169,7 @@ datetimes are in iso-XXXX format.
 currently UTC supported.
 
 ::
+
 	datetime encoding
 
 .. note
@@ -178,6 +189,7 @@ nodes can be used to represent an xml dom node
 
 extensions
 ----------
+
 extensions are three value tuples.
 
 name SHOULD be a unicode string, attributes SHOULD be a dictionary,
@@ -231,6 +243,7 @@ submitting forms
 
 resources
 ---------
+
 have the name 'resource'
 attributes is a dictionary with the keys 'url'
 content is a dict of string -> object
