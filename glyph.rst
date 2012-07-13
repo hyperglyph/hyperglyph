@@ -1,10 +1,24 @@
 glyph
 =====
+
 glyph is a data-interchange format with hypermedia elements.
 
 introduction
 ============
-glyph is derived from bencoding an
+
+glyph is a format for machine readable webpages.
+the server can translate objects into resources with forms,
+and the client can translate this back into objects with methods.
+
+glyph is a bencoding derivative encoding. it is not endian dependent
+and handles a variety of literals (strings, bytes, numbers, floats, dates, 
+booleans), collections (list, set, dictionary), as well as a generic 
+node type (name, attributes, content)
+
+glyph also contains 'extension' objects, which allows it to
+use links, forms, resources to represent generic objects.
+
+
 
 requirements
 ============
@@ -16,8 +30,8 @@ document are to be interpreted as described in [RFC2119].
 grammar
 =======
 
-
 ::
+
 	root :== (object whitespace*)+
 
 	ws :== (space | tab | vtab | cr | lf)*
@@ -69,6 +83,7 @@ numbers
 -------
 
 ::
+
 	number	encoding
 	123	i123; i+000123;
 	-123	i-123;
@@ -300,6 +315,8 @@ proposed changes
 - datetime with offset, timezone
   allow non utc dates, but you need the utc offset
   optional string timezone
+
+- unicode normalization
 
 appendices
 ==========
