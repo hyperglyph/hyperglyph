@@ -3,10 +3,9 @@
 =======
 :Author: tef
 :Date: 2012-07-13
-:Version: 0.1
+:Version: 0.2
 
 glyph is a data-interchange format with hypermedia elements,
-which can be used to build a duck-typed client-server system. 
 
 .. contents::
 
@@ -20,7 +19,8 @@ booleans), collections (list, set, dictionary), as well as a generic
 node type (name, attributes, content)
 
 glyph also contains 'extension' objects, which allows it to
-use links, forms, resources to represent generic objects.
+use links, forms, resources to represent generic objects
+and their methods.
 
 essentially, glyph is a format for machine readable webpages.
 the server can translate objects into resources with forms,
@@ -35,63 +35,39 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
 "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
 document are to be interpreted as described in [RFC2119].
 
-grammar
-=======
+overview
+========
 
+todo: examples for each data type
 ::
 
-	root :== ws (object ws*)+
+	data type	example			encoded
 
-	ws :== (space | tab | vtab | cr | lf)*
+	integer		1			i1;
+	unicode		"hello"			u5:hello;
+	bytearray	[0x31, 0x32, 0x33]	b3:123;
 
-	object :== 
-		  number
-		| unicode
-		| bytearray
-		| float
-		| datetime
-		| nil
-		| true
-		| false
-		| list
-		| set
-		| dictionary
-		| node
-		| extension
 
-	number :== 'i' ws sign ascii_number ws ';'
+given an object, glyph can map this to a resource with forms.
 
-	unicode :== 'u' ws ascii_number ws ':' utf8_bytes 
-		where len(bytes) = int(ascii_number)
+mapping to http
+===============
 
-	bytearray :== 'b' ws ascii_number ws ':' bytes
-		where len(bytes) = int(ascii_number)
+TODO: describe typical client/server interaction
 
-	true :== 'T'
-	false :== 'F'
-	nil :== 'N'
+how hypermedia encapsulates state
 
-	list :== 'L' ws (object ws)* 'E'
-	set :== 'S' ws (object ws)* 'E'
-	dict :== 'D' ws (object ws object ws)* 'E'
+data types
+----------
 
-	float :== 'f' ws hex_float ws ';'
-
-	datetime :== 'd' iso_datetime ws ';'
-
-	node :== 'X' ws name_obj ws attr_obj ws content_obj 
-
-	extension :== 'H' ws name_obj ws attr_obj ws content_obj 
-	
-
-numbers
--------
+integers
+--------
 
 integers of arbitrary precision, sign is optional, and either '+' or '-'
 
 ::
 
-	number :== 'i' ws sign ascii_number ws ';'
+	integer :== 'i' ws sign ascii_number ws ';'
 	sign :== '+' | '-' | ''
 	ascii_number :== <a decimal number as an ascii string>
 
@@ -111,15 +87,15 @@ utf-16 surrogate pairs (JSON, Java, I'm looking at *you*)
 
 ::
 
-	unicode :== 'u' ws ascii_number ws ':' utf8_bytes 
+	unicode :== 'u' ws ascii_number ws ':' utf8_bytes ';'
 		where len(bytes) = int(ascii_number)
 
 	utf8_bytes :== <the utf8 string>
 
 	string 	encoding
-	'foo'	u3:foo
-	'bar'	u4:bar
-	'💩'	u4:\xf0\x9f\x92\xa9
+	'foo'	u3:foo;
+	'bar'	u4:bar;
+	'💩'	u4:\xf0\x9f\x92\xa9;
 
 	n.b length is length of bytes, not length of string
 
@@ -135,11 +111,11 @@ is assumed.
 
 ::
 
-	bytearray :== 'b' ws ascii_number ws ':' bytes
+	bytearray :== 'b' ws ascii_number ws ':' bytes ';'
 		where len(bytes) = int(ascii_number)
 
 	bytes			encoding
-	[0x31,0x32,0x33]	b3:123
+	[0x31,0x32,0x33]	b3:123;
 
 
 singletons
@@ -243,7 +219,7 @@ tuples of name, attributes and content objects.
 
 name SHOULD be a unicode string, attributes SHOULD be a dictionary::
 
-	node :== 'X' ws name_obj ws attr_obj ws content_obj 
+	node :== 'X' ws name_obj ws attr_obj ws content_obj 'E'
 
 	name_obj :== string | object
 	attr_obj :== dictionary | object
@@ -259,7 +235,7 @@ i.e forwarding node[blah] and node.blah to content_obj[blah]
 nodes can be used to represent an xml dom node::
 
 	xml			encoded
-	<xml a=1>1</xml>	Xu3:xmlDu1:ai1;
+	<xml a=1>1</xml>	Xu3:xmlDu1:ai1;E
 
 
 extensions
@@ -271,7 +247,7 @@ application meaning.
 
 name SHOULD be a unicode string, attributes SHOULD be a dictionary::
 
-	extension :== 'H' ws name_obj ws attr_obj ws content_obj 
+	extension :== 'H' ws name_obj ws attr_obj ws content_obj 'E' 
 	name_obj :== string | object
 	attr_obj :== dictionary | object
 	content_obj :== object
@@ -375,13 +351,6 @@ glyph clients can return an response with an unknown encoding
 as a blob
 
 
-mapping to http
-===============
-
-TODO: describe typical client/server interaction
-
-how hypermedia encapsulates state
-
 types/schemas
 =============
 	
@@ -389,6 +358,55 @@ form variables currently untyped. form has a values
 attribute containing a list of string names
 
 PROPOSED: some way to epress types on form inputs, default values
+
+grammar
+=======
+
+::
+
+	root :== ws (object ws*)+
+
+	ws :== (space | tab | vtab | cr | lf)*
+
+	object :== 
+		  integer
+		| unicode
+		| bytearray
+		| float
+		| datetime
+		| nil
+		| true
+		| false
+		| list
+		| set
+		| dictionary
+		| node
+		| extension
+
+	integer :== 'i' sign ascii_number ';'
+
+	unicode :== 'u' ascii_number ':' utf8_bytes ';'
+		where len(bytes) = int(ascii_number)
+
+	bytearray :== 'b' ascii_number ':' bytes ';'
+		where len(bytes) = int(ascii_number)
+
+	true :== 'T'
+	false :== 'F'
+	nil :== 'N'
+
+	list :== 'L' ws (object ws)* 'E'
+	set :== 'S' ws (object ws)* 'E'
+	dict :== 'D' ws (object ws object ws)* 'E'
+
+	float :== 'f' hex_float ';'
+
+	datetime :== 'd' iso_datetime ';'
+
+	node :== 'X' ws name_obj ws attr_obj ws content_obj ws 'E'
+
+	extension :== 'H' ws name_obj ws attr_obj ws content_obj ws 'E' 
+	
 
 encoding
 ========
@@ -410,91 +428,6 @@ error handling
 recovery
 
 handling resources, forms, links
-
-history
-=======
-
-- initial use bencode
-
-	  json didn't support binary data
-- booleans, datetimes added
-
-
-- nil added
-
-	  creature comforts
-
-- forms, links, embeds added
-
-  	hypermedia is neat
-
-- use b for byte array instead of s
-
-	  less confusing
-
-- remove bencode ordering constraint on dictionaries
-
-	  as there isn't the same dict keys must be string restrictions
-
-- changed terminators/separators to '\n'
-
-	  idea for using 'readline' in decoders, but made things ugly
-
-- resources added
-
-	  instead of using nodes to represent resources
-
-- blob, error type placeholders added
-- separator changed to ':' ,changed terminator to ';' 
-
-	  new lines make for ugly query strings
-	  easier to read, and no semantic whitespace means easier pretty printing 
-
-- blob extension type - aka byte array with headers
-
-  	use case is for inling a response that isn't glyph
-
-- error extension type
-
-	  use as body content in 4xx, 5xx
-
-- unicode normalization as a recommendation
-
-proposed changes
-================
-
-- put a ';' at the end of strings - easier to read format
-
-- unify link and embed extension
-
-
-- schema/type information for forms (aka values)
-
-	  (allow better mapping of args)
-
-- datetime with offset, timezone
-
-	  allow non utc dates, but you need the utc offset
-	  optional string timezone
-
-- timedelta/period type
-
-	p<iso period format>;
-
-- order preserving dictionary type
-
-	  we use a list of lists for form schemas
-	  hard to represent in many languages (but python, java, ruby have this)
-	  current thinking: bad idea
-
-- restrictions on what goes in dictionaries, sets
-
-	  should use immutable collections? tuples?
-
-- caching information inside of resources	
-
-	  resources/embeds CAN contain control headers, freshness information
-          specify key names as being optional
 
 
 appendices
@@ -539,6 +472,7 @@ decimal:  0.5d::
 
 	exponent: bits 1..12  (11 bits) as network order int 
 	instead of signed, exponent is stored as exp+1023 if exp != 0
+	for a double - single floats have a different offset.
 	
 	raw_exponent = ((byte[0] &127) << 4) + ((byte[1]&240) >> 4)
 	so raw_exponent = ((0x3f &127) << 4) + ((0xe0)>>4) = 1022
@@ -568,3 +502,105 @@ for subnormals and 0, the raw exponent is 0, and so the exponent is either::
 	-1022, if the fractional part is non 0
 
 these are formatted with a leading 0, not 1
+
+history
+-------
+
+- v0
+
+- initial use bencode
+
+	  json didn't support binary data
+- booleans, datetimes added
+
+
+- nil added
+
+	  creature comforts
+
+- forms, links, embeds added
+
+  	hypermedia is neat
+
+- use b for byte array instead of s
+
+	  less confusing
+
+- remove bencode ordering constraint on dictionaries
+
+	  as there isn't the same dict keys must be string restrictions
+
+- changed terminators/separators to '\n'
+
+	  idea for using 'readline' in decoders, but made things ugly
+
+- resources added
+
+	  instead of using nodes to represent resources
+
+- blob, error type placeholders added
+
+- separator changed to ':' ,changed terminator to ';' 
+
+	  new lines make for ugly query strings
+	  easier to read, and no semantic whitespace means easier pretty printing 
+
+- blob extension type - aka byte array with headers
+
+  	use case is for inling a response that isn't glyph
+
+- error extension type
+
+	  use as body content in 4xx, 5xx
+
+- unicode normalization as a recommendation
+
+- 0.1
+
+- remove whitespace between prefix ... ;
+- put a ';' at the end of strings - easier to read format
+- put a 'E' at the end of nodes, extensions
+
+- 0.2
+
+proposed changes
+----------------
+
+- resource becomes name, attrs, content* ?
+  
+- datetime with offset, timezone
+
+	  allow non utc dates, but you need the utc offset
+	  optional string timezone
+
+- timedelta/period type
+
+	p<iso period format>;
+	yes
+
+-  maybe true, false nil as 1,0,-
+
+
+- unify link and embed extension
+
+
+- schema/type information for forms (aka values)
+
+	  (allow better mapping of args)
+
+
+- order preserving dictionary type
+
+	  we use a list of lists for form schemas
+	  hard to represent in many languages (but python, java, ruby have this)
+	  current thinking: bad idea
+
+- restrictions on what goes in dictionaries, sets
+
+	  should use immutable collections? tuples?
+
+- caching information inside of resources	
+
+	  resources/embeds CAN contain control headers, freshness information
+          specify key names as being optional
+

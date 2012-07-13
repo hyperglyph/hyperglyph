@@ -6,112 +6,6 @@ from pytz import utc
 
 CONTENT_TYPE='application/vnd.glyph'
 
-"""
-glyph is a serialization format roughly based around bencoding
-with support for hypermedia types (links, forms).
-
-
-    strings!:
-        utf-8 string -> u <byte len> \x0a <utf-8 string>
-        byte string -> b <byte len> \x0a  <byte string>
-
-    numbers:
-        utc datetime -> d %Y-%m-%dT%H:%M:%S.%fZ \x0a
-            note: currently only UTC times supported,
-                  so all datetimes must end with Z
-
-        num -> i <number> \x0a
-            arbitrary precision whole number
-
-        float -> f <float in hex> \x0a
-            float or double - the hex format is from
-            c99 
-            
-
-    collections:
-        list -> L <item> <item> <item> <item>....E
-            
-        dict -> D <key> <value> <key> <value>....E
-            no duplicates allowed
-
-        set  -> S <item> <item> <item> <item>....E
-            no duplicates
-
-
-    singleton datatypes:
-        true -> T
-        false -> F
-        none -> N
-
-    xml like three item tuples (name, attributes, children)
-        node -> X<name item><attr item><children item>
-            an object with a name, attributes and children
-                attributes is nominally a dict.
-                children nominally list
-            think html5 microdata like
-
-    hypermedia types/extensions: 
-        ext -> H<item><item><item>
-            like a node, but contains url, method, possibly form values.
-
-    currently the following extensions are defined:
-        link, form and embed.
-
-        all dictionary keys *should* be utf-8
-
-        link:   
-            name is "link"
-            attr is a dict, containing the following keys:
-                url, method
-                
-            children is None
-
-        form:   
-            name is "form"
-            attr is a dict, containing the following keys:
-                url, method
-                
-            children is currently a list of names
-            for the form to submit
-
-            currently to submit a form, a dictionary is sent back
-
-        embed
-            name is "embed"
-            attr is a dict, containing the following keys:
-                url, method
-                
-            children is the object that would be returned
-            from fetching that link
-
-        
-
-    notes:
-        utf-8 vs bytestrings in dictionary keys/values
-        is a hard one.
-
-        i'm working on it
-                
-
-    whitespace/newlines
-        parser can ignore whitespace when it is safe to do so
-        parser can treat CRLF as LF
-
-
-    unordered collections:
-        for the unordered collections, it is recommended
-        to order them in some way, such that the serializing
-        is consistent within the library, i.e
-
-            dump(dict) equals dump(parse(dump(dict)))
-
-        but the ordering is ignored when reading.
-
-    todo: timezones, periods?
-
-
-"""
-
 UNICODE_CHARSET="utf-8"
 
 BSTR='b'
@@ -228,6 +122,7 @@ class Encoder(object):
             buf.write("%d"%len(obj))
             buf.write(LEN_SEP)
             buf.write(obj)
+            buf.write(END_ITEM)
         
         elif isinstance(obj, unicode):
             buf.write(UNI)
@@ -235,6 +130,7 @@ class Encoder(object):
             buf.write("%d"%len(obj))
             buf.write(LEN_SEP)
             buf.write(obj)
+            buf.write(END_ITEM)
         
         elif isinstance(obj, set):
             buf.write(SET)
@@ -282,9 +178,13 @@ class Encoder(object):
         if c == BSTR or c == UNI:
             l = _read_until(fh, LEN_SEP, parse=int)[0]
             buf= fh.read(l)
+            first = read_first(fh)
             if c == UNI:
                 buf=buf.decode(UNICODE_CHARSET)
-            return buf
+            if first == END_ITEM:
+                return buf
+            else:
+                raise StandardError('error')
 
         elif c == NUM:
             return _read_until(fh, END_ITEM, parse=int)[0]

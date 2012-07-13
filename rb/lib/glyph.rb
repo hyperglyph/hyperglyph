@@ -338,14 +338,14 @@ module Glyph
     end
     if Symbol === o
       u = o.to_s.encode('utf-8')
-      "u#{u.bytesize}:#{u}"
+      "u#{u.bytesize}:#{u};"
     elsif String === o
       u = o.encode('utf-8')
-      "u#{u.bytesize}:#{u}"
+      "u#{u.bytesize}:#{u};"
     elsif Integer === o
       "i#{o};"
     elsif StringIO === o
-      "b#{o.string.length}:#{o.string}"
+      "b#{o.string.length}:#{o.string};"
     elsif Float === o
       "f#{o.to_hex};"
     elsif Array === o
@@ -404,12 +404,12 @@ module Glyph
     when ?u
       num = scanner.scan_until(/:/).chop.to_i
       str = scanner.peek(num)
-      scanner.pos+=num
+      scanner.pos+=num+1
       str
     when ?b
       num = scanner.scan_until(/:/).chop.to_i
       str = scanner.peek(num)
-      scanner.pos+=num
+      scanner.pos+=num+1
       StringIO.new(str)
     when ?D
       dict = {}
