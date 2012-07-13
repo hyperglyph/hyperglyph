@@ -14,10 +14,6 @@ which can be used to build a duck-typed client-server system.
 introduction
 ============
 
-glyph is a format for machine readable webpages.
-the server can translate objects into resources with forms,
-and the client can translate this back into objects with methods.
-
 glyph is a bencoding derivative encoding. it is not endian dependent
 and handles a variety of literals (strings, bytes, numbers, floats, dates, 
 booleans), collections (list, set, dictionary), as well as a generic 
@@ -26,6 +22,9 @@ node type (name, attributes, content)
 glyph also contains 'extension' objects, which allows it to
 use links, forms, resources to represent generic objects.
 
+essentially, glyph is a format for machine readable webpages.
+the server can translate objects into resources with forms,
+and the client can translate this back into objects with methods.
 
 
 requirements
@@ -40,11 +39,9 @@ grammar
 
 ::
 
-	root :== (object whitespace*)+
+	root :== ws (object ws*)+
 
 	ws :== (space | tab | vtab | cr | lf)*
-
-	nl :== cr | crlf
 
 	object :== 
 		  number
@@ -62,17 +59,12 @@ grammar
 		| extension
 
 	number :== 'i' ws sign ascii_number ws ';'
-	
 
 	unicode :== 'u' ws ascii_number ws ':' utf8_bytes 
-		where len(bytes) = ascii_number
+		where len(bytes) = int(ascii_number)
 
 	bytearray :== 'b' ws ascii_number ws ':' bytes
-		where len(bytes) = ascii_number
-
-	float :== 'f' ws hex_float ws ';'
-
-	datetime :== 'd' utc_iso_datetime ws ';'
+		where len(bytes) = int(ascii_number)
 
 	true :== 'T'
 	false :== 'F'
@@ -82,124 +74,309 @@ grammar
 	set :== 'S' ws (object ws)* 'E'
 	dict :== 'D' ws (object ws object ws)* 'E'
 
-	node :== 'X' ws object ws object ws object 
-	
-	extension :== 'H' ws object ws object ws object
+	float :== 'f' ws hex_float ws ';'
 
+	datetime :== 'd' iso_datetime ws ';'
+
+	node :== 'X' ws name_obj ws attr_obj ws content_obj 
+
+	extension :== 'H' ws name_obj ws attr_obj ws content_obj 
+	
 
 numbers
 -------
 
-::
+integers of arbitrary precision, sign is optional, and either '+' or '-'
 
-	number	encoding
+::
+	number :== 'i' ws sign ascii_number ws ';'
+	sign :== '+' | '-' | ''
+	ascii_number :== <a decimal number as an ascii string>
+
+	number	encoded:
 	123	i123; i+000123;
 	-123	i-123;
 	0	i0; i-0; i+0;
 
-integers of arbitrary precision, sign is optional.
+note: if the decoder cannot represent the number without overflow, 
+it SHOULD throw an error
 
-.. note
-	overflow behavior
-	
 unicode
 -------
 
-unicode element is a utf-8 encoded string. must not include
-utf-16 surrogate pairs.
+unicode element is a utf-8 encoded string. MUST not include
+utf-16 surrogate pairs (JSON, Java, I'm looking at *you*)
 
 ::
+	unicode :== 'u' ws ascii_number ws ':' utf8_bytes 
+		where len(bytes) = int(ascii_number)
+
+	utf8_bytes :== <the utf8 string>
 
 	string 	encoding
-	foo	u3:foo
-	bar	u4:bar
-	💩	u4:\xf0\x9f\x92\xa9
+	'foo'	u3:foo
+	'bar'	u4:bar
+	'💩'	u4:\xf0\x9f\x92\xa9
 
 	n.b length is length of bytes, not length of string
 
-PROPOSED: strings should be NFC normalized, as per some RFC I can't recall.
-especially since they are used as dictionary keys
+encoders SHOULD normalize strings to NFC, decoders MAY
+normalize strings to NFC
 
 
 bytearrays
 ----------
 
+a byte array is a string of bytes. no encoding
+is assumed.
+
 ::
+	bytearray :== 'b' ws ascii_number ws ':' bytes
+		where len(bytes) = int(ascii_number)
 
-	bytes		encoding
-	0x31 0x32 0x33	b3:123
+	bytes			encoding
+	[0x31,0x32,0x33]	b3:123
 
-float
------
 
-hexadecimal floating point notation is available
-in java, c99 and python. see the appendix for how
-this represenation works ::
+singletons
+----------
 
-	0.5	f0x1.0000000000000p-1; 
-	-0.5 	f-0x1.0000000000000p-1; 
-	inf	finf;
-	-inf	f-inf;
-	nan	fnan;
+glyph has three singleton types: true, false, and nil::
 
-n.b 'Infinity' ,'-Infinity', 'NaN' are legal forms too.
+	true :== 'T'
+	false :== 'F'
+	nil :== 'N'
+
+nil SHOULD map to null or None or nil.
 
 collections
 -----------
 
+glyph has three collection types, an ordered list,
+an unordered set, and an unordered dictionary.
+
+sets and dicts MUST NOT have duplicate items,
+clients SHOULD throw an error.
+
 ::
+	list :== 'L' ws (object ws)* 'E'
+	set :== 'S' ws (object ws)* 'E'
+	dict :== 'D' ws (object ws object ws)* 'E'
 
-	list	Li1;i2;i3;E
-	set	Si1;i2;i3;E
-	dict	Si1;i2;i3;i4;E
+	object		encoding
 
-lists preserve order, 
-sets, dicts don't - and do not have duplicate keys
+	list(1,2,3)	Li1;i2;i3;E
+	set(1,2,3)	Si1;i2;i3;E
+	dict(1:2, 2:3)	Si1;i2;i3;i4;E
 
-
-.. note
-	ordered dictionaries
-	behaviour on duplicate keys 
-	
+SUGGESTED: order preserving dictionary type
 
 datetimes
 ---------
 
-datetimes are in iso-XXXX format. 
-currently UTC supported.
+datetimes are in utc, in iso-8601 format::
 
-::
+	datetime :== 'd' iso_datetime ws ';'
+	iso_datetime :== <%Y-%m-%dT%H:%M:%S.%fZ>
 
-	datetime encoding
+	object		encoding
 
-.. note
-	timezones, periods?
-	
+	1970-1-1	d1970-01-01T00:00:00.000Z;
+
+encoders SHOULD use UTC timezone of 'Z',
+decoders MAY only support UTC timestamps.
+
+PROPOSED: allow utc offsets, allow string timezone
+
+float
+-----
+
+floating point numbers cannot be represented in decimal
+without loss of accuracy. instead of using an endian
+dependent binary format, we use a hexadecimal string
+
+(note: hex floats are supported natively by python and java)
+
+a floating point number in hex takes a number of formats::
+
+	0.5	0x1.0000000000000p-1
+	-0.5 	-0x1.0000000000000p-1 
+	+0.0	0x0p0
+	-0.0	-0x0p0
+	1.729	0x1.ba9fbe76c8b44p+0
+
+first there is an optional sign, '+' or '-', then
+the prefix '0x' indicates it is in hex.
+finally, a hex number and its decimal exponent,
+separated by a 'p'. the exponent can have a sign,
+and is a decimal number.
+
+	float :== 'f' ws hex_float ws ';'
+
+	float	encoding
+	0.5	f0x1.0000000000000p-1; 
+	-0.5 	f-0x1.0000000000000p-1; 
+	0.0	f0x0p0;
+
+special values, nan and infinity are serialized as strings
+
+	float		encoding
+	infinity	finf; fInfinity; finfinity;
+	-infinity	f-inf; f-infinity; f-Infinity;
+	NaN		fnan; -fNaN
+
+decoders SHOULD ignore case and MAY only check the prefix
+of 'inf' rather than being exact.
+
+hexadecimal floating point conversion is detailed in an appendix.
 
 node
 ----
 
-nodes are three value tuples, name, attributes and content.
-name SHOULD be a unicode string, attributes SHOULD be a dictionary,
-content SHOULD be a list.
+nodes are generic named containers for application use:
+tuples of name, attributes and content objects.
 
-nodes can be used to represent an xml dom node
+name SHOULD be a unicode string, attributes SHOULD be a dictionary::
 
-	<xml a=1>1</xml> Xu3:xmlDu1:ai1;
+	node :== 'X' ws name_obj ws attr_obj ws content_obj 
+
+	name_obj :== string | object
+	attr_obj :== dictionary | object
+	content_obj :== object
+
+decoders MUST handle nodes with arbitrary objects for
+name, attributes and content
+
+decoders normally transform nodes into wrapper objects
+where object attributes are matched to the content_obj
+i.e forwarding node[blah] and node.blah to content_obj[blah]
+
+nodes can be used to represent an xml dom node::
+
+	xml			encoded
+	<xml a=1>1</xml>	Xu3:xmlDu1:ai1;
+
 
 extensions
 ----------
 
-extensions are three value tuples.
+extensions are name, attr, content tuples, used internally within glyph
+to describe objects with special handling or meaning, rather than
+application meaning.
 
-name SHOULD be a unicode string, attributes SHOULD be a dictionary,
-content SHOULD be a list.
+name SHOULD be a unicode string, attributes SHOULD be a dictionary::
 
-extensions are data types with special handling, used to implement
-forms and links
+	extension :== 'H' ws name_obj ws attr_obj ws content_obj 
+	name_obj :== string | object
+	attr_obj :== dictionary | object
+	content_obj :== object
 
-hypermedia
+extensions are used to represent links, forms, resources, errors
+and blobs within glyph.
+
+decoders SHOULD handle unknown extensions as node types.
+
+extensions
 ==========
+
+the following extensions are defined within glyph
+
+note: all names are unicode strings
+
+link
+----
+a hyperlink with a method and url
+
+- name 'link'
+- attributes is a dictionary with the keys 'url', 'method'
+- content is nil object 
+
+links map to functions with no arguments.
+
+
+embed
+-----
+a hyperlink with a method, url and the response embedded
+
+- links with inline responses have the name 'embed'
+- attributes is a dictionary with the keys 'url', 'method'
+ - url and method are both unicode keys with unicode values.
+- content is the inlined response.
+
+PROPOSED: unify link and embed type.
+
+embeds map to functions with no arguments
+
+form
+----
+
+like a html form, with a url, method, expected form values.
+
+- name 'form'
+- attributes is a dictionary
+  - MUST have the keys 'url', 'method' , 'values'
+  - url and method are both unicode keys with unicode values.
+  - values is a list of unicode names
+- content is nil object
+
+forms map to functions with arguments.
+when submitting a form, the arguments
+are encoded as a list, in the order given.
+
+resource
+--------
+
+like a top level webpage. like in a node
+- name 'resource'
+- attributes is a dictionary,
+  -  MAY have the keys 'url', 'name'
+- content is a dict of string -> object
+  - objects often forms
+
+resources map to instances, where the content contains
+forms mapping to the methods.
+
+error
+-----
+
+errors provide a generic object for messages in response
+to failed requests
+
+- name 'error'
+- attributes is a dictionary with the keys 'logref', 'message'
+- content SHOULD be a dict of string -> object, MAY be empty.
+
+logref is a application specific reference for logging.
+message is a unicode string
+
+clients upon recieving 
+
+
+blob
+----
+
+blobs represent a typed bytestring. blobs can represent
+inlined responses for data other than glyph objects.
+
+- name 'blob'
+- attributes is a dictionary,
+  - MUST have the key 'content-type'
+  - MAY have the key 'url'
+- content is a bytearray
+
+glyph servers can transform a response of a blob
+into a http response with the given content-type and blob
+
+glyph clients can return an response with an unknown encoding
+as a blob
+
+
+mapping to http
+===============
+
+TODO: describe typical client/server interaction
+
+how hypermedia encapsulates state
 
 types/schemas
 =============
@@ -207,62 +384,12 @@ types/schemas
 form variables currently untyped. form has a values
 attribute containing a list of string names
 
-
-proposed change to allow optional types of form arguments, including
-defaults.
-
-extensions
-==========
-
-links
------
-
-links have the name 'link'
-attributes is a dictionary with the keys 'url', 'method'
-content is none
-
-building links
-submitting links
-
-embeds
-------
-
-links with inline resources have the name 'embed'
-attributes is a dictionary with the keys 'url', 'method'
-content is an object, normally a resource
-
-forms
------
-
-have the name 'form'
-attributes is a dictionary with the keys 'url', 'method'
-content is none
-
-building forms
-submitting forms
-
-resources
----------
-
-have the name 'resource'
-attributes is a dictionary with the keys 'url'
-content is a dict of string -> object
-
-errors
-------
-
-proposed. 'error'
-attributes is a dictionary with the keys
-
-blobs
------
-
-proposed
-
-
+PROPOSED: some way to epress types on form inputs, default values
 
 encoding
 ========
+
+TODO: expand with notes on encoder specifics
 
 building urls
 
@@ -273,6 +400,8 @@ handling extensions
 parsers
 =======
 
+TODO
+
 error handling
 recovery
 
@@ -282,18 +411,30 @@ changes
 =======
 
 - initial use bencode
+  json didn't support binary data
 - booleans, datetimes added
 - nil added
+  creature comforts
 - forms, links, embeds added
-- use b for bytestring instead of s
+  hypermedia is neat
+- use b for byte array instead of s
+  less confusing
 - remove bencode ordering constraint on dictionaries
-- changed terminators/separators to ';'
+  as there isn't the same dict keys must be string restrictions
+- changed terminators/separators to '\n'
+  idea for using 'readline' in decoders, but made things ugly
 - resources added
-- separator changed to ':' (new lines make for ugly query strings)
+  instead of using nodes to represent resources
 - blob, error type placeholders added
-- change separator to ';' 
-  easier to read 
+- separator changed to ':' ,changed terminator to ';' 
+   (new lines make for ugly query strings)
+  easier to read, and no semantic whitespace means easier pretty printing 
+- blob extension type - aka byte array with headers
+  use case is for inling a response that isn't glyph
+- error extension type
+  use as body content in 4xx, 5xx
 
+- unicode normalization as a recommendation
 
 proposed changes
 ================
@@ -302,13 +443,12 @@ proposed changes
 
 - unify link and embed extension
 
-- blob extension type - aka bytestring with headers
-  remove bytestring entirely? (we use it, convienent for python) 
-  use case is for inling a response that isn't glyph
+- schema/type information for forms (aka values)
+  allow better mapping 
 
-- error extension type
-  similar in use to the vnd.error proposal https://github.com/blongden/vnd.error
-  use as body content in 4xx, 5xx
+- datetime with offset, timezone
+  allow non utc dates, but you need the utc offset
+  optional string timezone
 
 - order preserving dictionary type
   we use a list of lists for form schemas
@@ -318,18 +458,9 @@ proposed changes
 - restrictions on what goes in dictionaries, sets
   should use immutable collections? tuples?
 
-- schema/type information for forms (aka values)
-  allow better mapping 
-
 - caching information inside of resources	
   resources/embeds CAN contain control headers, freshness information
-  add a glyph.refresh() call?
 
-- datetime with offset, timezone
-  allow non utc dates, but you need the utc offset
-  optional string timezone
-
-- unicode normalization
 
 appendices
 ==========

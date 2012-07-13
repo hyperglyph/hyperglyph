@@ -17,7 +17,7 @@ come say hello: ##glyph on freenode
 note
 ----
 
-glyph-rpc is still under development. the underlying serialization format is 
+glyph-rpc is still under development. the underlying serialization format (glyph) is 
 considered unstable. not yet recommended for public apis.
 
 the serialization format is being finalized and documented and may 
