@@ -89,6 +89,7 @@ numbers
 integers of arbitrary precision, sign is optional, and either '+' or '-'
 
 ::
+
 	number :== 'i' ws sign ascii_number ws ';'
 	sign :== '+' | '-' | ''
 	ascii_number :== <a decimal number as an ascii string>
@@ -429,7 +430,7 @@ changes
   instead of using nodes to represent resources
 - blob, error type placeholders added
 - separator changed to ':' ,changed terminator to ';' 
-   (new lines make for ugly query strings)
+  new lines make for ugly query strings
   easier to read, and no semantic whitespace means easier pretty printing 
 - blob extension type - aka byte array with headers
   use case is for inling a response that isn't glyph
