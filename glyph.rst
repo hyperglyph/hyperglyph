@@ -449,22 +449,32 @@ proposed changes
 
 
 - schema/type information for forms (aka values)
-  allow better mapping 
+
+	  (allow better mapping of args)
 
 - datetime with offset, timezone
-  allow non utc dates, but you need the utc offset
-  optional string timezone
+
+	  allow non utc dates, but you need the utc offset
+	  optional string timezone
+
+- timedelta/period type
+
+	p<iso period format>;
 
 - order preserving dictionary type
-  we use a list of lists for form schemas
-  hard to represent in many languages (but python, java, ruby have this)
-  current thinking: bad idea
+
+	  we use a list of lists for form schemas
+	  hard to represent in many languages (but python, java, ruby have this)
+	  current thinking: bad idea
 
 - restrictions on what goes in dictionaries, sets
-  should use immutable collections? tuples?
+
+	  should use immutable collections? tuples?
 
 - caching information inside of resources	
-  resources/embeds CAN contain control headers, freshness information
+
+	  resources/embeds CAN contain control headers, freshness information
+          specify key names as being optional
 
 
 appendices
@@ -490,11 +500,6 @@ extension registry
 
 hexadecimal floating point
 --------------------------
-
-normals, subnormals
-
-nan, infinity, zero
-
 
 decimal:  0.5d::
 
