@@ -26,6 +26,7 @@ essentially, glyph is a format for machine readable webpages.
 the server can translate objects into resources with forms,
 and the client can translate this back into objects with methods.
 
+glyph uses the mime type: 'application/vnd.glyph'
 
 requirements
 ============
