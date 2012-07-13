@@ -411,32 +411,52 @@ recovery
 
 handling resources, forms, links
 
-changes
+history
 =======
 
 - initial use bencode
-  json didn't support binary data
+
+	  json didn't support binary data
 - booleans, datetimes added
+
+
 - nil added
-  creature comforts
+
+	  creature comforts
+
 - forms, links, embeds added
-  hypermedia is neat
+
+  	hypermedia is neat
+
 - use b for byte array instead of s
-  less confusing
+
+	  less confusing
+
 - remove bencode ordering constraint on dictionaries
-  as there isn't the same dict keys must be string restrictions
+
+	  as there isn't the same dict keys must be string restrictions
+
 - changed terminators/separators to '\n'
-  idea for using 'readline' in decoders, but made things ugly
+
+	  idea for using 'readline' in decoders, but made things ugly
+
 - resources added
-  instead of using nodes to represent resources
+
+	  instead of using nodes to represent resources
+
 - blob, error type placeholders added
 - separator changed to ':' ,changed terminator to ';' 
-  new lines make for ugly query strings
-  easier to read, and no semantic whitespace means easier pretty printing 
+
+	  new lines make for ugly query strings
+	  easier to read, and no semantic whitespace means easier pretty printing 
+
 - blob extension type - aka byte array with headers
-  use case is for inling a response that isn't glyph
+
+  	use case is for inling a response that isn't glyph
+
 - error extension type
-  use as body content in 4xx, 5xx
+
+	  use as body content in 4xx, 5xx
 
 - unicode normalization as a recommendation
 
