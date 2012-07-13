@@ -108,6 +108,7 @@ unicode element is a utf-8 encoded string. MUST not include
 utf-16 surrogate pairs (JSON, Java, I'm looking at *you*)
 
 ::
+
 	unicode :== 'u' ws ascii_number ws ':' utf8_bytes 
 		where len(bytes) = int(ascii_number)
 
@@ -131,6 +132,7 @@ a byte array is a string of bytes. no encoding
 is assumed.
 
 ::
+
 	bytearray :== 'b' ws ascii_number ws ':' bytes
 		where len(bytes) = int(ascii_number)
 
@@ -159,6 +161,7 @@ sets and dicts MUST NOT have duplicate items,
 clients SHOULD throw an error.
 
 ::
+
 	list :== 'L' ws (object ws)* 'E'
 	set :== 'S' ws (object ws)* 'E'
 	dict :== 'D' ws (object ws object ws)* 'E'
@@ -209,7 +212,7 @@ first there is an optional sign, '+' or '-', then
 the prefix '0x' indicates it is in hex.
 finally, a hex number and its decimal exponent,
 separated by a 'p'. the exponent can have a sign,
-and is a decimal number.
+and is a decimal number::
 
 	float :== 'f' ws hex_float ws ';'
 
@@ -218,7 +221,7 @@ and is a decimal number.
 	-0.5 	f-0x1.0000000000000p-1; 
 	0.0	f0x0p0;
 
-special values, nan and infinity are serialized as strings
+special values, nan and infinity are serialized as strings::
 
 	float		encoding
 	infinity	finf; fInfinity; finfinity;
@@ -287,9 +290,9 @@ link
 ----
 a hyperlink with a method and url
 
-- name 'link'
-- attributes is a dictionary with the keys 'url', 'method'
-- content is nil object 
+	- name 'link'
+	- attributes is a dictionary with the keys 'url', 'method'
+	- content is nil object 
 
 links map to functions with no arguments.
 
@@ -298,10 +301,10 @@ embed
 -----
 a hyperlink with a method, url and the response embedded
 
-- links with inline responses have the name 'embed'
-- attributes is a dictionary with the keys 'url', 'method'
- - url and method are both unicode keys with unicode values.
-- content is the inlined response.
+	- links with inline responses have the name 'embed'
+	- attributes is a dictionary with the keys 'url', 'method'
+	 - url and method are both unicode keys with unicode values.
+	- content is the inlined response.
 
 PROPOSED: unify link and embed type.
 
@@ -312,12 +315,12 @@ form
 
 like a html form, with a url, method, expected form values.
 
-- name 'form'
-- attributes is a dictionary
-  - MUST have the keys 'url', 'method' , 'values'
-  - url and method are both unicode keys with unicode values.
-  - values is a list of unicode names
-- content is nil object
+	- name 'form'
+	- attributes is a dictionary
+	  - MUST have the keys 'url', 'method' , 'values'
+	  - url and method are both unicode keys with unicode values.
+	  - values is a list of unicode names
+	- content is nil object
 
 forms map to functions with arguments.
 when submitting a form, the arguments
@@ -327,11 +330,12 @@ resource
 --------
 
 like a top level webpage. like in a node
-- name 'resource'
-- attributes is a dictionary,
-  -  MAY have the keys 'url', 'name'
-- content is a dict of string -> object
-  - objects often forms
+
+	- name 'resource'
+	- attributes is a dictionary,
+	  -  MAY have the keys 'url', 'name'
+	- content is a dict of string -> object
+	  - objects often forms
 
 resources map to instances, where the content contains
 forms mapping to the methods.
@@ -342,9 +346,9 @@ error
 errors provide a generic object for messages in response
 to failed requests. servers MAY return them.
 
-- name 'error'
-- attributes is a dictionary with the keys 'logref', 'message'
-- content SHOULD be a dict of string -> object, MAY be empty.
+	- name 'error'
+	- attributes is a dictionary with the keys 'logref', 'message'
+	- content SHOULD be a dict of string -> object, MAY be empty.
 
 logref is a application specific reference for logging.
 message is a unicode string
@@ -356,11 +360,11 @@ blob
 blobs represent a typed bytestring. blobs can represent
 inlined responses for data other than glyph objects.
 
-- name 'blob'
-- attributes is a dictionary,
-  - MUST have the key 'content-type'
-  - MAY have the key 'url'
-- content is a bytearray
+	- name 'blob'
+	- attributes is a dictionary,
+	  - MUST have the key 'content-type'
+	  - MAY have the key 'url'
+	- content is a bytearray
 
 glyph servers can transform a response of a blob
 into a http response with the given content-type and blob
