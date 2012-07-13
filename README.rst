@@ -1,5 +1,5 @@
 glyph-rpc
----------
+=========
 
 glyph-rpc is yet another http rpc library, but it tries to exploit http rather
 than simply tunnel requests over it. glyph builds webpages out of objects, for
@@ -18,11 +18,36 @@ note
 ----
 
 glyph-rpc is still under development. the underlying serialization format is 
-currently unstable. not recommended for public apis. after a few more ports
-the format will stabilize.
+considered unstable. not yet recommended for public apis.
+
+the serialization format is being finalized and documented and may 
+change during review, but most of the work is done, just
+edge cases to fully document.
+
+the code has been used in production internally. 
+
+roadmap
+=======
+
+current
+-------
+
+	complete implementation in python
+	client and server for ruby, missing embedding, 
+1.0
+---
+- complete specification (*in progress*)
+
+- comformant implementation of spec in ruby and python
+- freeze spec, label it v1.0
+
+1.1+
+----
+- would like to have but 
+
 
 example
--------
+=======
 
 glyph-rpc is still under development. the underlying serialization format is 
 currently unstable. not recommended for public apis.
@@ -187,7 +212,7 @@ The server is stateless - the state of the objects is encapsulated
 in the links & forms. 
 
 internals
----------
+=========
 
 glyph on the server end has four  major parts - a router, a mapper, a handler, and
 a resource.
@@ -198,3 +223,5 @@ handler - given an instance, handles mapping the deserialization and serializati
 resource - the bit that actually services the request
 
 
+the ruby client is currently the simplest, and the python client
+has a lot more code for more generic http services.
