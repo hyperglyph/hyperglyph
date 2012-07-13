@@ -1,11 +1,12 @@
-=======
- glyph
-=======
+===============================
+ glyph data model and encoding
+===============================
 :Author: tef
 :Date: 2012-07-13
 :Version: 0.2
 
 glyph is a data-interchange format with hypermedia elements,
+to describe machine readable web pages.
 
 .. contents::
 
@@ -13,14 +14,13 @@ glyph is a data-interchange format with hypermedia elements,
 introduction
 ============
 
-glyph is a bencoding derivative encoding. it is not endian dependent
-and handles a variety of literals (strings, bytes, numbers, floats, dates, 
-booleans), collections (list, set, dictionary), as well as a generic 
-node type (name, attributes, content)
+glyph is an encoding for remote procedure and method calls over
+http, that supports returning arbitrary objects, and calling
+methods on these at the client.
 
-glyph also contains 'extension' objects, which allows it to
-use links, forms, resources to represent generic objects
-and their methods.
+glyph is normally served over http, and used to offer
+objects to the client. objects are described in terms
+of hypermedia objects - links and forms. 
 
 essentially, glyph is a format for machine readable webpages.
 the server can translate objects into resources with forms,
@@ -38,7 +38,15 @@ document are to be interpreted as described in [RFC2119].
 overview
 ========
 
-todo: examples for each data type
+glyph is designed for ease of implementation, ease of human inspection, and
+based around bencoding from bittorrent. despite being a binary format, 
+there are no byte ordering or endian issues.
+
+underneath, glyph natively handles a variety of literals
+(strings, bytes, numbers, floats, dates, booleans), 
+collections (list, set, dictionary).
+
+
 ::
 
 	data type	example			encoded
@@ -46,9 +54,16 @@ todo: examples for each data type
 	integer		1			i1;
 	unicode		"hello"			u5:hello;
 	bytearray	[0x31, 0x32, 0x33]	b3:123;
+	list		[1,2,3]			Li1;i2;i3;E
+	set		{1,2,3}			Si1;i2;i3;E
+	dictionary	{1:2, 2:3}		Di1;i2;i3;i4;E
+	singleton	nil true false		N T F
+	float		0.5			f0x1.0000000000000p-1; 
+	datetime	1970-1-1 00:00 UTC	d1970-01-01T00:00:00.000Z;
 
-
-given an object, glyph can map this to a resource with forms.
+glyph also supports a node tuple type (name, attributes, content).
+there is also a special 'extension' type used to define objects with special
+behaviour
 
 mapping to http
 ===============
@@ -58,7 +73,7 @@ TODO: describe typical client/server interaction
 how hypermedia encapsulates state
 
 data types
-----------
+==========
 
 integers
 --------
@@ -155,7 +170,7 @@ SUGGESTED: order preserving dictionary type
 datetimes
 ---------
 
-datetimes are in utc, in iso-8601 format::
+datetimes SHOULD be in utc, and MUST be in iso-8601/rfc3339 format::
 
 	datetime :== 'd' iso_datetime ws ';'
 	iso_datetime :== <%Y-%m-%dT%H:%M:%S.%fZ>
@@ -268,9 +283,9 @@ link
 ----
 a hyperlink with a method and url
 
-	- name 'link'
-	- attributes is a dictionary with the keys 'url', 'method'
-	- content is nil object 
+- name 'link'
+- attributes is a dictionary with the keys 'url', 'method'
+- content is nil object 
 
 links map to functions with no arguments.
 
@@ -279,10 +294,10 @@ embed
 -----
 a hyperlink with a method, url and the response embedded
 
-	- links with inline responses have the name 'embed'
-	- attributes is a dictionary with the keys 'url', 'method'
-	 - url and method are both unicode keys with unicode values.
-	- content is the inlined response.
+- links with inline responses have the name 'embed'
+  * attributes is a dictionary with the keys 'url', 'method'
+  *  url and method are both unicode keys with unicode values.
+- content is the inlined response.
 
 PROPOSED: unify link and embed type.
 
@@ -293,12 +308,12 @@ form
 
 like a html form, with a url, method, expected form values.
 
-	- name 'form'
-	- attributes is a dictionary
-	  - MUST have the keys 'url', 'method' , 'values'
-	  - url and method are both unicode keys with unicode values.
-	  - values is a list of unicode names
-	- content is nil object
+- name 'form'
+- attributes is a dictionary
+  * MUST have the keys 'url', 'method' , 'values'
+  * url and method are both unicode keys with unicode values.
+  * values is a list of unicode names
+- content is nil object
 
 forms map to functions with arguments.
 when submitting a form, the arguments
@@ -309,11 +324,11 @@ resource
 
 like a top level webpage. like in a node
 
-	- name 'resource'
-	- attributes is a dictionary,
-	  -  MAY have the keys 'url', 'name'
-	- content is a dict of string -> object
-	  - objects often forms
+- name 'resource'
+- attributes is a dictionary,
+  *  MAY have the keys 'url', 'name'
+- content is a dict of string -> object
+  * objects often forms
 
 resources map to instances, where the content contains
 forms mapping to the methods.
@@ -324,9 +339,9 @@ error
 errors provide a generic object for messages in response
 to failed requests. servers MAY return them.
 
-	- name 'error'
-	- attributes is a dictionary with the keys 'logref', 'message'
-	- content SHOULD be a dict of string -> object, MAY be empty.
+- name 'error'
+- attributes is a dictionary with the keys 'logref', 'message'
+- content SHOULD be a dict of string -> object, MAY be empty.
 
 logref is a application specific reference for logging.
 message is a unicode string
@@ -338,11 +353,11 @@ blob
 blobs represent a typed bytestring. blobs can represent
 inlined responses for data other than glyph objects.
 
-	- name 'blob'
-	- attributes is a dictionary,
-	  - MUST have the key 'content-type'
-	  - MAY have the key 'url'
-	- content is a bytearray
+- name 'blob'
+- attributes is a dictionary,
+  * MUST have the key 'content-type'
+  * MAY have the key 'url'
+- content is a bytearray
 
 glyph servers can transform a response of a blob
 into a http response with the given content-type and blob
@@ -538,6 +553,8 @@ history
 
 	  instead of using nodes to represent resources
 
+- v0.1  - spec started
+
 - blob, error type placeholders added
 
 - separator changed to ':' ,changed terminator to ';' 
@@ -555,34 +572,49 @@ history
 
 - unicode normalization as a recommendation
 
-- 0.1
 
 - remove whitespace between prefix ... ;
 - put a ';' at the end of strings - easier to read format
 - put a 'E' at the end of nodes, extensions
 
-- 0.2
+- v0.2 - current
 
-proposed changes
-----------------
+planned changes
+---------------
 
-- resource becomes name, attrs, content* ?
-  
-- datetime with offset, timezone
-
-	  allow non utc dates, but you need the utc offset
-	  optional string timezone
-
-- timedelta/period type
+- v0.3
+- allow any iso datetime with offset in datetime type
+- add timedelta/period type
 
 	p<iso period format>;
 	yes
 
--  maybe true, false nil as 1,0,-
+- 0.4 -
 
+
+- 0.5 grammar/encoding frozen - no more literals, collections added
+
+- 0.6 schema/form inputs type
+
+- 0.8 caching options defined
+- 0.9 all extension type parameters defined
+- 1.0 final
+
+proposed changes
+----------------
 
 - unify link and embed extension
 
+- node/ext becomes name, attrs, content* ?
+	i.e allow a number of objects as the 'content'
+  
+- datetime with offset, timezone
+	  optional string timezone
+
+- caching information inside of resources	
+
+	  resources/embeds CAN contain control headers, freshness information
+          specify key names as being optional
 
 - schema/type information for forms (aka values)
 
@@ -599,8 +631,4 @@ proposed changes
 
 	  should use immutable collections? tuples?
 
-- caching information inside of resources	
-
-	  resources/embeds CAN contain control headers, freshness information
-          specify key names as being optional
 
