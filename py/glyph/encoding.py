@@ -117,7 +117,7 @@ UNICODE_CHARSET="utf-8"
 BSTR='b'
 UNI='u'
 LEN_SEP=':'
-END_ITEM='\x0a'
+END_ITEM=';'
 
 FLT='f'
 NUM='i'

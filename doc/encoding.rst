@@ -86,18 +86,18 @@ bytes!
 	b5:hello
 
 numbers:
-	utc datetime -> d %Y-%m-%dT%H:%M:%S.%fZ \x0a
+	utc datetime -> d %Y-%m-%dT%H:%M:%S.%fZ ;
 		note: currently only UTC times supported,
 			  so all datetimes must end with Z
 
-	d1970-01-01T00:00:00.000Z\n
+	d1970-01-01T00:00:00.000Z;
 
-	num -> i <number> \x0a
+	num -> i <number> ;
 		arbitrary precision whole number
 
-	i123\n
+	i123;
 
-	double -> f <double in hex> \x0a
+	double -> f <double in hex> ;
 		double or double - the hex format is from
 		c99 (-)0xMANTISSAp(-)EXPONENT
 
@@ -188,16 +188,15 @@ whitespace/newlines
 parser SHOULD ignore whitespace when it doesn't change
 semantics i.e
 
-	i 123 \n, i123\n, i 123\n, i123 \n, all same 
+all same ::
+	i 123 ;
+	i123;
+	i 123;
+	i123 ;
 
 includes whitespace between items
 
-parser MUST treat CRLF as LF - where LF is used
-as a terminator.
-
-	i.e i123\r\n and i123\n are the same
-
-
+	i.e i123\r; and i123; are the same
 
 
 unordered collections (dict/set)
@@ -218,23 +217,23 @@ example dumps:
 >>> glyph.dump(b"hello, bytes")
 'b12:hello, bytes'
 >>> glyph.dump(1)
-'i1\n'
+'i1;'
 >>> glyph.dump(-1)
-'i-1\n'
+'i-1;'
 >>> glyph.dump(1.0)
-'f0x1.0000000000000p+0\n'
+'f0x1.0000000000000p+0;'
 >>> glyph.dump(-0.0)
-'f-0x0.0p+0\n'
+'f-0x0.0p+0;'
 >>> glyph.dump(2.225073858507201e-308)
-'f0x0.fffffffffffffp-1022\n'
+'f0x0.fffffffffffffp-1022;'
 >>> glyph.dump(double('nan'))
-'fnan\n'
+'fnan;'
 >>> glyph.dump([1,2,3])
-'Li1\ni2\ni3\nE'
+'Li1;i2;i3;E'
 >>> glyph.dump(set([1,2,3]))
-'Si1\ni2\ni3\nE'
+'Si1;i2;i3;E'
 >>> glyph.dump({1:2,3:4})
-'Di1\ni2\ni3\ni4\nE'
+'Di1;i2;i3;i4;E'
 >>> glyph.dump(glyph.form('/url', values=['one', 'two'])
 ... )
 'Hu4:formDu6:methodu4:POSTu3:urlu4:/urlu6:valuesLu3:oneu3:twoEEN'

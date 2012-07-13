@@ -39,7 +39,7 @@ grammar
 		| node
 		| extension
 
-	number :== 'i' ws sign ascii_number ws 0x0a
+	number :== 'i' ws sign ascii_number ws ';'
 	
 
 	unicode :== 'u' ws ascii_number ws ':' utf8_bytes 
@@ -48,9 +48,9 @@ grammar
 	bytearray :== 'b' ws ascii_number ws ':' bytes
 		where len(bytes) = ascii_number
 
-	float :== 'f' ws hex_float ws 0x0a
+	float :== 'f' ws hex_float ws ';'
 
-	datetime :== 'd' utc_iso_datetime ws0x0a
+	datetime :== 'd' utc_iso_datetime ws ';'
 
 	true :== 'T'
 	false :== 'F'
@@ -64,22 +64,15 @@ grammar
 	
 	extension :== 'H' ws object ws object ws object
 
-.. note
-
-	may change terminator character to ';' 
-	\n makes ugly query urls & lumpy output. better not having it sensitive.
-	
-	consider adding trailing character ';' to string, bytearrays for 
-	nicer parsing.
 
 numbers
 -------
 
 ::
 	number	encoding
-	123	i123\n i+000123\n
-	-123	i-123\n
-	0	i0\n i-0\n i+0\n
+	123	i123; i+000123;
+	-123	i-123;
+	0	i0; i-0; i+0;
 
 integers of arbitrary precision, sign is optional.
 
@@ -119,11 +112,11 @@ hexadecimal floating point notation is available
 in java, c99 and python. see the appendix for how
 this represenation works
 ::
-	0.5	f0x1.0000000000000p-1\n 
-	-0.5 	f-0x1.0000000000000p-1\n 
-	inf	finf\n
-	-inf	f-inf\n
-	nan	fnan\n
+	0.5	f0x1.0000000000000p-1; 
+	-0.5 	f-0x1.0000000000000p-1; 
+	inf	finf;
+	-inf	f-inf;
+	nan	fnan;
 
 n.b 'Infinity' ,'-Infinity', 'NaN' are legal forms too.
 
@@ -131,9 +124,9 @@ collections
 -----------
 
 ::
-	list	Li1\ni2\ni3\nE
-	set	Si1\ni2\ni3\nE
-	dict	Si1\ni2\ni3\ni4\nE
+	list	Li1;i2;i3;E
+	set	Si1;i2;i3;E
+	dict	Si1;i2;i3;i4;E
 
 lists preserve order, 
 sets, dicts don't - and do not have duplicate keys
@@ -166,7 +159,7 @@ content SHOULD be a list.
 
 nodes can be used to represent an xml dom node
 
-	<xml a=1>1</xml> Xu3:xmlDu1:ai1\n
+	<xml a=1>1</xml> Xu3:xmlDu1:ai1;
 
 extensions
 ----------
@@ -266,16 +259,18 @@ changes
 - forms, links, embeds added
 - use b for bytestring instead of s
 - remove bencode ordering constraint on dictionaries
-- changed terminators/separators to '\n'
+- changed terminators/separators to ';'
 - resources added
 - separator changed to ':' (new lines make for ugly query strings)
 - blob, error type placeholders added
-- change separator back to 'e' or ';' or ','
+- change separator to ';' 
   easier to read 
 
 
 proposed changes
 ================
+
+- put a ';' at the end of strings - easier to read format
 
 - unify link and embed extension
 
@@ -335,3 +330,50 @@ normals, subnormals
 nan, infinity, zero
 
 
+decimal:  0.5d::
+
+	in network byte order
+
+	offset:    0  8  16 32 40 48 56 64
+	bytes:     3f e0 00 00 00 00 00 00
+
+
+	sign bit: bit 0
+
+	sign_bit = (byte[0] & 128) == 128   
+	sign = 0 is sign_bit is 0
+	       1 if sign_bit is 1
+
+	sign bit of 0.5 is 0x3f & 128 = 0
+
+	exponent: bits 1..12  (11 bits) as network order int 
+	instead of signed, exponent is stored as exp+1023 if exp != 0
+	
+	raw_exponent = ((byte[0] &127) << 4) + ((byte[1]&240) >> 4)
+	so raw_exponent = ((0x3f &127) << 4) + ((0xe0)>>4) = 1022
+
+	n.b if raw exponent is 0, then exponent is 0.
+	    if raw exponent is not 0, exponent is raw_exponent-1023
+
+	exponent of 0.5 is -1 (1022-1023)
+
+	fractional: bits 13..64  (52 bits) as unsigned network int
+
+	fractional = [ byte[1]&15, byte[2], ...]
+
+	fractional part of 0.5 is [0xe0&15, 0x00,0x00,...] is 0
+
+
+	so hex is <SIGN>0x1.<FRACTIONAL>p<EXPONENT> where FRACTIONAL is in hex, exponent in decimal
+	for normals.
+
+	0.5 in hex:   0x1.0000000000000p-1 
+	-0.5 in hex: -0x1.0000000000000p-1 
+
+
+for subnormals and 0, the raw exponent is 0, and so the exponent is either::
+
+	0, if the fractional part is 0 
+	-1022, if the fractional part is non 0
+
+these are formatted with a leading 0, not 1

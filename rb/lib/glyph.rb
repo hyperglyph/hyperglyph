@@ -343,11 +343,11 @@ module Glyph
       u = o.encode('utf-8')
       "u#{u.bytesize}:#{u}"
     elsif Integer === o
-      "i#{o}\n"
+      "i#{o};"
     elsif StringIO === o
       "b#{o.string.length}:#{o.string}"
     elsif Float === o
-      "f#{o.to_hex}\n"
+      "f#{o.to_hex};"
     elsif Array === o
       "L#{o.map{|o| Glyph.dump(o, resolve, inline) }.join}E"
     elsif Set === o
@@ -361,9 +361,9 @@ module Glyph
     elsif o.nil?
       "N"
     elsif DateTime === o
-      "d#{o.strftime("%FT%T.%NZ")}\n"
+      "d#{o.strftime("%FT%T.%NZ")};"
     elsif Time === o
-      "d#{o.strftime("%FT%T.%LZ")}\n"
+      "d#{o.strftime("%FT%T.%LZ")};"
     elsif Extension === o
       o.instance_eval {
         @attrs['url'] = resolve.call(@attrs['url']) if not String === @attrs['url']
@@ -384,7 +384,7 @@ module Glyph
   end
 
   def self.parse(scanner, url)
-    s = scanner.scan(/\w/)[-1]
+    s = scanner.scan(/[\w\n]/)[-1]
     return case s[-1]
     when ?T
       true
@@ -393,13 +393,13 @@ module Glyph
     when ?N
       nil
     when ?i
-      num = scanner.scan_until(/\n/)
+      num = scanner.scan_until(/;/)
       num.chop.to_i
     when ?d
-      dt = scanner.scan_until(/\n/)
+      dt = scanner.scan_until(/;/)
       DateTime.strptime(dt, "%FT%T.%L%Z")
     when ?f
-      num = scanner.scan_until(/\n/)
+      num = scanner.scan_until(/;/)
       num.chop.hex_to_f
     when ?u
       num = scanner.scan_until(/:/).chop.to_i
