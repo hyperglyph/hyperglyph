@@ -96,7 +96,7 @@ utf-16 surrogate pairs.
 	should normalise to NFC according to rfc specs
 
 
-..
+::
 	string 	encoding
 	foo	u3:foo
 	bar	u4:bar
@@ -148,6 +148,7 @@ datetimes
 ---------
 
 datetimes are in iso-XXXX format. 
+currently UTC supported.
 
 ::
 	datetime encoding
@@ -177,6 +178,9 @@ content SHOULD be a list.
 extensions are data types with special handling, used to implement
 forms and links
 
+hypermedia
+==========
+
 types/schemas
 =============
 	
@@ -193,23 +197,41 @@ extensions
 links
 -----
 
+links have the name 'link'
+attributes is a dictionary with the keys 'url', 'method'
+content is none
+
 building links
 submitting links
+
+embeds
+------
+
+links with inline resources have the name 'embed'
+attributes is a dictionary with the keys 'url', 'method'
+content is an object, normally a resource
 
 forms
 -----
 
-building forms
+have the name 'form'
+attributes is a dictionary with the keys 'url', 'method'
+content is none
 
+building forms
 submitting forms
 
 resources
 ---------
+have the name 'resource'
+attributes is a dictionary with the keys 'url'
+content is a dict of string -> object
 
 errors
 ------
 
-proposed
+proposed. 'error'
+attributes is a dictionary with the keys
 
 blobs
 -----
@@ -236,7 +258,7 @@ recovery
 handling resources, forms, links
 
 changes
--------
+=======
 
 - initial use bencode
 - booleans, datetimes added
@@ -247,34 +269,42 @@ changes
 - changed terminators/separators to '\n'
 - resources added
 - separator changed to ':' (new lines make for ugly query strings)
+- blob, error type placeholders added
+- change separator back to 'e' or ';' or ','
+  easier to read 
+
 
 proposed changes
-----------------
+================
 
-- change separator back to 'e' or ';' or ','
-  - easier to read 
+- unify link and embed extension
 
 - blob extension type - aka bytestring with headers
-  - remove bytestring entirely? (we use it, convienent for python) 
-  - use case is for inling a response that isn't glyph
+  remove bytestring entirely? (we use it, convienent for python) 
+  use case is for inling a response that isn't glyph
 
 - error extension type
-  - similar in use to the vnd.error proposal https://github.com/blongden/vnd.error
-  - use as body content in 4xx, 5xx
+  similar in use to the vnd.error proposal https://github.com/blongden/vnd.error
+  use as body content in 4xx, 5xx
 
 - order preserving dictionary type
-  - we use a list of lists for form schemas
-  - hard to represent in many languages (but python, java, ruby have this)
-  - current thinking: bad idea
+  we use a list of lists for form schemas
+  hard to represent in many languages (but python, java, ruby have this)
+  current thinking: bad idea
 
 - restrictions on what goes in dictionaries, sets
-  - should use immutable collections? tuples?
+  should use immutable collections? tuples?
 
 - schema/type information for forms (aka values)
+  allow better mapping 
 
 - caching information inside of resources	
   resources/embeds CAN contain control headers, freshness information
   add a glyph.refresh() call?
+
+- datetime with offset, timezone
+  allow non utc dates, but you need the utc offset
+  optional string timezone
 
 appendices
 ==========
