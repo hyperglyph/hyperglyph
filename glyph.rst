@@ -170,7 +170,7 @@ SUGGESTED: order preserving dictionary type
 datetimes
 ---------
 
-datetimes SHOULD be in utc, and MUST be in iso-8601/rfc3339 format::
+datetimes MUST be in utc, and MUST be in iso-8601/rfc3339 format::
 
 	datetime :== 'd' iso_datetime ws ';'
 	iso_datetime :== <normally: %Y-%m-%dT%H:%M:%S.%fZ >
@@ -179,8 +179,8 @@ datetimes SHOULD be in utc, and MUST be in iso-8601/rfc3339 format::
 
 	1970-1-1	d1970-01-01T00:00:00.000Z;
 
-encoders SHOULD use UTC timezone of 'Z',
-decoders MAY only support UTC timestamps.
+encoders MUST use UTC timezone of 'Z',
+decoders SHOULD only support UTC timestamps.
 
 PROPOSED: allow utc offsets, allow string timezone
 
