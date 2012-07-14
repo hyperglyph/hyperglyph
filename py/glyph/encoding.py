@@ -17,6 +17,7 @@ END_NODE = END_EXT = END_DICT = END_LIST = END_SET = END_ITEM
 FLT='f'
 NUM='i'
 DTM='d'
+PER='p'
 
 DICT='D'
 LIST='L'
@@ -169,6 +170,11 @@ class Encoder(object):
             obj = obj.astimezone(utc)
             buf.write(obj.strftime("%Y-%m-%dT%H:%M:%S.%fZ"))
             buf.write(END_ITEM)
+        elif isinstance(obj, timedelta):
+            raise NotImplementedError()
+            buf.write(PER)
+            buf.write()
+            buf.write(END_ITEM)
         else:
             self._dump(inline(obj), buf, resolver, inline)
 
@@ -256,6 +262,9 @@ class Encoder(object):
             ext= self.extension.__make__(name, attr, content)
             ext.__resolve__(resolver)
             return ext
+        elif c == PER:
+            periodstring =  _read_until(fh, END_ITEM)[0]
+            raise NotImplementedError()
         elif c == DTM:
             datestring =  _read_until(fh, END_ITEM)[0]
             if datestring[-1].lower() == 'z':

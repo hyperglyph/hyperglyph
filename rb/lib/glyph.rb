@@ -14,6 +14,12 @@ require 'hexfloat.rb'
 module Glyph
   CONTENT_TYPE = "application/vnd.glyph"
 
+  class TimeDelta
+    def initialize(period)
+      @period = period
+    end
+  end
+
   class FetchError < StandardError
   end
   class DecodeError < StandardError
@@ -357,6 +363,8 @@ module Glyph
       "N;"
     elsif DateTime === o
       "d#{o.strftime("%FT%T.%NZ")};"
+    elsif TimeDelta === o
+      "p#{o.iso_period};"
     elsif Time === o
       "d#{o.strftime("%FT%T.%LZ")};"
     elsif Extension === o
@@ -396,6 +404,9 @@ module Glyph
     when ?d
       dt = scanner.scan_until(/;/)
       DateTime.strptime(dt, "%FT%T.%L%Z")
+    when ?p
+      per = scanner.scan_until(/;/)
+      TimeDelta.iso_parse(per)
     when ?f
       num = scanner.scan_until(/;/)
       num.chop.hex_to_f

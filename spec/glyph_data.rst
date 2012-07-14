@@ -590,7 +590,6 @@ planned changes
 proposed changes
 ----------------
 
-
 - caching information inside of resources	
 
 	resources/embeds CAN contain control headers, freshness information
