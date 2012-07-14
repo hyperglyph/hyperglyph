@@ -12,6 +12,7 @@ BSTR='b'
 UNI='u'
 LEN_SEP=':'
 END_ITEM=';'
+END_NODE = END_EXT = END_DICT = END_LIST = END_SET = END_ITEM
 
 FLT='f'
 NUM='i'
@@ -20,7 +21,6 @@ DTM='d'
 DICT='D'
 LIST='L'
 SET='S'
-END_NODE = END_EXT = END_DICT = END_LIST = END_SET ='E'
 
 TRUE='T'
 FALSE='F'
@@ -95,12 +95,15 @@ class Encoder(object):
     def _dump(self, obj, buf, resolver, inline):
         if obj is True:
             buf.write(TRUE)
+            buf.write(END_ITEM)
 
         elif obj is False:
             buf.write(FALSE)
+            buf.write(END_ITEM)
         
         elif obj is None:
             buf.write(NONE)
+            buf.write(END_ITEM)
         
         elif isinstance(obj, (self.extension,)):
             buf.write(EXT)
@@ -172,10 +175,13 @@ class Encoder(object):
 
     def _read_one(self, fh, c, resolver):
         if c == NONE:
+            _read_until(fh, END_ITEM)
             return None
         elif c == TRUE:
+            _read_until(fh, END_ITEM)
             return True
         elif c == FALSE:
+            _read_until(fh, END_ITEM)
             return False
         if c == BSTR or c == UNI:
             l = _read_until(fh, LEN_SEP, parse=int)[0]

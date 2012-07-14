@@ -56,10 +56,10 @@ collections (list, set, dictionary).
 	integer		1			i1;
 	unicode		"hello"			u5:hello;
 	bytearray	[0x31, 0x32, 0x33]	b3:123;
-	list		[1,2,3]			Li1;i2;i3;E
-	set		{1,2,3}			Si1;i2;i3;E
-	dictionary	{1:2, 2:3}		Di1;i2;i3;i4;E
-	singleton	nil true false		N T F
+	list		[1,2,3]			Li1;i2;i3;;
+	set		{1,2,3}			Si1;i2;i3;;
+	dictionary	{1:2, 2:3}		Di1;i2;i3;i4;;
+	singleton	nil true false		N; T; F;
 	float		0.5			f0x1.0000000000000p-1; 
 	datetime	1970-1-1 00:00 UTC	d1970-01-01T00:00:00.000Z;
 
@@ -140,9 +140,9 @@ singletons
 
 glyph has three singleton types: true, false, and nil::
 
-	true :== 'T'
-	false :== 'F'
-	nil :== 'N'
+	true :== 'T;'
+	false :== 'F;'
+	nil :== 'N;'
 
 nil SHOULD map to null or None or nil.
 
@@ -157,15 +157,15 @@ clients SHOULD throw an error.
 
 ::
 
-	list :== 'L' ws (object ws)* 'E'
-	set :== 'S' ws (object ws)* 'E'
-	dict :== 'D' ws (object ws object ws)* 'E'
+	list :== 'L' ws (object ws)* ';'
+	set :== 'S' ws (object ws)* ';'
+	dict :== 'D' ws (object ws object ws)* ';'
 
 	object		encoding
 
-	list(1,2,3)	Li1;i2;i3;E
-	set(1,2,3)	Si1;i2;i3;E
-	dict(1:2, 2:3)	Si1;i2;i3;i4;E
+	list(1,2,3)	Li1;i2;i3;;
+	set(1,2,3)	Si1;i2;i3;;
+	dict(1:2, 2:3)	Si1;i2;i3;i4;;
 
 SUGGESTED: order preserving dictionary type
 
@@ -222,12 +222,13 @@ and is a decimal number::
 special values, nan and infinity are serialized as strings::
 
 	float		encoding
-	infinity	finf; fInfinity; finfinity;
-	-infinity	f-inf; f-infinity; f-Infinity;
-	NaN		fnan; -fNaN
 
-decoders SHOULD ignore case and MAY only check the prefix
-of 'inf' rather than being exact.
+	Infinity	finf; fInfinity; finfinity;
+	-Infinity	f-inf; f-infinity; f-Infinity;
+	NaN		fnan; fNaN;
+
+decoders MUST ignore case.
+encoders MUST use 'inf' or 'infinity', not 'infin', 'in', etc.
 
 
 node
@@ -238,7 +239,7 @@ tuples of name, attributes and content objects.
 
 name SHOULD be a unicode string, attributes SHOULD be a dictionary::
 
-	node :== 'X' ws name_obj ws attr_obj ws content_obj ws 'E'
+	node :== 'X' ws name_obj ws attr_obj ws content_obj ws ';'
 
 	name_obj :== string | object
 	attr_obj :== dictionary | object
@@ -254,7 +255,7 @@ i.e forwarding node[blah] and node.blah to content_obj[blah]
 nodes can be used to represent an xml dom node::
 
 	xml			encoded
-	<xml a=1>1</xml>	Xu3:xmlDu1:ai1;E
+	<xml a=1>1</xml>	Xu3:xmlDu1:ai1;;
 
 
 extensions
@@ -266,7 +267,7 @@ application meaning.
 
 name SHOULD be a unicode string, attributes SHOULD be a dictionary::
 
-	extension :== 'H' ws name_obj ws attr_obj ws content_obj ws 'E' 
+	extension :== 'H' ws name_obj ws attr_obj ws content_obj ws ';' 
 	name_obj :== string | object
 	attr_obj :== dictionary | object
 	content_obj :== object
@@ -369,6 +370,11 @@ into a http response with the given content-type and blob
 glyph clients can return an response with an unknown encoding
 as a blob
 
+input
+-----
+
+PLACEHOLDER: for input form type
+
 
 types/schemas
 =============
@@ -410,21 +416,21 @@ grammar
 	bytearray :== 'b' ascii_number ':' bytes ';'
 		where len(bytes) = int(ascii_number)
 
-	true :== 'T'
-	false :== 'F'
-	nil :== 'N'
+	true :== 'T;'
+	false :== 'F;'
+	nil :== 'N;'
 
-	list :== 'L' ws (object ws)* 'E'
-	set :== 'S' ws (object ws)* 'E'
-	dict :== 'D' ws (object ws object ws)* 'E'
+	list :== 'L' ws (object ws)* ';'
+	set :== 'S' ws (object ws)* ';'
+	dict :== 'D' ws (object ws object ws)* ';'
 
 	float :== 'f' hex_float ';'
 
 	datetime :== 'd' iso_datetime ';'
 
-	node :== 'X' ws name_obj ws attr_obj ws content_obj ws 'E'
+	node :== 'X' ws name_obj ws attr_obj ws content_obj ws ';'
 
-	extension :== 'H' ws name_obj ws attr_obj ws content_obj ws 'E' 
+	extension :== 'H' ws name_obj ws attr_obj ws content_obj ws ';' 
 	
 
 encoding
@@ -554,7 +560,12 @@ before embracing hypermedia.
 	consistency and ease for human inspection of data
 
 - v0.3
-	made utc mandatory rather than recommendation
+
+- made utc mandatory rather than recommendation
+
+- encoding consolidation
+	use ; as terminator everywhere
+	TFN -> T;F;N;
 
 	
 
@@ -577,6 +588,12 @@ planned changes
 
 proposed changes
 ----------------
+
+
+- timedelta
+	add timedelta/period type: p<iso period format>;
+	problem: only python has a timedelta type :(
+	answer: fuck them, they can use a wrapper
 
 - unify link and embed extension
 	add 'cached':True as attribute

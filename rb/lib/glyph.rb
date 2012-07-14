@@ -349,17 +349,17 @@ module Glyph
     elsif Float === o
       "f#{o.to_hex};"
     elsif Array === o
-      "L#{o.map{|o| Glyph.dump(o, resolve, inline) }.join}E"
+      "L#{o.map{|o| Glyph.dump(o, resolve, inline) }.join};"
     elsif Set === o
-      "S#{o.map{|o| Glyph.dump(o, resolve, inline) }.join}E"
+      "S#{o.map{|o| Glyph.dump(o, resolve, inline) }.join};"
     elsif Hash === o
-      "D#{o.map{|k,v| [Glyph.dump(k, resolve, inline), Glyph.dump(v, resolve, inline)]}.join}E"
+      "D#{o.map{|k,v| [Glyph.dump(k, resolve, inline), Glyph.dump(v, resolve, inline)]}.join};"
     elsif TrueClass === o
-      "T"
+      "T;"
     elsif FalseClass === o
-      "F"
+      "F;"
     elsif o.nil?
-      "N"
+      "N;"
     elsif DateTime === o
       "d#{o.strftime("%FT%T.%NZ")};"
     elsif Time === o
@@ -367,11 +367,11 @@ module Glyph
     elsif Extension === o
       o.instance_eval {
         @attrs['url'] = resolve.call(@attrs['url']) if not String === @attrs['url']
-        "H#{Glyph.dump(@name, resolve, inline)}#{Glyph.dump(@attrs, resolve, inline)}#{Glyph.dump(@content,resolve, inline)}E"
+        "H#{Glyph.dump(@name, resolve, inline)}#{Glyph.dump(@attrs, resolve, inline)}#{Glyph.dump(@content,resolve, inline)};"
       }
     elsif Node === o 
       o.instance_eval {
-        "X#{Glyph.dump(@name, resolve, inline)}#{Glyph.dump(@attrs, resolve, inline)}#{Glyph.dump(@content,resolve, inline)}E"
+        "X#{Glyph.dump(@name, resolve, inline)}#{Glyph.dump(@attrs, resolve, inline)}#{Glyph.dump(@content,resolve, inline)};"
       }
     else
       raise EncodeError, "unsupported #{o}"
@@ -387,10 +387,13 @@ module Glyph
     s = scanner.scan(/[\w\n]/)[-1]
     return case s[-1]
     when ?T
+      scanner.scan(/;/)
       true
     when ?F
+      scanner.scan(/;/)
       false
     when ?N
+      scanner.scan(/;/)
       nil
     when ?i
       num = scanner.scan_until(/;/)
@@ -413,7 +416,7 @@ module Glyph
       StringIO.new(str)
     when ?D
       dict = {}
-      until scanner.scan(/E/)
+      until scanner.scan(/;/)
 
         key = parse(scanner, url)
         val = parse(scanner, url)
@@ -423,13 +426,13 @@ module Glyph
 
     when ?L
       lst = []
-      until scanner.scan(/E/)
+      until scanner.scan(/;/)
         lst.push(parse(scanner, url))
       end
       lst
     when ?S
       lst = Set.new
-      until scanner.scan(/E/)
+      until scanner.scan(/;/)
         lst.add(parse(scanner, url))
       end
       lst
@@ -437,14 +440,14 @@ module Glyph
       name = parse(scanner, url)
       attrs = parse(scanner, url)
       content = parse(scanner, url)
-      scanner.scan(/E/)
+      scanner.scan(/;/)
       n = Node.new(name, attrs, content)
       n
     when ?H
       name = parse(scanner, url)
       attrs = parse(scanner, url)
       content = parse(scanner, url)
-      scanner.scan(/E/)
+      scanner.scan(/;/)
       e = Extension.make(name, attrs, content)
       if url
         e.resolve(url)
