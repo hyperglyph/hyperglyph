@@ -2,8 +2,8 @@
  glyph data model and encoding
 ===============================
 :Author: tef
-:Date: 2012-07-13
-:Version: 0.2
+:Date: 2012-07-14
+:Version: 0.3 (DRAFT)
 
 glyph is a data-interchange format with hypermedia elements,
 to describe machine readable web pages.
@@ -198,8 +198,8 @@ in python 0.5.hex(), in ruby printf/scanf)
 
 a floating point number in hex takes a number of formats::
 
-	0.5	0x1.0000000000000p-1
-	-0.5 	-0x1.0000000000000p-1 
+	0.5	0x1.0p-1
+	-0.5 	-0x1.0p-1 
 	+0.0	0x0p0
 	-0.0	-0x0p0
 	1.729	0x1.ba9fbe76c8b44p+0
@@ -213,8 +213,8 @@ and is a decimal number::
 	float :== 'f' ws hex_float ws ';'
 
 	float	encoding
-	0.5	f0x1.0000000000000p-1; 
-	-0.5 	f-0x1.0000000000000p-1; 
+	0.5	f0x1.0p-1; 
+	-0.5 	f-0x1.0p-1; 
 	0.0	f0x0p0;
 
 special values, nan and infinity are serialized as strings::
@@ -469,20 +469,24 @@ extension registry
 ------------------
 
 
+changelog
+=========
+
 history
 -------
 
-- v0
+glyph started out as a simple encoding for rpc over http,
+before embracing hypermedia.
 
-- initial use bencode
+- unversioned
 
-	  json didn't support binary data
-- booleans, datetimes added
+	started with bencode with a 's' prefix on strings
+	json didn't support binary data without mangling
+	didn't support utf-8 without mangling 
 
+- booleans, datetimes, nil added
 
-- nil added
-
-	  creature comforts
+	creature comforts
 
 - forms, links, embeds added
 
@@ -490,58 +494,76 @@ history
 
 - use b for byte array instead of s
 
-	  less confusing
+	less confusing
 
 - remove bencode ordering constraint on dictionaries
 
-	  as there isn't the same dict keys must be string restrictions
+	as there isn't the same dict keys must be string restrictions
+
 
 - changed terminators/separators to '\n'
 
-	  idea for using 'readline' in decoders, but made things ugly
+	idea for using 'readline' in decoders, but made things ugly
+
+- sets added
+	
+	creature comforts
+
+- used utf-8 strings everywhere instead of bytestrings
+
+	python made it easy not to care about using unicode.
+
 
 - resources added
 
-	  instead of using nodes to represent resources
+	instead of using nodes to represent resources
+	use extension type
 
-- v0.1  - spec started
+- v0.1 
 
-- blob, error type placeholders added
+	encoding spec started in lieu of implementation based
+	specification. declare current impl 0.1
+
+- blob, error types added
+	
+	blob can be used to encapsulate mime data.
+	errors as a generic template for error messages.
+
+- v0.2
 
 - separator changed to ':' ,changed terminator to ';' 
 
-	  new lines make for ugly query strings
-	  easier to read, and no semantic whitespace means easier pretty printing 
-
-- blob extension type - aka byte array with headers
-
-  	use case is for inling a response that isn't glyph
-
-- error extension type
-
-	  use as body content in 4xx, 5xx
+	new lines make for ugly query strings, 
+	and no semantic whitespace means easier pretty printing 
 
 - unicode normalization as a recommendation
 
+	perhaps should be mandatory.
 
 - remove whitespace between prefix ... ;
-- put a ';' at the end of strings - easier to read format
-- put a 'E' at the end of nodes, extensions
+	
+	allowing whitespace inside objects is confusing
+	for non container types.
 
-- v0.2 - current
+- add redundant terminators
+	
+	put a ';' at the end of strings, bytearrays
+	put a 'E' at the end of nodes, extensions
+	consistency and ease for human inspection of data
+
+- v0.3
+	made utc mandatory rather than recommendation
+
+	
+
 
 planned changes
 ---------------
 
 - v0.3
-- allow any iso datetime with offset in datetime type
-- add timedelta/period type
+	add timedelta/period type: p<iso period format>;
 
-	p<iso period format>;
-	yes
-
-- 0.4 -
-
+- 0.4
 
 - 0.5 grammar/encoding frozen - no more literals, collections added
 
@@ -555,27 +577,34 @@ proposed changes
 ----------------
 
 - unify link and embed extension
+	add 'cached':True as attribute
+	means content can be returned in lieu of fetching
 
-- node/ext becomes name, attrs, content* ?
-	i.e allow a number of objects as the 'content'
-  
+
+- caching information inside of resources	
+
+	resources/embeds CAN contain control headers, freshness information
+        specify key names as being optional
+	expires? cache-control? etag
+
+- schema/type information for forms (aka values)
+
+	formargs is a list of string names | input elements
+	input elements have a name, type, optional default value
+
+
+rejected changes
+----------------
+
 - datetime with utc offset
 	allow +hh/+hhmm/+hh:mm offsets instead of 'Z'
 	maybe allow string timestamps
 	need non utc usecases
 
-- caching information inside of resources	
-
-	  resources/embeds CAN contain control headers, freshness information
-          specify key names as being optional
-
-- schema/type information for forms (aka values)
-
-	  (allow better mapping of args)
-
-
-rejected changes
-----------------
+- node/ext becomes name, attrs, content* ?
+	i.e allow a number of objects as the 'content'
+	effort
+  
 
 - datetime with string timezone
  	awkward, unstandardized. can use node type instead
