@@ -11,3 +11,6 @@ install:
 	
 script:
         make test
+
+notifications:
+  irc: "irc.freenode.org##glyph"
