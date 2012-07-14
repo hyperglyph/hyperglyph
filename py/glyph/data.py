@@ -34,7 +34,7 @@ def link(url, method='GET'):
     return Extension.__make__(u'link', {u'method':method, u'url':url}, None)
 
 def embedlink(url, content, method=u'GET'):
-    return Extension.__make__(u'embed', {u'method':method, u'url':url}, content)
+    return Extension.__make__(u'link', {u'method':method, u'url':url, u'inline':True}, content)
 
 def error(url, reference, message):
     return Extension.__make__(u'error', {u'logref':reference, u'message':message}, {})
@@ -201,20 +201,11 @@ class Form(Extension):
 @Extension.register('link')
 class Link(Extension):
     def __call__(self, *args, **kwargs):
-        url = self._attributes[u'url']
-        return fetch(self._attributes.get(u'method',u'GET'),url)
-
-    def url(self):
-        return self._attributes[u'url']
-        
-    def __resolve__(self, resolver):
-        self._attributes[u'url'] = unicode(resolver(self._attributes[u'url']))
-
-
-@Extension.register('embed')
-class Embed(Extension):
-    def __call__(self, *args, **kwargs):
-        return self._content
+        if self._attributes.get(u'inline', False):
+            return self._content
+        else:
+            url = self._attributes[u'url']
+            return fetch(self._attributes.get(u'method',u'GET'),url)
 
     def url(self):
         return self._attributes[u'url']

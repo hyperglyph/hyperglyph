@@ -260,8 +260,6 @@ module Glyph
           return Form.new(name, attrs, content)
         when "link"
           return Link.new(name, attrs, content)
-        when "embed"
-          return Embed.new(name, attrs, content)
         when "resource"
           return ExtResource.new(name, attrs, content)
         when "blob"
@@ -312,26 +310,23 @@ module Glyph
 
   class Link < Extension
     def call(*args, &block)
-      ret = Glyph.fetch(@attrs['method'], @attrs['url'], nil)
-      if block
-        block.call(ret)
+      if @attrs['inline']
+        if block
+          block.call(@content)
+        else
+          @content
+        end
       else
-        ret
+        ret = Glyph.fetch(@attrs['method'], @attrs['url'], nil)
+        if block
+          block.call(ret)
+        else
+          ret
+        end
       end
     end
   end
     
-  class Embed < Extension
-    def call(*args, &block)
-      if block
-        block.call(@content)
-      else
-        @content
-      end
-    end
-  end
-
-
   def self.dump(o, resolve=nil, inline=nil)
     if Resource === o
       o = inline.call(o)
