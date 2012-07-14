@@ -173,7 +173,7 @@ datetimes
 datetimes SHOULD be in utc, and MUST be in iso-8601/rfc3339 format::
 
 	datetime :== 'd' iso_datetime ws ';'
-	iso_datetime :== <%Y-%m-%dT%H:%M:%S.%fZ>
+	iso_datetime :== <normally: %Y-%m-%dT%H:%M:%S.%fZ >
 
 	object		encoding
 
@@ -183,6 +183,8 @@ encoders SHOULD use UTC timezone of 'Z',
 decoders MAY only support UTC timestamps.
 
 PROPOSED: allow utc offsets, allow string timezone
+
+TODO: format variants, inconsistencies
 
 float
 -----
@@ -379,7 +381,7 @@ grammar
 
 ::
 
-	root :== ws (object ws*)+
+	root :== ws object ws
 
 	ws :== (space | tab | vtab | cr | lf)*
 
@@ -608,8 +610,7 @@ proposed changes
 - node/ext becomes name, attrs, content* ?
 	i.e allow a number of objects as the 'content'
   
-- datetime with offset, timezone
-	  optional string timezone
+- datetime with utc offset
 
 - caching information inside of resources	
 
@@ -621,14 +622,21 @@ proposed changes
 	  (allow better mapping of args)
 
 
-- order preserving dictionary type
+rejected changes
+----------------
 
-	  we use a list of lists for form schemas
-	  hard to represent in many languages (but python, java, ruby have this)
-	  current thinking: bad idea
+- datetime with string timezone
+ 	awkward, unstandardized. can use node type instead
+	or an extension
+
+- order preserving dictionary type
+	use a list of lists
+
+	hard to represent in many languages (but python, java, ruby have this)
+	and hard to represent uniformly across languages
 
 - restrictions on what goes in dictionaries, sets
-
-	  should use immutable collections? tuples?
+	should use immutable collections? tuples?
+	maybe a recommendation, but not a standard?
 
 
