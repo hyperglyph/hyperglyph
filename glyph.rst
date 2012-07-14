@@ -194,7 +194,7 @@ in decimal without loss of accuracy. instead of using an endian
 dependent binary format, we use a hexadecimal format from c99
 
 (in c99: printf("%a",0.5), in java Double.toHexString(), 
-in python 0.5.hex())
+in python 0.5.hex(), in ruby printf/scanf)
 
 a floating point number in hex takes a number of formats::
 
@@ -227,7 +227,6 @@ special values, nan and infinity are serialized as strings::
 decoders SHOULD ignore case and MAY only check the prefix
 of 'inf' rather than being exact.
 
-hexadecimal floating point conversion is detailed in an appendix.
 
 node
 ----
@@ -469,57 +468,6 @@ mime type registration
 extension registry
 ------------------
 
-hexadecimal floating point
---------------------------
-
-decimal:  0.5d::
-
-	in network byte order
-
-	offset:    0  8  16 32 40 48 56 64
-	bytes:     3f e0 00 00 00 00 00 00
-
-
-	sign bit: bit 0
-
-	sign_bit = (byte[0] & 128) == 128   
-	sign = 0 is sign_bit is 0
-	       1 if sign_bit is 1
-
-	sign bit of 0.5 is 0x3f & 128 = 0
-
-	exponent: bits 1..12  (11 bits) as network order int 
-	instead of signed, exponent is stored as exp+1023 if exp != 0
-	for a double - single floats have a different offset.
-	
-	raw_exponent = ((byte[0] &127) << 4) + ((byte[1]&240) >> 4)
-	so raw_exponent = ((0x3f &127) << 4) + ((0xe0)>>4) = 1022
-
-	n.b if raw exponent is 0, then exponent is 0.
-	    if raw exponent is not 0, exponent is raw_exponent-1023
-
-	exponent of 0.5 is -1 (1022-1023)
-
-	fractional: bits 13..64  (52 bits) as unsigned network int
-
-	fractional = [ byte[1]&15, byte[2], ...]
-
-	fractional part of 0.5 is [0xe0&15, 0x00,0x00,...] is 0
-
-
-	so hex is <SIGN>0x1.<FRACTIONAL>p<EXPONENT> where FRACTIONAL is in hex, exponent in decimal
-	for normals.
-
-	0.5 in hex:   0x1.0000000000000p-1 
-	-0.5 in hex: -0x1.0000000000000p-1 
-
-
-for subnormals and 0, the raw exponent is 0, and so the exponent is either::
-
-	0, if the fractional part is 0 
-	-1022, if the fractional part is non 0
-
-these are formatted with a leading 0, not 1
 
 history
 -------
