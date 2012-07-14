@@ -38,8 +38,8 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
 "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
 document are to be interpreted as described in [RFC2119].
 
-overview
-========
+data types
+==========
 
 glyph is designed for ease of implementation, ease of human inspection, and
 based around bencoding from bittorrent. despite being a binary format, 
@@ -67,15 +67,6 @@ glyph also supports a node tuple type (name, attributes, content).
 there is also a special 'extension' type used to define objects with special
 behaviour
 
-mapping to http
-===============
-
-TODO: describe typical client/server interaction
-
-how hypermedia encapsulates state
-
-data types
-==========
 
 integers
 --------
