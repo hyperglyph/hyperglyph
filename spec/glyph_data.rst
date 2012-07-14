@@ -46,7 +46,7 @@ based around bencoding from bittorrent. despite being a binary format,
 there are no byte ordering or endian issues.
 
 underneath, glyph natively handles a variety of literals
-(strings, bytes, numbers, floats, dates, booleans), 
+(strings, bytes, numbers, floats, utc datetimes, timedeltas, booleans), 
 collections (list, set, dictionary).
 
 
@@ -62,14 +62,15 @@ collections (list, set, dictionary).
 	singleton	nil true false		N; T; F;
 	float		0.5			f0x1.0000000000000p-1; 
 	datetime	1970-1-1 00:00 UTC	d1970-01-01T00:00:00.000Z;
+	timedelta	3 days			pP0Y0M3DT0H0M0S;
 
 glyph also supports a node tuple type (name, attributes, content).
 there is also a special 'extension' type used to define objects with special
 behaviour
 
 
-integers
---------
+integer
+-------
 
 integers of arbitrary precision, sign is optional, and either '+' or '-'
 
@@ -90,8 +91,11 @@ it SHOULD throw an error
 unicode
 -------
 
-unicode element is a utf-8 encoded string. MUST not include
-utf-16 surrogate pairs (JSON, Java, I'm looking at *you*)
+unicode element is a utf-8 encoded string. MUST NOT include
+utf-16 surrogate pairs. Modified UTF-8/CESU-8 MUST NOT be used.
+
+..
+	(JSON, Java, I'm looking at *you*)
 
 ::
 
@@ -107,12 +111,12 @@ utf-16 surrogate pairs (JSON, Java, I'm looking at *you*)
 
 	n.b length is length of bytes, not length of string
 
-encoders SHOULD normalize strings to NFC, decoders MAY
-normalize strings to NFC
+Encoders SHOULD normalize strings to NFC, decoders MAY
+normalize strings to NFC.
 
 
-bytearrays
-----------
+bytearray
+---------
 
 a byte array is a string of bytes. no encoding
 is assumed.
@@ -160,24 +164,35 @@ clients SHOULD throw an error.
 
 SUGGESTED: order preserving dictionary type
 
-datetimes
----------
+datetime
+--------
 
-datetimes MUST be in utc, and MUST be in iso-8601/rfc3339 format::
+datetimes MUST be in utc, and MUST be in the following subset of iso-8601/rfc3339 format::
 
 	datetime :== 'd' iso_datetime ';'
-	iso_datetime :== <normally: %Y-%m-%dT%H:%M:%S.%fZ >
+	iso_datetime :== <date: %Y-%m-%dT%H:%M:%S.%fZ>
 
 	object		encoding
 
 	1970-1-1	d1970-01-01T00:00:00.000Z;
 
-encoders MUST use UTC timezone of 'Z',
+encoders MUST use UTC timezone of 'Z'.
+
 decoders SHOULD only support UTC timestamps.
 
-PROPOSED: allow utc offsets, allow string timezone
+timedelta
+---------
 
-TODO: format variants, inconsistencies
+timedeltas MUST be in the following subset of iso-8601 period format::
+
+	timedelta :== 'p' iso_period ';'
+	iso_period :== <period:  pnynmndtnhnmns>
+
+	object			encoding
+
+	3 days, 2 hours		pP0Y0M3DT0H2M0S;
+
+encoders MUST present all leading 0s.
 
 float
 -----
@@ -277,27 +292,18 @@ note: all names are unicode strings
 
 link
 ----
-a hyperlink with a method and url
+
+a hyperlink with a method and url, optionally with an inlined response
 
 - name 'link'
-- attributes is a dictionary with the keys 'url', 'method'
-- content is nil object 
+- attributes is a dictionary. MUST have the keys 'url', 'method'
+- MAY have the key 'inline'
+- content is an object, which is either nil or the inlined response
 
-links map to functions with no arguments.
+links map to functions with no arguments. if the key 'cache' is in the
+attributes and the associated value is true, then the function MAY
+return the associated content object, instead of making a request.
 
-
-embed
------
-a hyperlink with a method, url and the response embedded
-
-- links with inline responses have the name 'embed'
-  * attributes is a dictionary with the keys 'url', 'method'
-  *  url and method are both unicode keys with unicode values.
-- content is the inlined response.
-
-PROPOSED: unify link and embed type.
-
-embeds map to functions with no arguments
 
 form
 ----
@@ -311,9 +317,8 @@ like a html form, with a url, method, expected form values.
   * values is a list of unicode names
 - content is nil object
 
-forms map to functions with arguments.
-when submitting a form, the arguments
-are encoded as a list, in the order given.
+forms map to functions with arguments. when submitting a form, the arguments
+are encoded as a list, in the order given in the 'values' attribute.
 
 resource
 --------
@@ -418,6 +423,9 @@ grammar
 	float :== 'f' hex_float ';'
 
 	datetime :== 'd' iso_datetime ';'
+	timedelta :== 'p' iso_period ';'
+
+
 
 	node :== 'X' ws name_obj ws attr_obj ws content_obj ws ';'
 
@@ -558,14 +566,16 @@ before embracing hypermedia.
 	use ; as terminator everywhere
 	TFN -> T;F;N;
 
-	
+- add timedelta/period type:
+	p<iso period format>;
+	problems: timedeltas are sometimes int millis or float days or specific object
 
+- unify link and embed extension
+	add 'cached':True as attribute
+	means content can be returned in lieu of fetching
 
 planned changes
 ---------------
-
-- v0.3
-	add timedelta/period type: p<iso period format>;
 
 - 0.4
 
@@ -579,16 +589,6 @@ planned changes
 
 proposed changes
 ----------------
-
-
-- timedelta
-	add timedelta/period type: p<iso period format>;
-	problem: only python has a timedelta type :(
-	answer: fuck them, they can use a wrapper
-
-- unify link and embed extension
-	add 'cached':True as attribute
-	means content can be returned in lieu of fetching
 
 
 - caching information inside of resources	
