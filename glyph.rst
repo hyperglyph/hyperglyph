@@ -189,11 +189,12 @@ TODO: format variants, inconsistencies
 float
 -----
 
-floating point numbers cannot be represented in decimal
-without loss of accuracy. instead of using an endian
-dependent binary format, we use a hexadecimal string
+floating point numbers cannot easily be represented 
+in decimal without loss of accuracy. instead of using an endian
+dependent binary format, we use a hexadecimal format from c99
 
-(note: hex floats are supported natively by python and java)
+(in c99: printf("%a",0.5), in java Double.toHexString(), 
+in python 0.5.hex())
 
 a floating point number in hex takes a number of formats::
 
