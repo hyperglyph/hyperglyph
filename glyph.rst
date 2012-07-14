@@ -26,6 +26,9 @@ essentially, glyph is a format for machine readable webpages.
 the server can translate objects into resources with forms,
 and the client can translate this back into objects with methods.
 
+mime type
+---------
+
 glyph uses the mime type: 'application/vnd.glyph'
 
 requirements
@@ -48,7 +51,6 @@ collections (list, set, dictionary).
 
 
 ::
-
 	data type	example			encoded
 
 	integer		1			i1;
@@ -82,7 +84,7 @@ integers of arbitrary precision, sign is optional, and either '+' or '-'
 
 ::
 
-	integer :== 'i' ws sign ascii_number ws ';'
+	integer :== 'i' sign ascii_number ';'
 	sign :== '+' | '-' | ''
 	ascii_number :== <a decimal number as an ascii string>
 
@@ -102,7 +104,7 @@ utf-16 surrogate pairs (JSON, Java, I'm looking at *you*)
 
 ::
 
-	unicode :== 'u' ws ascii_number ws ':' utf8_bytes ';'
+	unicode :== 'u' ascii_number ':' utf8_bytes ';'
 		where len(bytes) = int(ascii_number)
 
 	utf8_bytes :== <the utf8 string>
@@ -126,7 +128,7 @@ is assumed.
 
 ::
 
-	bytearray :== 'b' ws ascii_number ws ':' bytes ';'
+	bytearray :== 'b' ascii_number ':' bytes ';'
 		where len(bytes) = int(ascii_number)
 
 	bytes			encoding
@@ -172,7 +174,7 @@ datetimes
 
 datetimes MUST be in utc, and MUST be in iso-8601/rfc3339 format::
 
-	datetime :== 'd' iso_datetime ws ';'
+	datetime :== 'd' iso_datetime ';'
 	iso_datetime :== <normally: %Y-%m-%dT%H:%M:%S.%fZ >
 
 	object		encoding
@@ -210,7 +212,7 @@ finally, a hex number and its decimal exponent,
 separated by a 'p'. the exponent can have a sign,
 and is a decimal number::
 
-	float :== 'f' ws hex_float ws ';'
+	float :== 'f' hex_float ';'
 
 	float	encoding
 	0.5	f0x1.0p-1; 
@@ -236,7 +238,7 @@ tuples of name, attributes and content objects.
 
 name SHOULD be a unicode string, attributes SHOULD be a dictionary::
 
-	node :== 'X' ws name_obj ws attr_obj ws content_obj 'E'
+	node :== 'X' ws name_obj ws attr_obj ws content_obj ws 'E'
 
 	name_obj :== string | object
 	attr_obj :== dictionary | object
@@ -264,7 +266,7 @@ application meaning.
 
 name SHOULD be a unicode string, attributes SHOULD be a dictionary::
 
-	extension :== 'H' ws name_obj ws attr_obj ws content_obj 'E' 
+	extension :== 'H' ws name_obj ws attr_obj ws content_obj ws 'E' 
 	name_obj :== string | object
 	attr_obj :== dictionary | object
 	content_obj :== object
