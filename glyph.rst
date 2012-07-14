@@ -560,6 +560,9 @@ proposed changes
 	i.e allow a number of objects as the 'content'
   
 - datetime with utc offset
+	allow +hh/+hhmm/+hh:mm offsets instead of 'Z'
+	maybe allow string timestamps
+	need non utc usecases
 
 - caching information inside of resources	
 
