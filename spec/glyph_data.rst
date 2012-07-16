@@ -425,8 +425,6 @@ grammar
 	datetime :== 'd' iso_datetime ';'
 	timedelta :== 'p' iso_period ';'
 
-
-
 	node :== 'X' ws name_obj ws attr_obj ws content_obj ws ';'
 
 	extension :== 'H' ws name_obj ws attr_obj ws content_obj ws ';' 
@@ -594,13 +592,12 @@ proposed changes
 
 	resources/embeds CAN contain control headers, freshness information
         specify key names as being optional
-	expires? cache-control? etag
+	expires? cache-control? etag last_modified
 
 - schema/type information for forms (aka values)
 
 	formargs is a list of string names | input elements
 	input elements have a name, type, optional default value
-
 
 rejected changes
 ----------------

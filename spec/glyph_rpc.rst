@@ -30,8 +30,30 @@ document are to be interpreted as described in [RFC2119].
 overview
 ========
 
+
 client-server interaction
 -------------------------
+
+
+http
+----
+
+requests
+--------
+
+glyph
+
+responses
+---------
+return codes
+
+200 - OK
+
+303 - See Other
+
+4xx - 
+
+5xx - 
 
 
 appendices
