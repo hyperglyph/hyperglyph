@@ -51,6 +51,7 @@ collections (list, set, dictionary).
 
 
 ::
+
 	data type	example			encoded
 
 	integer		1			i1;
