@@ -1,7 +1,6 @@
 from urlparse import urljoin
 import datetime
-
-from cStringIO import StringIO
+import io
 
 from pytz import utc
 
@@ -42,7 +41,7 @@ def error(reference, message):
     return Extension.__make__(u'error', {u'logref':reference, u'message':message}, {})
 
 def blob(content, content_type=u"application/octet-stream"):
-    return Extension.__make__(u'blob', {u'content-type':content_type,}, content.read())
+    return Extension.__make__(u'blob', {u'content-type':content_type,}, content)
 
 # move to inspect ?
 
@@ -240,7 +239,14 @@ class Error(Extension):
 @Extension.register('blob')
 class Blob(Extension):
     def __init__(self, name, attributes, content):
-        self.fh = StringIO(content)
+        if isinstance(content, list):
+            content = "".join(content)
+        if not isinstance(content, io.IOBase):
+            if isinstance(content, unicode):
+                content = io.StringIO(content)
+            else:
+                content = io.BytesIO(content)
+        self.fh = content
         super(Blob, self).__init__(name, attributes, content)
 
     @property

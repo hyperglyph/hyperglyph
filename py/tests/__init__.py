@@ -28,7 +28,7 @@ class EncodingTest(unittest2.TestCase):
 class BlobEncodingTest(unittest2.TestCase):
     def testCase(self):
         s = "Hello, World"
-        a = glyph.blob(StringIO(s))
+        a = glyph.blob(s)
         b = glyph.parse(glyph.dump(a))
 
         self.assertEqual(s, b.fh.read())
@@ -389,14 +389,14 @@ class BlobReturnAndCall(ServerTest):
             def do_blob(self, b):
                 s = b.fh.read()
                 c = b.content_type
-                return glyph.blob(StringIO(s.lower()), content_type=c)
+                return glyph.blob(BytesIO(s.lower()), content_type=c)
 
 
         return m
 
     def testCase(self):
         root = glyph.get(self.endpoint.url)
-        b = glyph.blob(StringIO("TEST"), content_type="Test")
+        b = glyph.blob(BytesIO("TEST"), content_type="Test")
         b2 = root.do_blob(b)
         self.assertEqual(b2.fh.read(), "test")
         self.assertEqual(b2.content_type, "Test")

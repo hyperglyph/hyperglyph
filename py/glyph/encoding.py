@@ -1,6 +1,7 @@
 from urlparse import urljoin
 from cStringIO import StringIO
 from datetime import datetime, timedelta
+import io
 
 from pytz import utc
 
@@ -143,6 +144,14 @@ class Encoder(object):
             for x in sorted(obj):
                 self._dump(x, buf, resolver, inline)
             buf.write(END_SET)
+        elif isinstance(obj, io.IOBase):
+            buf.write(LIST)
+            while True:
+                data = obj.read(4096)
+                if not data:
+                    break
+                self._dump(data, buf, resolver, inline)
+            buf.write(END_LIST)
         elif hasattr(obj, 'iteritems'):
             buf.write(DICT)
             for k in sorted(obj.keys()): # always sorted, so can compare serialized
