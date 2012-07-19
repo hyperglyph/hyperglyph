@@ -8,6 +8,7 @@
 next commits:
 	blob handling
 		blob takes a fh/stringio, not a bytestring.
+
 	4xx vs 5xx determines exception thrown, client or server error
 
 	session handler injected into forms rather than being global

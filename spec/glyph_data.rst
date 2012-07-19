@@ -1,12 +1,16 @@
-===============================
- glyph data model and encoding
-===============================
+===========
+ glyph-rpc 
+===========
 :Author: tef
 :Date: 2012-07-14
 :Version: 0.3 (DRAFT)
 
-glyph is a data-interchange format with hypermedia elements,
-to describe machine readable web pages.
+glyph-rpc is a client-server protocol for interacting with
+objects over http, using machine readable web pages.
+
+these pages are encoded using a data-interchange format
+with hypermedia elements, called glyph, using the mime-type
+'application/vnd.glyph'
 
 .. contents::
 
@@ -14,11 +18,7 @@ to describe machine readable web pages.
 introduction
 ============
 
-glyph is an encoding for remote procedure and method calls over
-http, that supports returning arbitrary objects, and calling
-methods on these at the client.
-
-glyph is normally served over http, and used to offer
+glyph-rpc is normally served over http, and used to offer
 objects to the client. objects are described in terms
 of hypermedia objects - links and forms. 
 
@@ -37,6 +37,7 @@ requirements
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
 "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
 document are to be interpreted as described in [RFC2119].
+
 
 data types
 ==========
@@ -65,9 +66,28 @@ collections (list, set, dictionary).
 	datetime	1970-1-1 00:00 UTC	d1970-01-01T00:00:00.000Z;
 	timedelta	3 days			pP0Y0M3DT0H0M0S;
 
-glyph also supports a node tuple type (name, attributes, content).
-there is also a special 'extension' type used to define objects with special
-behaviour
+glyph also supports special data types:
+
+- a 'node' tuple type (name, attributes, content).
+
+- an 'extension' type used to define objects with special behaviour or meaning
+
+- a 'blob' and 'chunk' type, used to attach large files to an object
+
+a glyph encoded message consists of a single object, optionally
+followed by chunks.
+
+::
+	root :== ws object ws (trailer ws)* 
+	trailer :== (chunk | end_chunk)  
+
+	ws :== (space | tab | vtab | cr | lf)*
+
+	object :== integer | unicode | bytearray | float
+		| datetime | timedelta
+		| nil | true | false
+		| list | set | dictionary
+		| node | extension | blob
 
 
 integer
@@ -100,8 +120,10 @@ utf-16 surrogate pairs. Modified UTF-8/CESU-8 MUST NOT be used.
 
 ::
 
-	unicode :== 'u' ascii_number ':' utf8_bytes ';'
+	unicode :== 'u' ascii_number ':' utf8_bytes ';' | empty_unicode
 		where len(bytes) = int(ascii_number)
+
+	empty_unicode :== 'u;'
 
 	utf8_bytes :== <the utf8 string>
 
@@ -124,8 +146,10 @@ is assumed.
 
 ::
 
-	bytearray :== 'b' ascii_number ':' bytes ';'
+	bytearray :== 'b' ascii_number ':' bytes ';' | empty_bytearray
 		where len(bytes) = int(ascii_number)
+
+	empty_bytearray = 'b;'
 
 	bytes			encoding
 	[0x31,0x32,0x33]	b3:123;
@@ -284,6 +308,46 @@ and blobs within glyph.
 
 decoders SHOULD handle unknown extensions as node types.
 
+blob
+----
+
+binary data can be attached to an object, to enable
+requests to stream large data, similar to multipart handling.
+
+this is done through blobs and chunks. a blob is a placeholder
+for the content, and chunks appear after the root object. a client
+can return multiple blobs, which will have seperate chunks attached.
+
+::
+
+	root :== ws object ws (trailer ws)* 
+	object :== ... | blob | ... 
+	trailer :== (chunk | end_chunk)  
+
+	blob :== 'B' id_obj ws attr_dictionary ws ';'
+
+	chunk :== 'c' id_obj bytearray ';' 
+
+	end_chunk :== 'c' id_obj ';' 
+
+	id_obj :== unicode | bytearray | integer
+
+blobs have a unique identifier, which is used to match
+it to the chunks containing the data.  
+
+attributes MUST be a dictionary:
+  * MUST have the key 'content-type'
+  * MAY have the key 'url'
+
+for each blob, a number of chunks must appear in the trailer,
+including a final end_chunk. chunks for different files
+MAY be interweaved. 
+
+a glyph server SHOULD transform a response of a solitary blob object into a 
+http response, using the content-type attribute.
+
+glyph clients SHOULD return an response with an unknown encoding as a blob.
+
 extensions
 ==========
 
@@ -348,25 +412,6 @@ to failed requests. servers MAY return them.
 logref is a application specific reference for logging.
 message is a unicode string
 
-
-blob
-----
-
-blobs represent a typed bytestring. blobs can represent
-inlined responses for data other than glyph objects.
-
-- name 'blob'
-- attributes is a dictionary,
-  * MUST have the key 'content-type'
-  * MAY have the key 'url'
-- content is a bytearray
-
-glyph servers can transform a response of a blob
-into a http response with the given content-type and blob
-
-glyph clients can return an response with an unknown encoding
-as a blob
-
 input
 -----
 
@@ -386,7 +431,7 @@ grammar
 
 ::
 
-	root :== ws object ws
+	root :== ws object ws (trailer ws)* 
 
 	ws :== (space | tab | vtab | cr | lf)*
 
@@ -396,6 +441,7 @@ grammar
 		| bytearray
 		| float
 		| datetime
+		| timedelta
 		| nil
 		| true
 		| false
@@ -404,14 +450,22 @@ grammar
 		| dictionary
 		| node
 		| extension
+		| blob
+
+	trailer :== (chunk | end_chunk)  
+
 
 	integer :== 'i' sign ascii_number ';'
 
-	unicode :== 'u' ascii_number ':' utf8_bytes ';'
+	unicode :== 'u' ascii_number ':' utf8_bytes ';' | empty_unicode
+	   note :   where len(bytes) = int(ascii_number)
+
+	empty_unicode :=='u;'
+
+	bytearray :== 'b' ascii_number ':' bytes ';' | empty_bytearray
 		where len(bytes) = int(ascii_number)
 
-	bytearray :== 'b' ascii_number ':' bytes ';'
-		where len(bytes) = int(ascii_number)
+	empty_bytearray = 'b;'
 
 	true :== 'T;'
 	false :== 'F;'
@@ -430,6 +484,12 @@ grammar
 
 	extension :== 'H' ws name_obj ws attr_obj ws content_obj ws ';' 
 	
+	blob :== 'B' id_obj ws attr_obj ws ';'
+
+	chunk :== 'c' id_obj bytearray ';' 
+
+	end_chunk :== 'c' id_obj ';' 
+
 
 encoding
 ========
@@ -462,6 +522,12 @@ url schema
 form urls are of the form /ObjectName/method?<glyph instance data>
 
 note: ? breaks squid default config for caching.
+
+gzip/chunked
+------------
+
+clients MUST support gzip encoding
+
 
 caching
 -------
@@ -572,6 +638,11 @@ before embracing hypermedia.
 - unify link and embed extension
 	add 'cached':True as attribute
 	means content can be returned in lieu of fetching
+
+- blob/chunks as attachments for large file handling
+	add top level blob, chunk type
+
+- empty versions of bytestring, unicode
 
 planned changes
 ---------------
