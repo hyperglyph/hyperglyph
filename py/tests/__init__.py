@@ -1,6 +1,8 @@
 import unittest2
 import glyph
 
+from cStringIO import StringIO
+
 
 
 class EncodingTest(unittest2.TestCase):
@@ -21,6 +23,14 @@ class EncodingTest(unittest2.TestCase):
         ]
         for c in cases:
             self.assertEqual(c, glyph.parse(glyph.dump(c)))
+
+class BlobEncodingTest(unittest2.TestCase):
+    def testCase(self):
+        s = "Hello, World"
+        a = glyph.blob(StringIO(s))
+        b = glyph.parse(glyph.dump(a))
+
+        self.assertEqual(s, b.fh.read())
 
 
 class NodeTest(unittest2.TestCase):

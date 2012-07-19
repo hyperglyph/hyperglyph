@@ -1,6 +1,8 @@
 from urlparse import urljoin
 import datetime
 
+from cStringIO import StringIO
+
 from pytz import utc
 
 from .encoding import Encoder, CONTENT_TYPE
@@ -36,11 +38,11 @@ def link(url, method='GET'):
 def embedlink(url, content, method=u'GET'):
     return Extension.__make__(u'link', {u'method':method, u'url':url, u'inline':True}, content)
 
-def error(url, reference, message):
+def error(reference, message):
     return Extension.__make__(u'error', {u'logref':reference, u'message':message}, {})
 
-def blob(url, content, content_type):
-    return Extension.__make__(u'blob', {u'content-type':content_type,}, str(content))
+def blob(content, content_type=u"application/octet-stream"):
+    return Extension.__make__(u'blob', {u'content-type':content_type,}, content.read())
 
 # move to inspect ?
 
@@ -229,15 +231,21 @@ class Resource(Extension):
 class Error(Extension):
     @property
     def message(self):
-        return self._attributes['message']
+        return self._attributes[u'message']
 
     @property
     def logref(self):
-        return self._attributes['logref']
+        return self._attributes[u'logref']
 
 @Extension.register('blob')
 class Blob(Extension):
-    pass
+    def __init__(self, name, attributes, content):
+        self.fh = StringIO(content)
+        super(Blob, self).__init__(name, attributes, content)
+
+    @property
+    def content_type(self):
+        return self._attributes[u'content-type']
         
 
 
