@@ -35,8 +35,10 @@ current
 complete implementation in python
 client and server for ruby, missing embedding, 
 
+
 1.0
 ---
+
 - complete specification (*in progress*)
 
 - comformant implementation of spec in ruby and python
@@ -44,6 +46,7 @@ client and server for ruby, missing embedding,
 
 1.1+
 ----
+
 - would like to have but 
 
 
