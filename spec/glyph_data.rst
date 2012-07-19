@@ -1,7 +1,6 @@
 ===========
- glyph-rpc 
+ glyph rpc 
 ===========
-
 :Author: tef
 :Date: 2012-07-14
 :Version: 0.3 (DRAFT)
@@ -78,12 +77,12 @@ a glyph encoded message consists of a single object, optionally
 followed by chunks.
 
 ::
-
+	
 	root :== ws object ws (trailer ws)* 
 	trailer :== (chunk | end_chunk)  
-
+	
 	ws :== (space | tab | vtab | cr | lf)*
-
+	
 	object :== integer | unicode | bytearray | float
 		| datetime | timedelta
 		| nil | true | false
@@ -97,11 +96,11 @@ integer
 integers of arbitrary precision, sign is optional, and either '+' or '-'
 
 ::
-
+	
 	integer :== 'i' sign ascii_number ';'
 	sign :== '+' | '-' | ''
 	ascii_number :== <a decimal number as an ascii string>
-
+	
 	number	encoded:
 	123	i123; i+000123;
 	-123	i-123;
@@ -123,7 +122,7 @@ utf-16 surrogate pairs. Modified UTF-8/CESU-8 MUST NOT be used.
 
 	unicode :== 'u' ascii_number ':' utf8_bytes ';' | empty_unicode
 		where len(bytes) = int(ascii_number)
-
+	
 	empty_unicode :== 'u;'
 
 	utf8_bytes :== <the utf8 string>
