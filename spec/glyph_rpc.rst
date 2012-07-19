@@ -41,6 +41,15 @@ http
 requests
 --------
 
+link, form
+
+GET
+---
+
+
+POST
+----
+
 glyph
 
 responses
