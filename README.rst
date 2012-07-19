@@ -32,8 +32,9 @@ roadmap
 current
 -------
 
-	complete implementation in python
-	client and server for ruby, missing embedding, 
+complete implementation in python
+client and server for ruby, missing embedding, 
+
 1.0
 ---
 - complete specification (*in progress*)
