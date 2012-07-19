@@ -66,13 +66,14 @@ collections (list, set, dictionary).
 	datetime	1970-1-1 00:00 UTC	d1970-01-01T00:00:00.000Z;
 	timedelta	3 days			pP0Y0M3DT0H0M0S;
 
+
 glyph also supports special data types:
 
-- a 'node' tuple type (name, attributes, content).
+	- a 'node' tuple type (name, attributes, content).
 
-- an 'extension' type used to define objects with special behaviour or meaning
+	- an 'extension' type used to define objects with special behaviour or meaning
 
-- a 'blob' and 'chunk' type, used to attach large files to an object
+	- a 'blob' and 'chunk' type, used to attach large files to an object
 
 a glyph encoded message consists of a single object, optionally
 followed by chunks.
@@ -89,6 +90,7 @@ followed by chunks.
 		| nil | true | false
 		| list | set | dictionary
 		| node | extension | blob
+
 
 integer
 -------
@@ -337,8 +339,8 @@ it to the chunks containing the data.
 
 attributes MUST be a dictionary:
 
-* MUST have the key 'content-type'
-* MAY have the key 'url'
+	- MUST have the key 'content-type'
+	- MAY have the key 'url'
 
 for each blob, a number of chunks must appear in the trailer,
 including a final end_chunk. chunks for different files
@@ -524,9 +526,6 @@ form urls are of the form /ObjectName/method?<glyph instance data>
 
 note: ? breaks squid default config for caching.
 
-gzip/chunked
-------------
-
 clients MUST support gzip encoding
 
 
@@ -676,26 +675,31 @@ rejected changes
 ----------------
 
 - datetime with utc offset
+
 	allow +hh/+hhmm/+hh:mm offsets instead of 'Z'
 	maybe allow string timestamps
 	need non utc usecases
 
 - node/ext becomes name, attrs, content* ?
+
 	i.e allow a number of objects as the 'content'
 	effort
   
 
 - datetime with string timezone
+
  	awkward, unstandardized. can use node type instead
 	or an extension
 
 - order preserving dictionary type
+
 	use a list of lists
 
 	hard to represent in many languages (but python, java, ruby have this)
 	and hard to represent uniformly across languages
 
 - restrictions on what goes in dictionaries, sets
+
 	should use immutable collections? tuples?
 	maybe a recommendation, but not a standard?
 
