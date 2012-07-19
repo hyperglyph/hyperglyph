@@ -26,30 +26,6 @@ edge cases to fully document.
 
 the code has been used in production internally. 
 
-roadmap
-=======
-
-current
--------
-
-complete implementation in python
-client and server for ruby, missing embedding, 
-
-
-1.0
----
-
-- complete specification (*in progress*)
-
-- comformant implementation of spec in ruby and python
-- freeze spec, label it v1.0
-
-1.1+
-----
-
-- would like to have but 
-
-
 example
 =======
 
