@@ -38,18 +38,17 @@ identity = lambda x:x
 def fail():
     raise StandardError()
 
-def _read_until(fh, term, parse=identity):
-    if term == '\n':
-        line = fh.readline()
-        d, c = parse(line[:-1]), line[-1]
-    else:
+def _read_until(fh, term, parse=identity, skip=None):
+    c = fh.read(1)
+    buf=StringIO()
+    while c != term and c != skip:
+        buf.write(c)
         c = fh.read(1)
-        buf=StringIO()
-        while c != term:
-            buf.write(c)
-            c = fh.read(1)
+    if c == term:
         d = parse(buf.getvalue())
-    return d, c
+        return d, c
+    else:
+        return None, c
 
 def read_first(fh):
     c = fh.read(1)
@@ -126,17 +125,19 @@ class Encoder(object):
         
         elif isinstance(obj, (str, buffer)):
             buf.write(BSTR)
-            buf.write("%d"%len(obj))
-            buf.write(LEN_SEP)
-            buf.write(obj)
+            if len(obj) > 0:
+                buf.write("%d"%len(obj))
+                buf.write(LEN_SEP)
+                buf.write(obj)
             buf.write(END_ITEM)
         
         elif isinstance(obj, unicode):
             buf.write(UNI)
             obj = obj.encode(UNICODE_CHARSET)
-            buf.write("%d"%len(obj))
-            buf.write(LEN_SEP)
-            buf.write(obj)
+            if len(obj) > 0:
+                buf.write("%d"%len(obj))
+                buf.write(LEN_SEP)
+                buf.write(obj)
             buf.write(END_ITEM)
         
         elif isinstance(obj, set):
@@ -202,9 +203,13 @@ class Encoder(object):
             _read_until(fh, END_ITEM)
             return False
         if c == BSTR or c == UNI:
-            l = _read_until(fh, LEN_SEP, parse=int)[0]
-            buf= fh.read(l)
-            first = read_first(fh)
+            size, first = _read_until(fh, LEN_SEP, parse=int, skip=END_ITEM)
+            if first == LEN_SEP:
+                buf= fh.read(size)
+                first = read_first(fh)
+            else:
+                buf = b''
+
             if c == UNI:
                 buf=buf.decode(UNICODE_CHARSET)
             if first == END_ITEM:

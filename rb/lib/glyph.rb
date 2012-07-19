@@ -339,14 +339,27 @@ module Glyph
     end
     if Symbol === o
       u = o.to_s.encode('utf-8')
-      "u#{u.bytesize}:#{u};"
+      if u.bytesize > 0
+        "u#{u.bytesize}:#{u};"
+      else 
+        "u;"
+      end
     elsif String === o
       u = o.encode('utf-8')
-      "u#{u.bytesize}:#{u};"
+      if u.bytesize > 0
+        "u#{u.bytesize}:#{u};"
+      else 
+        "u;"
+      end
     elsif Integer === o
       "i#{o};"
     elsif StringIO === o
-      "b#{o.string.length}:#{o.string};"
+      b= o.string
+      if b.length >0
+        "b#{b.length}:#{b};"
+      else 
+        "b;"
+      end
     elsif Float === o
       "f#{o.to_hex};"
     elsif Array === o
@@ -411,14 +424,24 @@ module Glyph
       num = scanner.scan_until(/;/)
       num.chop.hex_to_f
     when ?u
-      num = scanner.scan_until(/:/).chop.to_i
-      str = scanner.peek(num)
-      scanner.pos+=num+1
-      str
+      num = scanner.scan_until(/[:;]/)
+      if num.end_with? ':'
+        num = num.chop.to_i
+        str = scanner.peek(num)
+        scanner.pos+=num+1
+        str
+      else
+        ''
+      end
     when ?b
-      num = scanner.scan_until(/:/).chop.to_i
-      str = scanner.peek(num)
-      scanner.pos+=num+1
+      num = scanner.scan_until(/:/)
+      if num.end_with? ':'
+        num = num.chop.to_i
+        str = scanner.peek(num)
+        scanner.pos+=num+1
+      else
+        str = ''
+      end
       StringIO.new(str)
     when ?D
       dict = {}
