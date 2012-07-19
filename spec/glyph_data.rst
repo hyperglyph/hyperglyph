@@ -1,6 +1,7 @@
 ===========
  glyph-rpc 
 ===========
+
 :Author: tef
 :Date: 2012-07-14
 :Version: 0.3 (DRAFT)
@@ -69,11 +70,9 @@ collections (list, set, dictionary).
 
 glyph also supports special data types:
 
-	- a 'node' tuple type (name, attributes, content).
-
-	- an 'extension' type used to define objects with special behaviour or meaning
-
-	- a 'blob' and 'chunk' type, used to attach large files to an object
+ - a 'node' tuple type (name, attributes, content).
+ - an 'extension' type used to define objects with special behaviour or meaning
+ - a 'blob' and 'chunk' type, used to attach large files to an object
 
 a glyph encoded message consists of a single object, optionally
 followed by chunks.
@@ -339,8 +338,8 @@ it to the chunks containing the data.
 
 attributes MUST be a dictionary:
 
-	- MUST have the key 'content-type'
-	- MAY have the key 'url'
+ - MUST have the key 'content-type'
+ - MAY have the key 'url'
 
 for each blob, a number of chunks must appear in the trailer,
 including a final end_chunk. chunks for different files

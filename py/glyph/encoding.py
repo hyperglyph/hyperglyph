@@ -32,6 +32,8 @@ NONE='N'
 
 NODE='X'
 EXT='H'
+BLOB = 'B'
+CHUNK = 'c'
 
 
 
