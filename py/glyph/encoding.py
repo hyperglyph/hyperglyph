@@ -176,7 +176,10 @@ class Encoder(object):
             buf.write()
             buf.write(END_ITEM)
         else:
-            self._dump(inline(obj), buf, resolver, inline)
+            try:
+                self._dump(inline(obj), buf, resolver, inline)
+            except StandardError:
+                raise StandardError('Failed to encode (%s)'%repr(obj))
 
 
     def _read_one(self, fh, c, resolver):
