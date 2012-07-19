@@ -2,6 +2,8 @@ from urlparse import urljoin
 from cStringIO import StringIO
 from datetime import datetime, timedelta
 import io
+import itertools
+import operator
 
 from pytz import utc
 
@@ -78,118 +80,150 @@ class wrapped(object):
         self.buf.write(r)
         return self.buf.getvalue()
 
+
+def forever(iterable):
+    """
+    Given an iterable yield bytes from all the nested iterators.
+    """
+    for x in iterable:
+        if isinstance(x, basestring):
+            for c in x:
+                yield c
+        else:
+            for y in forever(x):
+                yield y
+
+
+def chunker(iterable, n):
+    """
+    Given an iterable yield chunks of size N
+    """
+    args = [iter(iterable)] * n
+    for bits in itertools.izip_longest(fillvalue=None, *args):
+        yield reduce(operator.add, filter(bool, bits))
+
+
 class Encoder(object):
     def __init__(self, node, extension):
         self.node = node
         self.extension = extension
 
-    def dump(self, obj, resolver=identity, inline=fail):
-        buf = StringIO()
-        self._dump(obj, buf, resolver, inline)
-        return buf.getvalue()
+    def dump(self, *args, **kwargs):
+        buf = io.BytesIO()
+        kwargs.setdefault("chunk_size", 4096)
+        for chunk in self.dump_iter(*args, **kwargs):
+            buf.write(chunk)
+        buf.seek(0)
+        return buf.read()
+    
+    def dump_iter(self, obj, resolver=identity, inline=fail, chunk_size=None):
+        iterator = forever(self._dump(obj, resolver, inline))
+        chunks = iterator if chunk_size is None else chunker(iterator, chunk_size)
+        for chunk in chunks:
+            yield chunk
 
     def parse(self, s, resolver=identity):
         buf = StringIO(s)
         return self.read(buf, resolver)
 
 
-    def _dump(self, obj, buf, resolver, inline):
+    def _dump(self, obj, resolver, inline):
         if obj is True:
-            buf.write(TRUE)
-            buf.write(END_ITEM)
+            yield TRUE
+            yield END_ITEM
 
         elif obj is False:
-            buf.write(FALSE)
-            buf.write(END_ITEM)
+            yield FALSE
+            yield END_ITEM
         
         elif obj is None:
-            buf.write(NONE)
-            buf.write(END_ITEM)
+            yield NONE
+            yield END_ITEM
         
         elif isinstance(obj, (self.extension,)):
-            buf.write(EXT)
+            yield EXT
             name, attributes, content = obj.__getstate__()
             obj.__resolve__(resolver)
-            self._dump(name, buf, resolver, inline)
-            self._dump(attributes, buf, resolver, inline)
-            self._dump(content, buf, resolver, inline)
-            buf.write(END_EXT)
+            yield self._dump(name, resolver, inline)
+            yield self._dump(attributes, resolver, inline)
+            yield self._dump(content, resolver, inline)
+            yield END_EXT
         
         elif isinstance(obj, (self.node,)):
-            buf.write(NODE)
+            yield NODE
             name, attributes, content = obj.__getstate__()
-            self._dump(name, buf, resolver, inline)
-            self._dump(attributes, buf, resolver, inline)
-            self._dump(content, buf, resolver, inline)
-            buf.write(END_NODE)
+            yield self._dump(name, resolver, inline)
+            yield self._dump(attributes, resolver, inline)
+            yield self._dump(content, resolver, inline)
+            yield END_NODE
         
         elif isinstance(obj, (str, buffer)):
-            buf.write(BSTR)
+            yield BSTR
             if len(obj) > 0:
-                buf.write("%d"%len(obj))
-                buf.write(LEN_SEP)
-                buf.write(obj)
-            buf.write(END_ITEM)
+                yield "%d" % len(obj)
+                yield LEN_SEP
+                yield obj
+            yield END_ITEM
         
         elif isinstance(obj, unicode):
-            buf.write(UNI)
+            yield UNI
             obj = obj.encode(UNICODE_CHARSET)
             if len(obj) > 0:
-                buf.write("%d"%len(obj))
-                buf.write(LEN_SEP)
-                buf.write(obj)
-            buf.write(END_ITEM)
+                yield "%d" % len(obj)
+                yield LEN_SEP
+                yield obj
+            yield END_ITEM
         
         elif isinstance(obj, set):
-            buf.write(SET)
+            yield SET
             for x in sorted(obj):
-                self._dump(x, buf, resolver, inline)
-            buf.write(END_SET)
+                yield self._dump(x, resolver, inline)
+            yield END_SET
         elif isinstance(obj, io.IOBase):
-            buf.write(LIST)
+            yield LIST
             while True:
                 data = obj.read(4096)
                 if not data:
                     break
-                self._dump(data, buf, resolver, inline)
-            buf.write(END_LIST)
+                yield self._dump(data, resolver, inline)
+            yield END_LIST
         elif hasattr(obj, 'iteritems'):
-            buf.write(DICT)
+            yield DICT
             for k in sorted(obj.keys()): # always sorted, so can compare serialized
                 v=obj[k]
-                self._dump(k, buf, resolver, inline)
-                self._dump(v, buf, resolver, inline)
-            buf.write(END_DICT)
+                yield self._dump(k, resolver, inline)
+                yield self._dump(v, resolver, inline)
+            yield END_DICT
 
         elif hasattr(obj, '__iter__'):
-            buf.write(LIST)
+            yield LIST
             for x in obj:
-                self._dump(x, buf, resolver, inline)
-            buf.write(END_LIST)
+                yield self._dump(x, resolver, inline)
+            yield END_LIST
         elif isinstance(obj, (int, long)):
-            buf.write(NUM)
-            buf.write(str(obj))
-            buf.write(END_ITEM)
+            yield NUM
+            yield str(obj)
+            yield END_ITEM
         elif isinstance(obj, float):
-            buf.write(FLT)
-            obj= float.hex(obj)
-            buf.write(obj)
-            buf.write(END_ITEM)
+            yield FLT
+            obj = float.hex(obj)
+            yield obj
+            yield END_ITEM
         elif isinstance(obj, datetime):
-            buf.write(DTM)
+            yield DTM
             obj = obj.astimezone(utc)
-            buf.write(obj.strftime("%Y-%m-%dT%H:%M:%S.%fZ"))
-            buf.write(END_ITEM)
+            yield obj.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+            yield END_ITEM
         elif isinstance(obj, timedelta):
             raise NotImplementedError()
-            buf.write(PER)
-            buf.write()
-            buf.write(END_ITEM)
+            yield PER
+            yield
+            yield END_ITEM
         else:
             try:
-                self._dump(inline(obj), buf, resolver, inline)
+                yield self._dump(inline(obj), resolver, inline)
             except StandardError:
-                raise StandardError('Failed to encode (%s)'%repr(obj))
+                raise StandardError('Failed to encode (%s)' % repr(obj))
 
 
     def _read_one(self, fh, c, resolver):

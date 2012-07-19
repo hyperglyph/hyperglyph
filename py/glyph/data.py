@@ -259,5 +259,6 @@ class Blob(Extension):
 _encoder = Encoder(node=Node, extension=Extension)
 
 dump = _encoder.dump
+dump_iter = _encoder.dump_iter
 parse = _encoder.parse
 read = _encoder.read

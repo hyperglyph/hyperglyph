@@ -22,7 +22,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
 
-from .data import CONTENT_TYPE, dump, parse, get, node, form, link, utcnow, embedlink, blob, error
+from .data import CONTENT_TYPE, dump, dump_iter, parse, get, node, form, link, utcnow, embedlink, blob, error
 from .resource.handler import safe, embed, redirect
 from .resource.transient import TransientResource
 from .resource.persistent import PersistentResource
