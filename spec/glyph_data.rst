@@ -78,6 +78,7 @@ a glyph encoded message consists of a single object, optionally
 followed by chunks.
 
 ::
+
 	root :== ws object ws (trailer ws)* 
 	trailer :== (chunk | end_chunk)  
 
@@ -88,7 +89,6 @@ followed by chunks.
 		| nil | true | false
 		| list | set | dictionary
 		| node | extension | blob
-
 
 integer
 -------
@@ -336,8 +336,9 @@ blobs have a unique identifier, which is used to match
 it to the chunks containing the data.  
 
 attributes MUST be a dictionary:
-  * MUST have the key 'content-type'
-  * MAY have the key 'url'
+
+* MUST have the key 'content-type'
+* MAY have the key 'url'
 
 for each blob, a number of chunks must appear in the trailer,
 including a final end_chunk. chunks for different files
