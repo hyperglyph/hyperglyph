@@ -99,8 +99,8 @@ def chunker(iterable, n):
     Given an iterable yield chunks of size N
     """
     args = [iter(iterable)] * n
-    for bits in itertools.izip_longest(fillvalue=None, *args):
-        yield reduce(operator.add, itertools.ifilter(bool, bits))
+    for bits in itertools.izip_longest(fillvalue="", *args):
+        yield reduce(operator.add, bits)
 
 
 class Encoder(object):
