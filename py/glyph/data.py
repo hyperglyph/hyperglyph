@@ -2,6 +2,7 @@ from urlparse import urljoin
 import datetime
 import io
 
+
 from pytz import utc
 
 from .encoding import Encoder, CONTENT_TYPE

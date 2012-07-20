@@ -1,5 +1,6 @@
 import unittest2
 import glyph
+import datetime
 
 from cStringIO import StringIO
 from io import BytesIO
@@ -21,6 +22,7 @@ class EncodingTest(unittest2.TestCase):
             {'a':1},
             set([1,2,3]),
             glyph.utcnow(),
+            datetime.timedelta(days=5, hours=4, minutes=3, seconds=2),
         ]
         for c in cases:
             self.assertEqual(c, glyph.parse(glyph.dump(c)))

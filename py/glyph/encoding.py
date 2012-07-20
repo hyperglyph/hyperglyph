@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import io
 import itertools
 import operator
+import isodate
 
 from pytz import utc
 
@@ -217,9 +218,8 @@ class Encoder(object):
             yield obj.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
             yield END_ITEM
         elif isinstance(obj, timedelta):
-            raise NotImplementedError()
             yield PER
-            yield
+            yield isodate.duration_isoformat(obj)
             yield END_ITEM
         else:
             try:
@@ -316,8 +316,8 @@ class Encoder(object):
             ext.__resolve__(resolver)
             return ext
         elif c == PER:
-            periodstring =  _read_until(fh, END_ITEM)[0]
-            raise NotImplementedError()
+            period = _read_until(fh, END_ITEM)[0]
+            return isodate.parse_duration(period)
         elif c == DTM:
             datestring =  _read_until(fh, END_ITEM)[0]
             if datestring[-1].lower() == 'z':
