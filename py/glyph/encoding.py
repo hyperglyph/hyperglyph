@@ -41,9 +41,6 @@ def blob(content, content_type=u"application/octet-stream"):
 class Blob(object):
     def __init__(self, content, attributes):
         self._attributes = attributes
-
-        if isinstance(content, list):
-            content = "".join(content)
         if not isinstance(content, io.IOBase):
             if isinstance(content, unicode):
                 content = io.StringIO(content)
@@ -54,6 +51,30 @@ class Blob(object):
     @property
     def content_type(self):
         return self._attributes[u'content-type']
+    
+    def close(self):
+        return self.fh.close()
+    
+    def fileno(self):
+        return self.fh.fileno()
+    
+    def readable(self):
+        return self.fh.readable()
+    
+    def readline(self, limit=-1):
+        return self.fh.readline(limit)
+    
+    def readlines(self, hint=-1):
+        return self.fh.readlines(hint)
+    
+    def read(self, n=-1):
+        return self.fh.read(n)
+    
+    def readall(self):
+        return self.fh.readall()
+    
+    def readinto(self, b):
+        return self.fh.readinto(b)
 
 
 identity = lambda x:x
