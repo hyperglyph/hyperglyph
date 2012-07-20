@@ -27,7 +27,9 @@ the server can translate objects into resources with forms,
 and the client can translate this back into objects with methods.
 
 the client begins by fetching a page at a known url, and then
-follows links and submits forms to receive new objects
+follows links and submits forms to receive new objects.
+
+the links and forms contain a url and a method.
 
 mime type
 ---------
@@ -72,9 +74,9 @@ collections (list, set, dictionary).
 
 glyph also supports special data types:
 
- - a 'node' tuple type (name, attributes, content).
- - an 'extension' type used to define objects with special behaviour or meaning
- - a 'blob' and 'chunk' type, used to attach large files to an object
+- a 'node' tuple type (name, attributes, content).
+- an 'extension' type used to define objects with special behaviour or meaning
+- a 'blob' and 'chunk' type, used to attach large files to an object
 
 a glyph encoded message consists of a single object, optionally
 followed by chunks.
@@ -131,6 +133,7 @@ utf-16 surrogate pairs. Modified UTF-8/CESU-8 MUST NOT be used.
 	utf8_bytes :== <the utf8 string>
 
 	string 	encoding
+	''	u;
 	'foo'	u3:foo;
 	'bar'	u4:bar;
 	'💩'	u4:\xf0\x9f\x92\xa9;
@@ -139,6 +142,8 @@ utf-16 surrogate pairs. Modified UTF-8/CESU-8 MUST NOT be used.
 
 Encoders SHOULD normalize strings to NFC, decoders MAY
 normalize strings to NFC.
+
+unicode should map to the native string type where applicable.
 
 
 bytearray
@@ -156,6 +161,7 @@ is assumed.
 
 	bytes			encoding
 	[0x31,0x32,0x33]	b3:123;
+	[]			b;
 
 
 singletons
@@ -291,6 +297,8 @@ nodes can be used to represent an xml dom node::
 	xml			encoded
 	<xml a=1>1</xml>	Xu3:xmlDu1:ai1;;
 
+in the host language, f n is a node, n.foo should map to content[foo].
+
 
 extensions
 ----------
@@ -327,21 +335,22 @@ can return multiple blobs, which will have seperate chunks attached.
 	object :== ... | blob | ... 
 	trailer :== (chunk | end_chunk)  
 
-	blob :== 'B' id_obj ws attr_dictionary ws ';'
+	blob :== 'B' id_num ':' attr_dictionary ';'
 
-	chunk :== 'c' id_obj bytearray ';' 
+	chunk :== 'c' id_num ':' ascii_number ':' bytes ';' 
+	 note : where len(bytes) = int(ascii_number)
 
-	end_chunk :== 'c' id_obj ';' 
+	end_chunk :== 'c' id_num ';' 
 
-	id_obj :== unicode | bytearray | integer
+	id_num :== ascii_number
 
-blobs have a unique identifier, which is used to match
+blobs have a unique numeric identifier, which is used to match
 it to the chunks containing the data.  
 
 attributes MUST be a dictionary:
 
- - MUST have the key 'content-type'
- - MAY have the key 'url'
+- MUST have the key 'content-type'
+- MAY have the key 'url'
 
 for each blob, a number of chunks must appear in the trailer,
 including a final end_chunk. chunks for different files
@@ -350,7 +359,11 @@ MAY be interweaved.
 a glyph server SHOULD transform a response of a solitary blob object into a 
 http response, using the content-type attribute.
 
-glyph clients SHOULD return an response with an unknown encoding as a blob.
+glyph clients SHOULD return an response with an unknown encoding as a blob,
+and SHOULD set the url attribute of the blob object.
+
+a blob object should expose a content_type property, and a file like
+object. 
 
 extensions
 ==========
@@ -366,12 +379,17 @@ a hyperlink with a method and url, optionally with an inlined response
 
 - name 'link'
 - attributes is a dictionary. MUST have the keys 'url', 'method'
-- MAY have the key 'inline'
+ * method SHOULD be 'GET'
+ * MAY have the key 'inline'
+ * MAY have the keys 'etag', 'last-modified', 'cache-control'
 - content is an object, which is either nil or the inlined response
 
-links map to functions with no arguments. if the key 'cache' is in the
+links map to functions with no arguments. if the key 'inline' is in the
 attributes and the associated value is true, then the function MAY
 return the associated content object, instead of making a request.
+
+if a link has the etag, last-modified attributes, clients SHOULD
+perform a conditional GET, using the 'If-None-Match', 'If-Modified-Since'
 
 
 form
@@ -382,17 +400,23 @@ like a html form, with a url, method, expected form values.
 - name 'form'
 - attributes is a dictionary
   * MUST have the keys 'url', 'method' , 'values'
+  * method SHOULD be 'POST'
   * url and method are both unicode keys with unicode values.
   * values is a list of unicode names
+  * MAY have the keys 'etag', 'last-modified', 'cache-control'
 - content is nil object
 
 forms map to functions with arguments. when submitting a form, the arguments
 are encoded as a list, in the order given in the 'values' attribute.
 
+if a form has the etag, last-modified attributes, clients SHOULD
+perform a conditional POST, using the 'If-Match', 'If-Unmodified-Since'
+
 resource
 --------
 
-like a top level webpage. like in a node
+like a top level webpage. in the host language, resource.foo
+should map to the content dictionary. i.e r.foo is r.content[foo]
 
 - name 'resource'
 - attributes is a dictionary,
@@ -400,8 +424,12 @@ like a top level webpage. like in a node
 - content is a dict of string -> object
   * objects often forms
 
-resources map to instances, where the content contains
-forms mapping to the methods.
+when a method on the server returns a Resource object,
+for example, the GET() method on Resources returns self,
+the server changes it to a resource extension.
+
+the content dictionary should have objects for the instance
+data, as well as forms to map to the instance methods.
 
 error
 -----
@@ -488,38 +516,37 @@ grammar
 
 	extension :== 'H' ws name_obj ws attr_obj ws content_obj ws ';' 
 	
-	blob :== 'B' id_obj ws attr_obj ws ';'
+	blob :== 'B' id_num ':' attr_dictionary ';'
 
-	chunk :== 'c' id_obj bytearray ';' 
+	chunk :== 'c' id_num ':' ascii_number ':' bytes ';' 
+	 note : where len(bytes) = int(ascii_number)
 
-	end_chunk :== 'c' id_obj ';' 
+	end_chunk :== 'c' id_num ';' 
 
-protocol
---------
+http
+====
 
-a glyph request is simply an 
+HTTP requests should have the following headers:
 
+- Accept, set to the glyph mime type
 
-encoding
-========
+HTTP Responses MUST have an appropriate Content-Type, and
+the code may have special handling:
 
-TODO: expand with notes on encoder specifics
+- 201 Created. This is equivilent to returning a link
+  as the body.
 
-building urls
+- 204, No Content. This is equivilent to a 200 with a nil as the body.
+  A server SHOULD change a nil response into a 204
+  A client MUST understand a 204 as a nil response.
 
-handling resources, forms, links
+- 303 See Other. Redirects should be followed automatically,
+  using a GET. A server SHOULD allow methods to return a redirect
 
-handling extensions
+A server SHOULD allow gzip encoding, and clients MUST understand
+gzip encoding.
 
-parsers
-=======
-
-TODO
-
-error handling
-recovery
-
-handling resources, forms, links
+Clients SHOULD throw different Errors for 4xx and 5xx responses.
 
 
 appendices
@@ -528,16 +555,16 @@ appendices
 url schema
 ----------
 
-form urls are of the form /ObjectName/method?<glyph instance data>
+URLs are opaque to the client, beyond the initial url. Normally
+The server maps objects to urls, using something like this::
 
-note: ? breaks squid default config for caching.
+	/ObjectName/method?<glyph instance data>
 
-clients MUST support gzip encoding
-
+There are no conditions on the format of URLs, clients MUST
+not modify them. 
 
 caching
 -------
-
 
 mime type registration
 ----------------------
