@@ -22,9 +22,12 @@ glyph-rpc is normally served over http, and used to offer
 objects to the client. objects are described in terms
 of hypermedia objects - links and forms. 
 
-essentially, glyph is a format for machine readable webpages.
+underneath, glyph is a format for machine readable webpages.
 the server can translate objects into resources with forms,
 and the client can translate this back into objects with methods.
+
+the client begins by fetching a page at a known url, and then
+follows links and submits forms to receive new objects
 
 mime type
 ---------
@@ -490,6 +493,11 @@ grammar
 	chunk :== 'c' id_obj bytearray ';' 
 
 	end_chunk :== 'c' id_obj ';' 
+
+protocol
+--------
+
+a glyph request is simply an 
 
 
 encoding
