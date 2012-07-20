@@ -86,7 +86,7 @@ def chunker(iterable, n):
     Given an iterable yield chunks of size N
     """
     args = [iter(iterable)] * n
-    for bits in itertools.izip_longest(fillvalue="", *args):
+    for bits in itertools.izip_longest(itertools.chain.from_iterable(args), fillvalue=""):
         yield reduce(operator.add, bits)
 
 
