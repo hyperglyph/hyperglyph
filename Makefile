@@ -8,5 +8,5 @@ ruby_test: rb/
 	rm -f rb/glyph*.gem
 	cd rb && gem build glyph.gemspec
 	gem install rb/glyph*.gem
-	${RUBY}  rb/tests.rb
+	${RUBY}  rb/tests.rb; gem uninstall glyph
 

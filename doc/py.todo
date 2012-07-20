@@ -94,6 +94,10 @@ done:
     decided to keep redirect as an opt in
         can use to redirect to urls
 
+    auto link resources ?  handle: return [Resource(), ....]
+        callback from router turns resources into links/forms/etc?
+        possible: handles unknown types with callback
+
 remember:
     should handle http mapping by default, verbs, urls and content_type
     should be possible to use objects outside of mapper.
@@ -160,10 +164,6 @@ to think?
         url in page object?
         if unhandledd:
             throw result(content_type, content), decoded if text/*
-
-    auto link resources ?  handle: return [Resource(), ....]
-        callback from router turns resources into links/forms/etc?
-        possible: handles unknown types with callback
 
     collections:
         like an embed/property, but behaves with the __getitem__ calls ?

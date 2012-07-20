@@ -177,6 +177,7 @@ module Glyph
       Extension.make('form',{'method'=>'POST', 'url'=>obj, 'values'=>args}, nil)
     end
 
+
     def GET
       # default contents 
       content = {}
@@ -234,6 +235,10 @@ module Glyph
     end
   end
 
+  def self.blob(obj, content_type = 'application/octet-stream')
+    Blob.new  obj, {'content-type' => content_type}
+  end
+
   class BaseNode
     def initialize(name, attrs, content)
       @name = name
@@ -268,8 +273,6 @@ module Glyph
           return Link.new(name, attrs, content)
         when "resource"
           return ExtResource.new(name, attrs, content)
-        when "blob"
-          return Blob.new(name, attrs, content)
         when "error"
           return ExtError.new(name, attrs, content)
           
@@ -288,7 +291,18 @@ module Glyph
   class ExtError < Extension
   end
 
-  class Blob < Extension
+  class Blob 
+    def initialize(content, attrs)
+      @content = content
+      @attrs = attrs
+    end
+    
+    def fh
+      @content
+    end
+    def content_type
+      @attrs['content-type']
+    end
   end
 
   class ExtResource < Extension
@@ -334,6 +348,13 @@ module Glyph
   end
     
   def self.dump(o, resolve=nil, inline=nil)
+    blobs = []
+    root = self.dump_one(o, resolve, inline, blobs)
+    tail = self.dump_blobs(blobs)
+    return "#{root}#{tail}"
+  end
+
+  def self.dump_one(o, resolve, inline, blobs)
     if Resource === o
       o = inline.call(o)
     end
@@ -345,11 +366,19 @@ module Glyph
         "u;"
       end
     elsif String === o
-      u = o.encode('utf-8')
-      if u.bytesize > 0
-        "u#{u.bytesize}:#{u};"
-      else 
-        "u;"
+      if o.encoding == Encoding.find('ASCII-8BIT')
+        if o.length >0
+          "b#{o.length}:#{o};"
+        else 
+          "b;"
+        end
+      else
+        u = o.encode('utf-8')
+        if u.bytesize > 0
+          "u#{u.bytesize}:#{u};"
+        else 
+          "u;"
+        end
       end
     elsif Integer === o
       "i#{o};"
@@ -363,11 +392,11 @@ module Glyph
     elsif Float === o
       "f#{o.to_hex};"
     elsif Array === o
-      "L#{o.map{|o| Glyph.dump(o, resolve, inline) }.join};"
+      "L#{o.map{|o| Glyph.dump_one(o, resolve, inline, blobs) }.join};"
     elsif Set === o
-      "S#{o.map{|o| Glyph.dump(o, resolve, inline) }.join};"
+      "S#{o.map{|o| Glyph.dump_one(o, resolve, inline, blobs) }.join};"
     elsif Hash === o
-      "D#{o.map{|k,v| [Glyph.dump(k, resolve, inline), Glyph.dump(v, resolve, inline)]}.join};"
+      "D#{o.map{|k,v| [Glyph.dump_one(k, resolve, inline, blobs), Glyph.dump_one(v, resolve, inline, blobs)]}.join};"
     elsif TrueClass === o
       "T;"
     elsif FalseClass === o
@@ -380,18 +409,35 @@ module Glyph
       "p#{o.iso_period};"
     elsif Time === o
       "d#{o.strftime("%FT%T.%LZ")};"
+    elsif Blob === o
+      bid = blobs.length
+      blobs.push o.fh
+      o.instance_eval {
+        "B#{bid}:#{Glyph.dump_one(@attrs, resolve, inline, blobs)};"
+      }
     elsif Extension === o
       o.instance_eval {
         @attrs['url'] = resolve.call(@attrs['url']) if not String === @attrs['url']
-        "H#{Glyph.dump(@name, resolve, inline)}#{Glyph.dump(@attrs, resolve, inline)}#{Glyph.dump(@content,resolve, inline)};"
+        "H#{Glyph.dump_one(@name, resolve, inline, blobs)}#{Glyph.dump_one(@attrs, resolve, inline, blobs)}#{Glyph.dump_one(@content,resolve, inline, blobs)};"
       }
     elsif Node === o 
       o.instance_eval {
-        "X#{Glyph.dump(@name, resolve, inline)}#{Glyph.dump(@attrs, resolve, inline)}#{Glyph.dump(@content,resolve, inline)};"
+        "X#{Glyph.dump_one(@name, resolve, inline, blobs)}#{Glyph.dump_one(@attrs, resolve, inline, blobs)}#{Glyph.dump_one(@content,resolve, inline, blobs)};"
       }
     else
       raise EncodeError, "unsupported #{o}"
     end
+  end
+
+  def self.dump_blobs(blobs)
+    blobs.each_with_index.map {|b,i|
+      chunk = b.read
+      if chunk.bytesize >0
+        "c#{i}:#{chunk.bytesize}:#{chunk.to_s};c#{i};"
+      else
+        "c#{i};"
+      end
+    }.join
   end
   
   def self.load(str)
@@ -400,6 +446,13 @@ module Glyph
   end
 
   def self.parse(scanner, url)
+    blobs = {}
+    res= self.parse_one(scanner, url, blobs)
+    self.parse_blobs(scanner, blobs)
+    res
+  end
+
+  def self.parse_one(scanner,url,blobs)
     s = scanner.scan(/[\w\n]/)[-1]
     return case s[-1]
     when ?T
@@ -434,7 +487,7 @@ module Glyph
         ''
       end
     when ?b
-      num = scanner.scan_until(/:/)
+      num = scanner.scan_until(/[:;]/)
       if num.end_with? ':'
         num = num.chop.to_i
         str = scanner.peek(num)
@@ -446,9 +499,8 @@ module Glyph
     when ?D
       dict = {}
       until scanner.scan(/;/)
-
-        key = parse(scanner, url)
-        val = parse(scanner, url)
+        key = parse_one(scanner, url, blobs)
+        val = parse_one(scanner, url, blobs)
         dict[key]=val
       end
       dict
@@ -456,34 +508,63 @@ module Glyph
     when ?L
       lst = []
       until scanner.scan(/;/)
-        lst.push(parse(scanner, url))
+        lst.push(parse_one(scanner, url, blobs))
       end
       lst
     when ?S
       lst = Set.new
       until scanner.scan(/;/)
-        lst.add(parse(scanner, url))
+        lst.add(parse_one(scanner, url, blobs))
       end
       lst
     when ?X
-      name = parse(scanner, url)
-      attrs = parse(scanner, url)
-      content = parse(scanner, url)
+      name = parse_one(scanner, url, blobs)
+      attrs = parse_one(scanner, url, blobs)
+      content = parse_one(scanner, url, blobs)
       scanner.scan(/;/)
       n = Node.new(name, attrs, content)
       n
     when ?H
-      name = parse(scanner, url)
-      attrs = parse(scanner, url)
-      content = parse(scanner, url)
+      name = parse_one(scanner, url, blobs)
+      attrs = parse_one(scanner, url, blobs)
+      content = parse_one(scanner, url, blobs)
       scanner.scan(/;/)
       e = Extension.make(name, attrs, content)
       if url
         e.resolve(url)
       end
       e
+    when ?B
+      bid = scanner.scan_until(/:/).chop.to_i
+      blobs[bid] = fd = StringIO.new
+      attrs = parse_one(scanner, url, blobs)
+      scanner.scan(/;/)
+      blob(fd, attrs)
     else
       raise Glyph::DecodeError, "baws #{s}"
+    end
+  end
+
+  def self.parse_blobs(scanner, blobs)
+    while not blobs.empty?
+      s = scanner.scan(/[\w\n]/)[-1]
+      case s[-1]
+      when ?c
+        num = scanner.scan_until(/[:;]/)
+        term = num.end_with? ';'
+        num = num.chop.to_i
+        if term
+          blobs[num].rewind
+          blobs.delete num
+        else
+          len = scanner.scan_until(/:/).chop.to_i
+          str = scanner.peek(len)
+          blobs[num].write(str)
+          scanner.pos+=len+1
+        end
+      else
+        raise Glyph::DecodeError, "baws #{s}"
+      end
     end
   end
 
