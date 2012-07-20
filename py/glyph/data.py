@@ -56,10 +56,10 @@ def methodargs(m):
 def funcargs(m):
     return m.func_code.co_varnames[:]
 
-def get(url, args=None,headers=None):
+def get(url, args=None, headers=None):
     if hasattr(url, u'url'):
         url = url.url()
-    return  fetch('GET', url, args, None, headers)
+    return fetch('GET', url, args, None, headers)
 
 
 HEADERS={'Accept': CONTENT_TYPE, 'Content-Type': CONTENT_TYPE}
@@ -95,14 +95,40 @@ except:
                 traceback.print_exc()
                 raise StandardError(e)
 
-def fetch(method, url, args=None,data=None, headers=None):
+
+class IteratorFile(object):
+    
+    def __init__(self, iterator, chunked=False):
+        self.iterator = iterator
+        self.chunked = chunked
+        self.eof = False
+    
+    def read(self, n=None):
+        if n is None:
+            return "".join(self.iterator)
+        data = next(self.iterator, "")
+        if self.chunked:
+            chunk = "".join(("%X\r\n" % len(data), data, "\r\n"))
+        else:
+            chunk = data
+        ret = None if self.eof else chunk
+        if not data:
+            self.eof = True
+        return ret
+
+
+def fetch(method, url, args=None, data=None, headers=None, chunked=False):
     if headers is None:
         headers = {}
     headers.update(HEADERS)
     if args is None:
         args = {}
     if data is not None:
-        data=dump(data)
+        data = IteratorFile(dump_iter(data, chunk_size=4096), chunked=chunked)
+        if data.chunked:
+            headers["Transfer-Encoding"] = "chunked"
+        else:
+            data = data.read()
     result = session.request(method, url, params=args, data=data, headers=headers, allow_redirects=False)
     def join(u):
         return urljoin(result.url, u)
@@ -195,7 +221,9 @@ class Form(Extension):
             else:
                 raise StandardError('unknown argument')
 
-        return fetch(self._attributes.get(u'method',u'POST'),url, data=data)
+        chunked = getattr(self, "chunked", any([isinstance(v, Blob) for k, v in data]))
+
+        return fetch(self._attributes.get(u'method',u'POST'), url, data=data, chunked=chunked)
 
     def __resolve__(self, resolver):
         self._attributes[u'url'] = unicode(resolver(self._attributes[u'url']))
@@ -253,8 +281,6 @@ class Blob(Extension):
     @property
     def content_type(self):
         return self._attributes[u'content-type']
-        
-
 
 
 _encoder = Encoder(node=Node, extension=Extension)

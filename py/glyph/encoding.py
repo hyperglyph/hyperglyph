@@ -1,5 +1,4 @@
 from urlparse import urljoin
-from cStringIO import StringIO
 from datetime import datetime, timedelta
 import io
 import itertools
@@ -45,7 +44,7 @@ def fail():
 
 def _read_until(fh, term, parse=identity, skip=None):
     c = fh.read(1)
-    buf=StringIO()
+    buf = io.BytesIO()
     while c != term and c != skip:
         buf.write(c)
         c = fh.read(1)
@@ -60,28 +59,6 @@ def read_first(fh):
     while c in ('\r','\v','\n',' ','\t'):
         c = fh.read(1)
     return c
-        
-
-
-class wrapped(object):
-    def __init__(self, fh):
-        self.fh=fh
-        self.buf=StringIO()
-
-    def read(self,n):
-        r= self.fh.read(n)
-        self.buf.write(r)
-        return r
-
-    def readline(self):
-        r= self.fh.readline()
-        self.buf.write(r)
-        return r
-
-    def getvalue(self):
-        r= self.fh.read()
-        self.buf.write(r)
-        return self.buf.getvalue()
 
 
 def forever(iterable):
@@ -125,10 +102,10 @@ class Encoder(object):
         for chunk in chunks:
             yield chunk
 
-    def parse(self, s, resolver=identity):
-        buf = StringIO(s)
-        return self.read(buf, resolver)
-
+    def parse(self, stream, resolver=identity):
+        if not hasattr(stream, "read"):
+            stream = io.BytesIO(stream)
+        return self.read(stream, resolver)
 
     def _dump(self, obj, resolver, inline):
         if obj is True:
@@ -334,19 +311,8 @@ class Encoder(object):
             raise StandardError('decoding err', c)
         raise EOFError()
 
-
     def read(self, fh, resolver=identity):
-        fh = wrapped(fh)
-        try:
-            first = read_first(fh)
-            if first == '':
-                raise EOFError()
-
-            return self._read_one(fh, first, resolver)
-        except EOFError as r:
-            raise r
-        except StandardError as e:
-            raise 
-            import traceback; traceback.print_exc() 
-            raise StandardError('decoding %s'%(fh.getvalue()))
-
+        first = read_first(fh)
+        if first == '':
+            raise EOFError()
+        return self._read_one(fh, first, resolver)
