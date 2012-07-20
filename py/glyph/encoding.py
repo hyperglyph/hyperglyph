@@ -414,6 +414,9 @@ class TemporaryFile(object):
         self.fd, self.name = tempfile.mkstemp(*args, **kwargs)
         self.file = io.open(self.fd, "w+b")
     
+    def __repr__(self):
+        return "<%s.%s object at %s>" % (self.__class__.__module__, self.__class__.__name__, self.name)
+    
     def __getattr__(self, attr):
         return getattr(self.__dict__["file"], attr)
     
