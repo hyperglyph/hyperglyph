@@ -191,6 +191,10 @@ the programmer.
 The server is stateless - the state of the objects is encapsulated
 in the links & forms. 
 
+glyph now has large file support. wrap a file handle in glyph.blob,
+and pass it around. on the server side, large blobs are written
+to temporary files
+
 internals
 =========
 
