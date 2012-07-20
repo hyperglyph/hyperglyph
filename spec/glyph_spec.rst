@@ -325,6 +325,9 @@ blob
 binary data can be attached to an object, to enable
 requests to stream large data, similar to multipart handling.
 
+client code should be able to send a filehandle as an argument,
+and server code should expect blobs as a filehandle like 
+
 this is done through blobs and chunks. a blob is a placeholder
 for the content, and chunks appear after the root object. a client
 can return multiple blobs, which will have seperate chunks attached.
@@ -406,8 +409,10 @@ like a html form, with a url, method, expected form values.
   * MAY have the keys 'etag', 'last-modified', 'cache-control'
 - content is nil object
 
-forms map to functions with arguments. when submitting a form, the arguments
-are encoded as a list, in the order given in the 'values' attribute.
+forms map to functions with arguments. submitting a form should be calling 
+a function in the host language.
+
+when making a POST request, the data is a list of ('name', 'value') pairs.
 
 if a form has the etag, last-modified attributes, clients SHOULD
 perform a conditional POST, using the 'If-Match', 'If-Unmodified-Since'
@@ -421,6 +426,7 @@ should map to the content dictionary. i.e r.foo is r.content[foo]
 - name 'resource'
 - attributes is a dictionary,
   *  MAY have the keys 'url', 'name'
+  * MAY have the keys 'etag', 'last-modified', 'cache-control'
 - content is a dict of string -> object
   * objects often forms
 
@@ -439,20 +445,17 @@ to failed requests. servers MAY return them.
 
 - name 'error'
 - attributes is a dictionary with the keys 'logref', 'message'
+- MAY have the attribute 'url'
 - content SHOULD be a dict of string -> object, MAY be empty.
 
-logref is a application specific reference for logging.
-message is a unicode string
+logref is a application specific reference for logging, MUST
+be a unicode string, message MUST be a unicode string
 
 input
 -----
 
 PLACEHOLDER: for input form type
 
-
-types/schemas
-=============
-	
 form variables currently untyped. form has a values
 attribute containing a list of string names
 
