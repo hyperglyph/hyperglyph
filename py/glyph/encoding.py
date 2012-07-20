@@ -378,16 +378,8 @@ class Encoder(object):
                         finished = False
                         try:
                             tmp = TemporaryFile(suffix=str(blob_id))
-                            try:
-                                while True:
-                                    data = blob.read(4096)
-                                    if not data:
-                                        break
-                                    tmp.write(data)
-                            except:
-                                raise
-                            else:
-                                finished = True
+                            tmp.write(blob.read())
+                            finished = True
                         finally:
                             if not finished:
                                 tmp.close()
