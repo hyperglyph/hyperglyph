@@ -80,10 +80,11 @@ class Handler(object):
         verb = request.method
         if verb == 'GET' and cls.is_safe(attr):
             result = attr()
-        elif verb == 'POST' and not cls.is_safe(attr): 
+        elif verb == 'POST' and not cls.is_safe(attr):
             try:
-                data = dict(cls.parse(attr, request.data)) if request.data else {}
+                data = dict(cls.parse(attr, request.input_stream))
             except StandardError:
+                raise
                 raise BadRequest()
             result =attr(**data)
         else:
