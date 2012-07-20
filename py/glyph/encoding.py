@@ -64,6 +64,7 @@ identity = lambda x:x
 def fail():
     raise StandardError()
 
+
 def _read_until(fh, term, parse=identity, skip=None):
     c = fh.read(1)
     buf = io.BytesIO()
@@ -76,12 +77,12 @@ def _read_until(fh, term, parse=identity, skip=None):
     else:
         return None, c
 
+
 def read_first(fh):
     c = fh.read(1)
     while c in ('\r','\v','\n',' ','\t'):
         c = fh.read(1)
     return c
-
 
 
 def chunker(iterable, n):
@@ -229,7 +230,7 @@ class Encoder(object):
     def _dump_blobs(self, blobs):
         for idx, b in enumerate(blobs):
             while True:
-                data = b.read(4096)
+                data = b.read(8192)
                 if not data:
                     break
                 yield CHUNK
@@ -373,7 +374,11 @@ class Encoder(object):
                     size, first = _read_until(fh, LEN_SEP, parse=int)
                     blob = blobs[blob_id]
                     byte_count[blob_id] += blob.write(fh.read(size))
-                    if self.max_blob_mem_size is None or byte_count[blob_id] >= self.max_blob_mem_size:
+                    should_transfer = [
+                        self.max_blob_mem_size is None,
+                        byte_count[blob_id] >= self.max_blob_mem_size,
+                    ]
+                    if not isinstance(blob.fh, TemporaryFile) and any(should_transfer):
                         blob.seek(0)
                         finished = False
                         try:
@@ -383,6 +388,7 @@ class Encoder(object):
                         finally:
                             if not finished:
                                 tmp.close()
+                        blob.truncate(0)
                         blob.fh = tmp
                     first = read_first(fh)
 

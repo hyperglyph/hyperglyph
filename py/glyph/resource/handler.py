@@ -130,4 +130,3 @@ def safe(embed=False):
 
 def embed():
     return safe(embed=True)
-
