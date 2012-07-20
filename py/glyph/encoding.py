@@ -85,8 +85,8 @@ def chunker(iterable, n):
     """
     Given an iterable yield chunks of size N
     """
-    args = [iter(iterable)] * n
-    for bits in itertools.izip_longest(itertools.chain.from_iterable(args), fillvalue=""):
+    args = [itertools.chain.from_iterable(iterable)] * n
+    for bits in itertools.izip_longest(*args, fillvalue=""):
         yield reduce(operator.add, bits)
 
 
@@ -176,14 +176,6 @@ class Encoder(object):
             for x in sorted(obj):
                 for r in self._dump_one(x, resolver, inline, blobs): yield r
             yield END_SET
-        elif isinstance(obj, io.IOBase):
-            yield LIST
-            while True:
-                data = obj.read(4096)
-                if not data:
-                    break
-                for r in self._dump_one(data, resolver, inline, blobs): yield r
-            yield END_LIST
         elif hasattr(obj, 'iteritems'):
             yield DICT
             for k in sorted(obj.keys()): # always sorted, so can compare serialized
@@ -233,15 +225,17 @@ class Encoder(object):
 
     def _dump_blobs(self, blobs):
         for idx, b in enumerate(blobs):
-            data = b.read()
-            yield CHUNK
-            yield str(idx)
-            yield LEN_SEP
-            yield str(len(data))
-            yield LEN_SEP
-            yield data
-            yield END_ITEM
-
+            while True:
+                data = b.read(4096)
+                if not data:
+                    break
+                yield CHUNK
+                yield str(idx)
+                yield LEN_SEP
+                yield str(len(data))
+                yield LEN_SEP
+                yield data
+                yield END_ITEM
             yield CHUNK
             yield str(idx)
             yield END_ITEM
