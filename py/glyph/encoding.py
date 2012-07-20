@@ -91,7 +91,7 @@ def chunker(iterable, n):
     """
     args = [itertools.chain.from_iterable(iterable)] * n
     for bits in itertools.izip_longest(*args, fillvalue=""):
-        yield reduce(operator.add, bits)
+        yield "".join([bit for bit in bits if bit])
 
 
 class Encoder(object):
