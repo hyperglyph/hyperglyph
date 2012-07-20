@@ -1,9 +1,12 @@
 from urlparse import urljoin
 from datetime import datetime, timedelta
+import collections
 import io
+import os
 import itertools
 import operator
 import isodate
+import tempfile
 
 from pytz import utc
 
@@ -52,29 +55,8 @@ class Blob(object):
     def content_type(self):
         return self._attributes[u'content-type']
     
-    def close(self):
-        return self.fh.close()
-    
-    def fileno(self):
-        return self.fh.fileno()
-    
-    def readable(self):
-        return self.fh.readable()
-    
-    def readline(self, limit=-1):
-        return self.fh.readline(limit)
-    
-    def readlines(self, hint=-1):
-        return self.fh.readlines(hint)
-    
-    def read(self, n=-1):
-        return self.fh.read(n)
-    
-    def readall(self):
-        return self.fh.readall()
-    
-    def readinto(self, b):
-        return self.fh.readinto(b)
+    def __getattr__(self, attr):
+        return getattr(self.__dict__["fh"], attr)
 
 
 identity = lambda x:x
@@ -112,9 +94,10 @@ def chunker(iterable, n):
 
 
 class Encoder(object):
-    def __init__(self, node, extension):
+    def __init__(self, node, extension, **kwargs):
         self.node = node
         self.extension = extension
+        self.max_blob_mem_size = kwargs.get("max_blob_mem_size", 1024*1024*2)
 
     def dump(self, *args, **kwargs):
         buf = io.BytesIO()
@@ -204,7 +187,15 @@ class Encoder(object):
                 for r in self._dump_one(k, resolver, inline, blobs): yield r
                 for r in self._dump_one(v, resolver, inline, blobs): yield r
             yield END_DICT
-
+        elif isinstance(obj, Blob):
+            blob_id = len(blobs)
+            blobs.append(obj.fh)
+            yield BLOB
+            yield str(blob_id)
+            yield LEN_SEP
+            for r in self._dump_one(obj._attributes, resolver, inline, blobs):
+                yield r
+            yield END_ITEM
         elif hasattr(obj, '__iter__'):
             yield LIST
             for x in obj:
@@ -227,15 +218,6 @@ class Encoder(object):
         elif isinstance(obj, timedelta):
             yield PER
             yield isodate.duration_isoformat(obj)
-            yield END_ITEM
-        elif isinstance(obj, Blob):
-            blob_id = len(blobs)
-            blobs.append(obj.fh)
-            yield BLOB
-            yield str(blob_id)
-            yield LEN_SEP
-            for r in self._dump_one(obj._attributes, resolver, inline, blobs):
-                yield r
             yield END_ITEM
 
         else:
@@ -372,7 +354,7 @@ class Encoder(object):
             first = read_first(fh)
             if first != END_ITEM:
                     raise StandardError('blob')
-            blobs[blob_id] = blob.fh
+            blobs[blob_id] = blob
             return blob
 
         elif c not in ('', ):
@@ -380,6 +362,7 @@ class Encoder(object):
         raise EOFError()
 
     def _read_blobs(self, fh, blobs):
+        byte_count = collections.defaultdict(int)
         while blobs:
             first = read_first(fh)
             if first == CHUNK:
@@ -388,7 +371,27 @@ class Encoder(object):
                     blobs.pop(blob_id).seek(0)
                 else:
                     size, first = _read_until(fh, LEN_SEP, parse=int)
-                    blobs[blob_id].write(fh.read(size))
+                    blob = blobs[blob_id]
+                    byte_count[blob_id] += blob.write(fh.read(size))
+                    if self.max_blob_mem_size is None or byte_count[blob_id] >= self.max_blob_mem_size:
+                        blob.seek(0)
+                        finished = False
+                        try:
+                            tmp = TemporaryFile(suffix=str(blob_id))
+                            try:
+                                while True:
+                                    data = blob.read(4096)
+                                    if not data:
+                                        break
+                                    tmp.write(data)
+                            except:
+                                raise
+                            else:
+                                finished = True
+                        finally:
+                            if not finished:
+                                tmp.close()
+                        blob.fh = tmp
                     first = read_first(fh)
 
                 if first != END_ITEM:
@@ -406,3 +409,16 @@ class Encoder(object):
         self._read_blobs(fh, blobs)
         return result
 
+
+class TemporaryFile(object):
+    
+    def __init__(self, *args, **kwargs):
+        self.fd, self.name = tempfile.mkstemp(*args, **kwargs)
+        self.file = io.open(self.fd, "w+b")
+    
+    def __getattr__(self, attr):
+        return getattr(self.__dict__["file"], attr)
+    
+    def close(self):
+        self.file.close()
+        os.unlink(self.name)
