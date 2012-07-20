@@ -5,7 +5,7 @@ import io
 
 from pytz import utc
 
-from .encoding import Encoder, CONTENT_TYPE
+from .encoding import Encoder, CONTENT_TYPE, Blob
 
 
 def utcnow():
@@ -41,8 +41,6 @@ def embedlink(url, content, method=u'GET'):
 def error(reference, message):
     return Extension.__make__(u'error', {u'logref':reference, u'message':message}, {})
 
-def blob(content, content_type=u"application/octet-stream"):
-    return Extension.__make__(u'blob', {u'content-type':content_type,}, content)
 
 # move to inspect ?
 
@@ -264,23 +262,6 @@ class Error(Extension):
     @property
     def logref(self):
         return self._attributes[u'logref']
-
-@Extension.register('blob')
-class Blob(Extension):
-    def __init__(self, name, attributes, content):
-        if isinstance(content, list):
-            content = "".join(content)
-        if not isinstance(content, io.IOBase):
-            if isinstance(content, unicode):
-                content = io.StringIO(content)
-            else:
-                content = io.BytesIO(content)
-        self.fh = content
-        super(Blob, self).__init__(name, attributes, content)
-
-    @property
-    def content_type(self):
-        return self._attributes[u'content-type']
 
 
 _encoder = Encoder(node=Node, extension=Extension)
