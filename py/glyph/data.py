@@ -101,8 +101,8 @@ class IteratorFile(object):
         self.chunked = chunked
         self.eof = False
     
-    def read(self, n=None):
-        if n is None:
+    def read(self, n=-1):
+        if n == -1:
             return "".join(self.iterator)
         data = next(self.iterator, "")
         if self.chunked:
@@ -122,7 +122,7 @@ def fetch(method, url, args=None, data=None, headers=None, chunked=False):
     if args is None:
         args = {}
     if data is not None:
-        data = IteratorFile(dump_iter(data, chunk_size=4096), chunked=chunked)
+        data = IteratorFile(dump_iter(data, chunk_size=8192), chunked=chunked)
         if data.chunked:
             headers["Transfer-Encoding"] = "chunked"
         else:
