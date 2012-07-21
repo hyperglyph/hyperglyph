@@ -39,7 +39,7 @@ To show, rather than tell, let's begin with some server code::
     r = glyph.Router() # a wsgi application
 
     @r.add()
-    def hello()
+    def hello():
         return "Hello World"
 
     # and a http server running in a thread
