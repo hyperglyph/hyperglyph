@@ -194,7 +194,7 @@ clients SHOULD throw an error.
 
 	list(1,2,3)	Li1;i2;i3;;
 	set(1,2,3)	Si1;i2;i3;;
-	dict(1:2, 2:3)	Di1;i2;i3;i4;;
+	dict(1:2, 3:4)	Di1;i2;i3;i4;;
 
 SUGGESTED: order preserving dictionary type
 
