@@ -3,17 +3,16 @@
 ===========
 :Author: tef
 :Date: 2012-07-14
-:Version: 0.3 (DRAFT)
+:Version: 0.4 (DRAFT)
 
 glyph-rpc is a client-server protocol for interacting with
 objects over http, using machine readable web pages.
 
 these pages are encoded using a data-interchange format
-with hypermedia elements, called glyph, using the mime-type
-'application/vnd.glyph'
+with hypermedia elements. the format is called glyph, and
+uses the mime-type 'application/vnd.glyph'
 
 .. contents::
-
 
 introduction
 ============
@@ -93,6 +92,8 @@ followed by chunks.
 		| nil | true | false
 		| list | set | dictionary
 		| node | extension | blob
+
+
 
 
 integer
@@ -384,15 +385,15 @@ a hyperlink with a method and url, optionally with an inlined response
 - attributes is a dictionary. MUST have the keys 'url', 'method'
  * method SHOULD be 'GET'
  * MAY have the key 'inline'
- * MAY have the keys 'etag', 'last-modified', 'cache-control'
 - content is an object, which is either nil or the inlined response
 
 links map to functions with no arguments. if the key 'inline' is in the
 attributes and the associated value is true, then the function MAY
 return the associated content object, instead of making a request.
 
-if a link has the etag, last-modified attributes, clients SHOULD
-perform a conditional GET, using the 'If-None-Match', 'If-Modified-Since'
+	v0.5 proposed: conditional GET handling
+	attributes MAY have the keys 'etag', 'last-modified', 'cache-control'
+
 
 
 form
@@ -406,7 +407,6 @@ like a html form, with a url, method, expected form values.
   * method SHOULD be 'POST'
   * url and method are both unicode keys with unicode values.
   * values is a list of unicode names
-  * MAY have the keys 'etag', 'last-modified', 'cache-control'
 - content is nil object
 
 forms map to functions with arguments. submitting a form should be calling 
@@ -414,8 +414,12 @@ a function in the host language.
 
 when making a POST request, the data is a list of ('name', 'value') pairs.
 
-if a form has the etag, last-modified attributes, clients SHOULD
-perform a conditional POST, using the 'If-Match', 'If-Unmodified-Since'
+
+	v0.5 proposed: conditional POST handling
+	attributes MAY have the keys 'etag', 'last-modified', 'cache-control'
+
+	proposed: values list can contain 'input' extension types,
+	which indicate the name, type and default value.
 
 resource
 --------
@@ -426,7 +430,6 @@ should map to the content dictionary. i.e r.foo is r.content[foo]
 - name 'resource'
 - attributes is a dictionary,
   *  MAY have the keys 'url', 'name'
-  * MAY have the keys 'etag', 'last-modified', 'cache-control'
 - content is a dict of string -> object
   * objects often forms
 
@@ -451,13 +454,15 @@ to failed requests. servers MAY return them.
 logref is a application specific reference for logging, MUST
 be a unicode string, message MUST be a unicode string
 
-input
------
+PROPOSED: input
+---------------
 
-PLACEHOLDER: for input form type
+an object that appears in forms, to provide information about a parameter.
 
-form variables currently untyped. form has a values
-attribute containing a list of string names
+- name 'input'
+- attributes is a dictionary,
+  *  MUST have the key  'name'
+- content is nil
 
 PROPOSED: some way to epress types on form inputs, default values
 
@@ -688,6 +693,8 @@ before embracing hypermedia.
 
 - empty versions of bytestring, unicode
 
+- v0.4
+
 planned changes
 ---------------
 
@@ -709,6 +716,10 @@ proposed changes
 	resources/embeds CAN contain control headers, freshness information
         specify key names as being optional
 	expires? cache-control? etag last_modified
+
+- conditional POST/GET? 
+	
+	instead of cache control
 
 - schema/type information for forms (aka values)
 
