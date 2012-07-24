@@ -11,13 +11,7 @@ from ..data import CONTENT_TYPE, dump, parse, get, form, link, node, embedlink, 
 
 def get_stream(request):
     if request.headers.get('Transfer-Encoding') == 'chunked':
-        stream = request.stream
-        def dechunk():
-            line = int(stream.readline(),16)
-            while line >0:
-                yield stream.read(line)
-                line = int(stream.readline(),16)
-        return dechunk()
+        raise StandardError('middleware doesnt unwrap transfer-encoding')
     else:
         return request.stream
 

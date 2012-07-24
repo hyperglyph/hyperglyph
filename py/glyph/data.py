@@ -61,7 +61,7 @@ def get(url, args=None, headers=None):
 
 
 HEADERS={'Accept': CONTENT_TYPE, 'Content-Type': CONTENT_TYPE}
-CHUNKED = True
+CHUNKED = False # wsgiref is terrible
 try:
     import requests
     session = requests.session()
