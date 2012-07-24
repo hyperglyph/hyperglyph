@@ -19,23 +19,26 @@ class Handler(object):
     """ Represents the capabilities of methods on resources, used by the mapper
         to determine how to handle requests
     """
-    SAFE=False
-    EMBED=False
-    EXPIRES=False
-    REDIRECT=None
-    CACHE=ResponseCacheControl()
+    SAFE = False
+    EMBED = False
+    EXPIRES = False
+    REDIRECT = None
+    VISIBLE = True
+    CACHE = ResponseCacheControl()
 
     def __init__(self, handler=None):
         if handler:
-            self.safe=handler.safe
-            self.embed=handler.embed
-            self.expires=handler.expires
-            self.cache=handler.cache
+            self.safe = handler.safe
+            self.embed = handler.embed
+            self.expires = handler.expires
+            self.cache = handler.cache
+            self.visible = handler.visible
         else:
-            self.safe=self.SAFE
-            self.embed=self.EMBED
-            self.redirect=self.REDIRECT
-            self.cache=self.CACHE
+            self.safe = self.SAFE
+            self.embed = self.EMBED
+            self.redirect = self.REDIRECT
+            self.cache = self.CACHE
+            self.visible = self.VISIBLE
 
     @staticmethod
     def parse(resource, data):
@@ -67,6 +70,13 @@ class Handler(object):
             return m.__glyph_method__.redirect is not None
         except StandardError:
             return cls.REDIRECT
+
+    @classmethod
+    def is_visible(cls, m, name):
+        try:
+            return m.__glyph_method__.visible
+        except StandardError:
+            return not name.startswith('_')
 
     @staticmethod
     def redirect_code(m):
@@ -138,3 +148,11 @@ def safe(embed=False):
 
 def embed():
     return safe(embed=True)
+
+def hidden():
+    def _decorate(fn):
+        m = make_handler(fn)
+        m.visible = False
+        return fn
+    return _decorate
+    

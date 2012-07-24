@@ -272,6 +272,42 @@ class DefaultPersistentObjectTest(ServerTest):
         self.assertEqual(result_b.value(), 0)
         self.assertNotEqual(result_a.self.url(), result_b.self.url())
 
+class HiddenMethodTest(ServerTest):
+    def router(self):
+        m = glyph.Router()
+        @m.default()
+        class Test(glyph.r):
+
+            @glyph.hidden()
+            def nope(self):
+                return "Nope"
+        return m
+
+    def testCase(self):
+        result = glyph.get(self.endpoint.url)
+        with self.assertRaises(StandardError):
+            self.result.nope()
+"""
+class SpecialMethodTest(ServerTest):
+    def router(self):
+        m = glyph.Router()
+        @m.default()
+        class Test(glyph.r):
+            @classmethod
+            def clsm(cls):   
+                return "Hello"
+
+            @staticmethod
+            def static(self):
+                return "World"
+        return m
+
+    def testCase(self):
+        result = glyph.get(self.endpoint.url)
+        self.assertEqual(result.clsm(), "Hello")
+        self.assertEqual(result.static(), "World")
+"""
+
 class VerbTest(ServerTest):
 
     def router(self):

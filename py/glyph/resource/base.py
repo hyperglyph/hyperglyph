@@ -15,12 +15,11 @@ from .handler import Handler
 def make_controls(resource):
     forms = {}
     for m in dir(resource.__class__):
-        if not m.startswith('_') and m not in VERBS and m != 'index':
-            cls_attr = getattr(resource.__class__ ,m)
-            ins_attr = getattr(resource,m)
+        cls_attr = getattr(resource.__class__ ,m)
+        ins_attr = getattr(resource,m)
 
-            m = unicode(m)
-
+        m = unicode(m)
+        if m not in VERBS and Handler.is_visible(ins_attr, name=m):
             if isinstance(cls_attr, property):
                 # just inline the property
                 forms[m] = ins_attr
