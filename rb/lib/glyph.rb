@@ -496,7 +496,7 @@ module Glyph
         str = ''
       end
       StringIO.new(str)
-    when ?D
+    when ?D, ?O
       dict = {}
       until scanner.scan(/;/)
         key = parse_one(scanner, url, blobs)
