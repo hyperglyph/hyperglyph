@@ -61,10 +61,10 @@ def get(url, args=None, headers=None):
 
 
 HEADERS={'Accept': CONTENT_TYPE, 'Content-Type': CONTENT_TYPE}
+CHUNKED = False
 try:
     import requests
     session = requests.session()
-    CHUNKED = False
 except:
     import urllib2, urllib, collections
     Result = collections. namedtuple('Result', 'url, status_code, content,  headers,  raise_for_status') 
@@ -155,7 +155,7 @@ def fetch(method, url, args=None, data=None, headers=None):
             headers["Transfer-Encoding"] = "chunked"
             data = chunk_fh(data)
         else:
-            data = "".join(dump_iter(data, chunk_size=8192))
+            data = dump(data)
     result = session.request(method, url, params=args, data=data, headers=headers, allow_redirects=False)
     def join(u):
         return urljoin(result.url, u)
@@ -295,5 +295,6 @@ _encoder = Encoder(node=Node, extension=Extension)
 
 dump = _encoder.dump
 dump_iter = _encoder.dump_iter
+dump_buf = _encoder.dump_buf
 parse = _encoder.parse
 read = _encoder.read

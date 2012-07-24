@@ -92,11 +92,14 @@ class Encoder(object):
         self.max_blob_mem_size = kwargs.get("max_blob_mem_size", 1024*1024*2)
 
     def dump(self, obj, resolver=identity, inline=fail):
+        return self.dump_buf(obj, resolver, inline).read()
+
+    def dump_buf(self, obj, resolver=identity, inline=fail):
         buf = io.BytesIO()
         for chunk in self._dump(obj, resolver, inline):
             buf.write(chunk)
         buf.seek(0)
-        return buf.read()
+        return buf
     
     def dump_iter(self, obj, chunk_size=-1, resolver=identity, inline=fail):
         buf = io.BytesIO()
