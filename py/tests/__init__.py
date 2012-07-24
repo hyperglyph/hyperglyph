@@ -1,6 +1,7 @@
 import unittest2
 import glyph
 import datetime
+import collections
 
 from cStringIO import StringIO
 from io import BytesIO
@@ -16,6 +17,7 @@ class EncodingTest(unittest2.TestCase):
             u"bar",
             [],
             ['a',1,[2]],
+            collections.OrderedDict([('a', 1), ('b',2)]),
             None,
             True,
             False,

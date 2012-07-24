@@ -26,6 +26,7 @@ DTM='d'
 PER='p'
 
 DICT='D'
+ODICT='O'
 LIST='L'
 SET='S'
 
@@ -188,7 +189,10 @@ class Encoder(object):
                 for r in self._dump_one(x, resolver, inline, blobs): yield r
             yield END_SET
         elif hasattr(obj, 'iteritems'):
-            yield DICT
+            if isinstance(obj, collections.OrderedDict):
+                yield ODICT
+            else:
+                yield DICT
             for k in sorted(obj.keys()): # always sorted, so can compare serialized
                 v=obj[k]
                 for r in self._dump_one(k, resolver, inline, blobs): yield r
@@ -299,9 +303,12 @@ class Encoder(object):
                 first = read_first(fh)
             return out
 
-        elif c == DICT:
+        elif c == DICT or c == ODICT:
             first = read_first(fh)
-            out = {}
+            if c == ODICT:
+                out = collections.OrderedDict()
+            else:
+                out = {}
             while first != END_DICT:
                 f = self._read_one(fh, first, resolver, blobs)
                 second = read_first(fh)
