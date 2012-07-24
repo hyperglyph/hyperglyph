@@ -1,12 +1,15 @@
 from urlparse import urljoin
 import datetime
 import io
-
+import requests
 
 from pytz import utc
 
 from .encoding import Encoder, CONTENT_TYPE, Blob
 
+HEADERS={'Accept': CONTENT_TYPE, 'Content-Type': CONTENT_TYPE}
+CHUNKED = False # wsgiref is terrible - enable by default when the default wsgi server works
+session = requests.session()
 
 def utcnow():
     return datetime.datetime.utcnow().replace(tzinfo=utc)
@@ -59,41 +62,6 @@ def get(url, args=None, headers=None):
         url = url.url()
     return fetch('GET', url, args, None, headers)
 
-
-HEADERS={'Accept': CONTENT_TYPE, 'Content-Type': CONTENT_TYPE}
-CHUNKED = False # wsgiref is terrible
-try:
-    import requests
-    session = requests.session()
-except:
-    import urllib2, urllib, collections
-    Result = collections. namedtuple('Result', 'url, status_code, content,  headers,  raise_for_status') 
-    opener = urllib2.build_opener(urllib2.HTTPHandler)
-    CHUNKED = False
-    class session(object):
-        @staticmethod
-
-        def request(method, url, params, data, headers, allow_redirects):
-            url = "%s?%s" % (url, urllib.urlencode(params)) if params else url
-
-            if data:
-                req = urllib2.Request(url, data)
-            else:
-                req = urllib2.Request(url)
-
-            for header, value in headers.items():
-                req.add_header(header, value)
-            req.get_method = lambda: method
-            try:
-                result = opener.open(req)
-
-                return Result(result.geturl(), result.code, result.read(), result.info(), lambda: None)
-            except StopIteration: # In 2.7 this does not derive from Exception
-                raise
-            except StandardError as e:
-                import traceback
-                traceback.print_exc()
-                raise StandardError(e)
 
 # wow, transfer-chunked encoding is ugly.
 
