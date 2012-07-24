@@ -17,6 +17,12 @@ def make_controls(resource):
     for m in dir(resource.__class__):
         cls_attr = getattr(resource.__class__ ,m)
         ins_attr = getattr(resource,m)
+        if cls_attr == ins_attr:
+            # schenanigans
+            # classmethods are going to be weird. staticmethods weirder
+            # ignore them for now
+            continue
+            
 
         m = unicode(m)
         if m not in VERBS and Handler.is_visible(ins_attr, name=m):

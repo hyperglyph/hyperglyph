@@ -287,7 +287,7 @@ class HiddenMethodTest(ServerTest):
         result = glyph.get(self.endpoint.url)
         with self.assertRaises(StandardError):
             self.result.nope()
-"""
+
 class SpecialMethodTest(ServerTest):
     def router(self):
         m = glyph.Router()
@@ -304,9 +304,10 @@ class SpecialMethodTest(ServerTest):
 
     def testCase(self):
         result = glyph.get(self.endpoint.url)
-        self.assertEqual(result.clsm(), "Hello")
-        self.assertEqual(result.static(), "World")
-"""
+        with self.assertRaises(AttributeError):
+            self.result.clsm()
+        with self.assertRaises(AttributeError):
+            self.result.static()
 
 class VerbTest(ServerTest):
 
