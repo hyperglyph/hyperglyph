@@ -514,8 +514,71 @@ reserved extensions
 extensions with the names: collection, integer, unicode, bytearray, float, datetime, timedelta, nil, true, false, list, set, dict, dict, ordered_dict, node, extension, blob are reserved.
 
 
+
+glyph-rpc http mapping
+======================
+
+mime type
+---------
+
+glyph uses the mime type: 'application/vnd.glyph'
+
+url schema
+----------
+
+The server maps classes, instances, methods to urls.
+URLs are opaque to the client, beyond the initial url
+
+an example mapping::
+
+	object		url
+	a class		/ClassName/
+	an instance 	/ClassName/?GlyphInstanceData
+	a method	/ClassName/method?GlyphInstanceData
+	a function	/Function/
+
+There are no restrictions on how the server maps URLs, clients SHOULD NOT
+not modify or construct URLs, but use them as provided.
+
+requests
+--------
+
+HTTP requests should have the following headers:
+
+- Accept, set to the glyph mime type
+
+responses
+---------
+
+HTTP Responses MUST have an appropriate Content-Type, and
+the code may have special handling:
+
+- 201 Created. This is equivilent to returning a link
+  as the body.
+
+- 204, No Content. This is equivilent to a 200 with a nil as the body.
+  A server SHOULD change a nil response into a 204
+  A client MUST understand a 204 as a nil response.
+
+- 303 See Other. Redirects should be followed automatically,
+  using a GET. A server SHOULD allow methods to return a redirect
+
+A server SHOULD allow gzip encoding, and clients MUST understand
+gzip encoding.
+
+Clients SHOULD throw different Errors for 4xx and 5xx responses.
+
+
+appendix
+========
+
+mime type registration
+----------------------
+
+TODO: profile option in mime type?
+
 grammar
-=======
+-------
 
 ::
 
@@ -583,68 +646,8 @@ grammar
 
 	end_chunk :== 'c' id_num ';' 
 
-glyph-rpc http mapping
-======================
-
-mime type
----------
-
-glyph uses the mime type: 'application/vnd.glyph'
-
-url schema
-----------
-
-The server maps classes, instances, methods to urls.
-URLs are opaque to the client, beyond the initial url
-
-an example mapping::
-
-	object		url
-	a class		/ClassName/
-	an instance 	/ClassName/?GlyphInstanceData
-	a method	/ClassName/method?GlyphInstanceData
-	a function	/Function/
-
-There are no restrictions on how the server maps URLs, clients SHOULD NOT
-not modify or construct URLs, but use them as provided.
-
-requests
---------
-
-HTTP requests should have the following headers:
-
-- Accept, set to the glyph mime type
-
-responses
----------
-
-HTTP Responses MUST have an appropriate Content-Type, and
-the code may have special handling:
-
-- 201 Created. This is equivilent to returning a link
-  as the body.
-
-- 204, No Content. This is equivilent to a 200 with a nil as the body.
-  A server SHOULD change a nil response into a 204
-  A client MUST understand a 204 as a nil response.
-
-- 303 See Other. Redirects should be followed automatically,
-  using a GET. A server SHOULD allow methods to return a redirect
-
-A server SHOULD allow gzip encoding, and clients MUST understand
-gzip encoding.
-
-Clients SHOULD throw different Errors for 4xx and 5xx responses.
-
-
-mime type registration
-======================
-
-TODO: profile option in mime type?
-
-appendix: exadecimal floating point
-===================================
-
+hexadecimal floating point
+==========================
 
 a hex float has an optional sign, a hex fractional part and a decimal exponent part::
 	
@@ -671,18 +674,20 @@ parsing a float can be done manually, using `ldexp`::
 	# ldexp(f,e) is f + 2**e
 	float = sign *  ldexp(fractional, int(exponent))
 
-creating a float can be done manually using `frexp` and `modf`::
-	
-	# split the float up
-	f,exp = frexp(fractional)
-	# turn 0.hhhh->  hhhhh.0 
-	f = int(modf(f * 16** float_width)[1])
-	# construct hex float
-	hexfloat = sign(f) +  '0x0.' hex(abs(f)) + 'p' + signed_exponent
+..
+	creating a float can be done manually using `frexp` and `modf`::
+		# split the float up
+		f,exp = frexp(fractional)
+		# turn 0.hhhh->  hhhhh.0 
+		f = int(modf(f * 16** float_width)[1])
+		# construct hex float
+		hexfloat = sign(f) +  '0x0.' hex(abs(f)) + 'p' + signed_exponent
+
+	TODO: fix this, it's broken
 
 
-appendix: changelog
-===================
+changelog
+=========
 
 history
 -------
@@ -810,21 +815,6 @@ before embracing hypermedia.
 
 - added examples
 
-- added input, collection stub
-
-- v0.5
-
-planned changes
----------------
-
-- 0.5 grammar/encoding frozen - no more literals, collections added
-- 0.6 add extensions:  schema/form inputs type, collections6
-- 0.9 extensions frozen
-- 1.0 final
-
-proposed changes
-----------------
-
 - schema/type information for forms (aka values)
 
 	formargs is a list of string names | input elements
@@ -832,39 +822,12 @@ proposed changes
 
 - collection types
 
-	back/next links? url templates?
+- 0.5 grammar/encoding frozen - no more literals, collections added
 
-	metaobject protocols? i.e __next__ names on forms with special meaning
-	for emulating built in types
+planned changes
+---------------
 
-
-rejected changes
-----------------
-
-- datetime with utc offset
-
-	allow +hh/+hhmm/+hh:mm offsets instead of 'Z'
-	maybe allow string timestamps
-	need non utc usecases
-
-- node/ext becomes name, attrs, content* ?
-
-	i.e allow a number of objects as the 'content'
-	effort
-
-	maybe name, attrs, content?
-	implicitly nil ? 
-  
-
-- datetime with string timezone
-
- 	awkward, unstandardized. can use node type instead
-	or an extension
-
-
-- restrictions on what goes in dictionaries, sets
-
-	should use immutable collections? tuples?
-	maybe a recommendation, but not a standard?
-
+- 0.6 add extensions:  schema/form inputs type, collections
+- 0.9 extensions frozen
+- 1.0 final
 
