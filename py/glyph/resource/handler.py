@@ -1,4 +1,5 @@
 import types
+import sys
 
 from werkzeug.wrappers import Response
 from werkzeug.exceptions import HTTPException, NotFound, BadRequest, NotImplemented, MethodNotAllowed
@@ -6,6 +7,19 @@ from werkzeug.utils import redirect as Redirect
 from werkzeug.datastructures import ResponseCacheControl
 
 from ..data import CONTENT_TYPE, dump, parse, get, form, link, node, embedlink,  ismethod, methodargs
+
+
+def get_stream(request):
+    if request.headers.get('Transfer-Encoding') == 'chunked':
+        stream = request.stream
+        def dechunk():
+            line = int(stream.readline(),16)
+            while line >0:
+                yield stream.read(line)
+                line = int(stream.readline(),16)
+        return dechunk()
+    else:
+        return request.stream
 
 class Handler(object):   
     """ Represents the capabilities of methods on resources, used by the mapper
@@ -82,7 +96,7 @@ class Handler(object):
             result = attr()
         elif verb == 'POST' and not cls.is_safe(attr):
             try:
-                data = dict(cls.parse(attr, request.input_stream))
+                data = dict(cls.parse(attr, get_stream(request)))
             except StandardError:
                 raise
                 raise BadRequest()
