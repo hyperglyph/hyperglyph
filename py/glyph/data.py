@@ -64,10 +64,12 @@ HEADERS={'Accept': CONTENT_TYPE, 'Content-Type': CONTENT_TYPE}
 try:
     import requests
     session = requests.session()
+    CHUNKED = False
 except:
     import urllib2, urllib, collections
     Result = collections. namedtuple('Result', 'url, status_code, content,  headers,  raise_for_status') 
     opener = urllib2.build_opener(urllib2.HTTPHandler)
+    CHUNKED = False
     class session(object):
         @staticmethod
 
@@ -93,40 +95,67 @@ except:
                 traceback.print_exc()
                 raise StandardError(e)
 
+# wow, transfer-chunked encoding is ugly.
 
-class IteratorFile(object):
-    
-    def __init__(self, iterator, chunked=False):
-        self.iterator = iterator
-        self.chunked = chunked
-        self.eof = False
-    
-    def read(self, n=-1):
-        if n == -1:
-            return "".join(self.iterator)
-        data = next(self.iterator, "")
-        if self.chunked:
-            chunk = "".join(("%X\r\n" % len(data), data, "\r\n"))
+class chunk_fh(object):
+    def __init__(self, data):
+        self.g = data
+        self.state = 0
+        self.buf = io.BytesIO()
+
+    def read(self,size=-1):
+        """ we need to conform to the defintion of read,
+            don't return pieces bigger than size, and return all when size =< 0
+        """
+        if size > 0:
+            while self.buf.tell() < size:
+                if not self.read_chunk(size):
+                    break
         else:
-            chunk = data
-        ret = None if self.eof else chunk
-        if not data:
-            self.eof = True
+            while self.read_chunk(size):
+                pass
+
+        self.buf.seek(0)
+        ret = self.buf.read(size)
+        tail = self.buf.read()
+        self.buf.seek(0)
+        self.buf.truncate(0)
+        self.buf.write(tail)
+
         return ret
+        
+    def read_chunk(self, size):
+        chunk_size = max(1, size-4-len("%s"%size)) if size > 0 else size
 
+        try:
+            if self.state > 0:
+                chunk = self.g.send(chunk_size)
+            elif self.state == 0:
+                self.g = dump_iter(self.g, chunk_size=chunk_size)
+                chunk = self.g.next()
+                self.state = 1
+            elif self.state < 0:
+                return False
+                
+            self.buf.write("%X\r\n%s\r\n"%(len(chunk), chunk))
+        except (GeneratorExit, StopIteration):
+            self.state = -1
+            self.buf.write("0\r\n\r\n")
 
-def fetch(method, url, args=None, data=None, headers=None, chunked=False):
+        return self.state > 0
+                
+def fetch(method, url, args=None, data=None, headers=None):
     if headers is None:
         headers = {}
     headers.update(HEADERS)
     if args is None:
         args = {}
     if data is not None:
-        data = IteratorFile(dump_iter(data, chunk_size=8192), chunked=chunked)
-        if data.chunked:
+        if CHUNKED:
             headers["Transfer-Encoding"] = "chunked"
+            data = chunk_fh(data)
         else:
-            data = data.read()
+            data = "".join(dump_iter(data, chunk_size=8192))
     result = session.request(method, url, params=args, data=data, headers=headers, allow_redirects=False)
     def join(u):
         return urljoin(result.url, u)
@@ -219,9 +248,7 @@ class Form(Extension):
             else:
                 raise StandardError('unknown argument')
 
-        chunked = getattr(self, "chunked", any([isinstance(v, Blob) for k, v in data]))
-
-        return fetch(self._attributes.get(u'method',u'POST'), url, data=data, chunked=chunked)
+        return fetch(self._attributes.get(u'method',u'POST'), url, data=data)
 
     def __resolve__(self, resolver):
         self._attributes[u'url'] = unicode(resolver(self._attributes[u'url']))

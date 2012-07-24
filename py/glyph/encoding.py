@@ -85,34 +85,37 @@ def read_first(fh):
     return c
 
 
-def chunker(iterable, n):
-    """
-    Given an iterable yield chunks of size N
-    """
-    args = [itertools.chain.from_iterable(iterable)] * n
-    for bits in itertools.izip_longest(*args, fillvalue=""):
-        yield "".join([bit for bit in bits if bit])
-
-
 class Encoder(object):
     def __init__(self, node, extension, **kwargs):
         self.node = node
         self.extension = extension
         self.max_blob_mem_size = kwargs.get("max_blob_mem_size", 1024*1024*2)
 
-    def dump(self, *args, **kwargs):
+    def dump(self, obj, resolver=identity, inline=fail):
         buf = io.BytesIO()
-        kwargs.setdefault("chunk_size", 4096)
-        for chunk in self.dump_iter(*args, **kwargs):
+        for chunk in self._dump(obj, resolver, inline):
             buf.write(chunk)
         buf.seek(0)
         return buf.read()
     
-    def dump_iter(self, obj, resolver=identity, inline=fail, chunk_size=None):
-        iterator = self._dump(obj, resolver, inline)
-        chunks = iterator if chunk_size is None else chunker(iterator, chunk_size)
-        for chunk in chunks:
-            yield chunk
+    def dump_iter(self, obj, chunk_size=-1, resolver=identity, inline=fail):
+        buf = io.BytesIO()
+        for chunk in self._dump(obj, resolver, inline):
+            buf.write(chunk)
+
+            if chunk_size > 0 and buf.tell() > chunk_size:
+                buf.seek(0)
+                new_chunk_size = yield buf.read(chunk_size)
+                if new_chunk_size:
+                    chunk_size = new_chunk_size
+                tail = buf.read()
+                buf.seek(0)
+                buf.truncate(0)
+                buf.write(tail)
+             
+        if buf.tell():
+            yield buf.getvalue()
+        
 
     def parse(self, stream, resolver=identity):
         if not hasattr(stream, "read"):
