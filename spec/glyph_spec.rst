@@ -2,11 +2,11 @@
  glyph rpc 
 ===========
 :Author: tef
-:Date: 2012-07-14
-:Version: 0.4 (DRAFT)
+:Date: 2012-07-24
+:Version: 0.5 (DRAFT)
 
 glyph-rpc is a client-server protocol for interacting with
-objects over http, using machine readable web pages.
+objects over http, sing machine readable web pages.
 
 these pages are encoded using a data-interchange format
 with hypermedia elements. the format is called glyph, and
@@ -14,26 +14,6 @@ uses the mime-type 'application/vnd.glyph'
 
 .. contents::
 
-introduction
-============
-
-glyph-rpc is normally served over http, and used to offer
-objects to the client. objects are described in terms
-of hypermedia objects - links and forms. 
-
-underneath, glyph is a format for machine readable webpages.
-the server can translate objects into resources with forms,
-and the client can translate this back into objects with methods.
-
-the client begins by fetching a page at a known url, and then
-follows links and submits forms to receive new objects.
-
-the links and forms contain a url and a method.
-
-mime type
----------
-
-glyph uses the mime type: 'application/vnd.glyph'
 
 requirements
 ============
@@ -42,20 +22,29 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
 "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
 document are to be interpreted as described in [RFC2119].
 
+introduction
+============
 
-data types
-==========
+A glyph-rpc server is a web server which serves up glyph
+encoded pages. 
 
-glyph is designed for ease of implementation, ease of human inspection, and
-based around bencoding from bittorrent. despite being a binary format, 
-there are no byte ordering or endian issues.
+The server maps classes, instances, methods to URLs.
+URLs are opaque to the client, beyond the initial URL.
 
-underneath, glyph natively handles a variety of literals
-(strings, bytes, numbers, floats, utc datetimes, timedeltas, booleans), 
-collections (list, set, dictionary).
+A glyph-rpc client is a screen scraper which reads glyph
+pages, and follows links and forms to interact with them.
+
+These pages have named attributes, some containing data,
+others containing hypermedia: links and forms. 
+Links and forms map back to methods at the server.
 
 
-::
+glyph data model
+================
+
+glyph natively handles a variety of literals (strings, bytes, 
+numbers, floats, utc datetimes, timedeltas, booleans), 
+and collections (list, set, dict).  ::
 
 	data type		example			encoded
 	
@@ -63,14 +52,13 @@ collections (list, set, dictionary).
 	unicode			"hello"			u5:hello;
 	bytearray		[0x31, 0x32, 0x33]	b3:123;
 	list			[1,2,3]			Li1;i2;i3;;
-	set			{1,2,3}			Si1;i2;i3;;
-	dictionary		{1:2, 2:3}		Di1;i2;i3;i4;;
-	ordered_dict		{1:2, 2:3}		Oi1;i2;i3;i4;;
+	set			set(1,2,3)		Si1;i2;i3;;
+	dict			{1:2, 2:4}		Di1;i2;i3;i4;;
+	ordered_dict		ordered(1:2, 2:4)	Oi1;i2;i3;i4;;
 	singleton		nil true false		N; T; F;
 	float			0.5			f0x1.0000000000000p-1; 
 	datetime		1970-1-1 00:00 UTC	d1970-01-01T00:00:00.000Z;
 	timedelta		3 days			pP0Y0M3DT0H0M0S;
-
 
 glyph also supports special data types:
 
@@ -78,10 +66,17 @@ glyph also supports special data types:
 - an 'extension' type used to define objects with special behaviour or meaning
 - a 'blob' and 'chunk' type, used to attach large files to an object
 
-a glyph encoded message consists of a single object, optionally
-followed by chunks.
+the encoding format glyph aims to be: 
 
-::
+ - endian independent
+ - straight forward to implement
+ - allow human inspection
+
+top level
+---------
+
+a glyph encoded message consists of a single object, optionally
+followed by chunks ::
 	
 	root :== ws object ws (trailer ws)* 
 	trailer :== (chunk | end_chunk)  
@@ -91,10 +86,8 @@ followed by chunks.
 	object :== integer | unicode | bytearray | float
 		| datetime | timedelta
 		| nil | true | false
-		| list | set | dictionary | ordered_dict
+		| list | set | dict | ordered_dict
 		| node | extension | blob
-
-
 
 
 integer
@@ -190,7 +183,7 @@ clients SHOULD throw an error.
 
 	list :== 'L' ws (object ws)* ';'
 	set :== 'S' ws (object ws)* ';'
-	dictionary :== 'D' ws (object ws object ws)* ';'
+	dict :== 'D' ws (object ws object ws)* ';'
 	ordered_dict :== 'O' ws (object ws object ws)* ';'
 
 	object			encoding
@@ -279,7 +272,7 @@ name SHOULD be a unicode string, attributes SHOULD be a dictionary::
 	node :== 'X' ws name_obj ws attr_obj ws content_obj ws ';'
 
 	name_obj :== string | object
-	attr_obj :== dictionary | object
+	attr_obj :== dict | object
 	content_obj :== object
 
 decoders MUST handle nodes with arbitrary objects for
@@ -316,7 +309,7 @@ can return multiple blobs, which will have seperate chunks attached.
 	object :== ... | blob | ... 
 	trailer :== (chunk | end_chunk)  
 
-	blob :== 'B' id_num ':' attr_dictionary ';'
+	blob :== 'B' id_num ':' attr_dict ';'
 
 	chunk :== 'c' id_num ':' ascii_number ':' bytes ';' 
 	 note : where len(bytes) = int(ascii_number)
@@ -357,7 +350,7 @@ name SHOULD be a unicode string, attributes SHOULD be a dictionary::
 
 	extension :== 'H' ws name_obj ws attr_obj ws content_obj ws ';' 
 	name_obj :== string | object
-	attr_obj :== dictionary | object
+	attr_obj :== dict | object
 	content_obj :== object
 
 extensions are used to represent links, forms, resources, errors
@@ -398,6 +391,19 @@ example::
 
 	Hu4:link;du6:method;u3:GET;u3:url;u4:/foo;;n;;
 
+input
+-----
+
+an object that appears in forms, to provide information about a parameter.
+
+- name 'input'
+- attributes is a dictionary,
+  *  MUST have the key 'name'
+  *  MAY have the keys 'value', 'type'
+- content is nil
+
+the type attribute MAY be a unicode string, defining the expected
+input, using the names defined in the gramar.
 
 form
 ----
@@ -409,14 +415,19 @@ like a html form, with a url, method, expected form values.
   * MUST have the keys 'url', 'method' , 'values'
   * method SHOULD be 'POST'
   * url and method are both unicode keys with unicode values.
-  * values is a list of unicode names
+  * values is a list of parameter names,  unicode strings or input objects
   * MAY have the keys 'if_none_match' 'if_match'
 - content is nil object
 
-forms map to functions with arguments. submitting a form should be calling 
-a function in the host language.
+forms map to functions with arguments. function signatures map to the values
+parameter. invoking a form object should make a POST request,
+with the arguments encoded in glyph.
 
-when making a POST request, the data is a list of ('name', 'value') pairs.
+arguments are encoded in a list of list of `[name, value]` pairs,
+using the parameter names in the form, in the same order.
+
+the parameter names are either encoded as a unicode string,
+or as an input object, with a name attribute. input
 
 if the 'if_none_match' or 'if_match' attributes are present,
 the client MUST add the corresponding HTTP headers to the request. 
@@ -474,30 +485,19 @@ to failed requests. servers MAY return them.
 logref is a application specific reference for logging, MUST
 be a unicode string, message MUST be a unicode string
 
-reserved extensions
--------------------
 
-extensions with the names: collection, integer, unicode, bytearray, float, datetime, timedelta, nil, true, false, list, set, dict, dict, ordered_dict, node, extension, blob are reserved.
-
-proposed extensions
-===================
-
-PROPOSED: input
----------------
-
-an object that appears in forms, to provide information about a parameter.
-
-- name 'input'
-- attributes is a dictionary,
-  *  MUST have the key  'name'
-- content is nil
-
-
-PROPOSED: collection
---------------------
+collection
+----------
 
 an object that represents a remote collection of objects
 and SHOULD behave like a normal collection in the host language.
+
+- name 'collection'
+- attributes is a dictionary,
+  * MAY have the attributes 'range', 'get', 'del', 'set', 'next', 'prev', 'url','first','last'
+- content is optionally an ordered collection, or nil
+
+collections may optionally have a range of the items contained within.
 
 ..
 	- size / size_hint
@@ -507,6 +507,11 @@ and SHOULD behave like a normal collection in the host language.
 	- oh god cursors D:
 	- oh god url construction ?
 
+
+reserved extensions
+-------------------
+
+extensions with the names: collection, integer, unicode, bytearray, float, datetime, timedelta, nil, true, false, list, set, dict, dict, ordered_dict, node, extension, blob are reserved.
 
 
 grammar
@@ -530,7 +535,8 @@ grammar
 		| false
 		| list
 		| set
-		| dictionary
+		| dict
+		| ordered_dict
 		| node
 		| extension
 		| blob
@@ -558,7 +564,7 @@ grammar
 
 	list :== 'L' ws (object ws)* ';'
 	set :== 'S' ws (object ws)* ';'
-	dictionary :== 'D' ws (object ws object ws)* ';'
+	dict :== 'D' ws (object ws object ws)* ';'
 	ordered_dict :== 'O' ws (object ws object ws)* ';'
 
 	float :== 'f' hex_float ';'
@@ -570,15 +576,20 @@ grammar
 
 	extension :== 'H' ws name_obj ws attr_obj ws content_obj ws ';' 
 	
-	blob :== 'B' id_num ':' attr_dictionary ';'
+	blob :== 'B' id_num ':' attr_dict ';'
 
 	chunk :== 'c' id_num ':' ascii_number ':' bytes ';' 
 	 note : where len(bytes) = int(ascii_number)
 
 	end_chunk :== 'c' id_num ';' 
 
-http
-====
+glyph-rpc http mapping
+======================
+
+mime type
+---------
+
+glyph uses the mime type: 'application/vnd.glyph'
 
 url schema
 ----------
@@ -626,7 +637,6 @@ gzip encoding.
 Clients SHOULD throw different Errors for 4xx and 5xx responses.
 
 
-
 mime type registration
 ======================
 
@@ -665,8 +675,8 @@ creating a float can be done manually using `frexp` and `modf`::
 	
 	# split the float up
 	f,exp = frexp(fractional)
-	# turn 0.hhhh->  hhhhh.0
-	f = int(modf(f * 16**width)[1])
+	# turn 0.hhhh->  hhhhh.0 
+	f = int(modf(f * 16** float_width)[1])
 	# construct hex float
 	hexfloat = sign(f) +  '0x0.' hex(abs(f)) + 'p' + signed_exponent
 
@@ -800,12 +810,16 @@ before embracing hypermedia.
 
 - added examples
 
+- added input, collection stub
+
+- v0.5
+
 planned changes
 ---------------
 
-- 0.4 schema/form inputs type
 - 0.5 grammar/encoding frozen - no more literals, collections added
-- 0.9 all extension type parameters defined
+- 0.6 add extensions:  schema/form inputs type, collections6
+- 0.9 extensions frozen
 - 1.0 final
 
 proposed changes
