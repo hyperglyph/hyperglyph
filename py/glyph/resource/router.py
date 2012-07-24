@@ -79,7 +79,7 @@ class Router(object):
         if m:
             return m.inline(r)
 
-        raise StandardError()
+        raise StandardError("Don't know how to inline %s"%repr(r))
         
 
     def url(self, r):

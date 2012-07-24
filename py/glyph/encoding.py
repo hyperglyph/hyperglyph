@@ -228,10 +228,7 @@ class Encoder(object):
             yield END_ITEM
 
         else:
-            try:
-                for r in self._dump_one(inline(obj), resolver, inline, blobs): yield r
-            except StandardError:
-                raise StandardError('Failed to encode (%s)' % repr(obj))
+            for r in self._dump_one(inline(obj), resolver, inline, blobs): yield r
 
     def _dump_blobs(self, blobs):
         for idx, b in enumerate(blobs):

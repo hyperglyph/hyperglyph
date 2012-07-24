@@ -742,6 +742,23 @@ proposed changes
 	metaobject protocols? i.e __next__ names on forms with special meaning
 	for emulating built in types
 
+- ordered dictionaries
+
+	hard to represent in many languages (but python, java, ruby have this)
+	and hard to represent uniformly across languages
+
+	counterpoint: iso periods are the same, have to write as if we've got better languages
+		timedeltas are wildly inconsistent
+
+	counterpoint: sets aren't there in other languages either
+
+	pro: in ruby 1.9 dicts are ordered, want to be able to send them back and forth?
+		remember - internal rpc usecase
+		ruby doesn't have unordered hash type :(
+	
+         
+	
+
 rejected changes
 ----------------
 
@@ -762,12 +779,6 @@ rejected changes
  	awkward, unstandardized. can use node type instead
 	or an extension
 
-- order preserving dictionary type
-
-	use a list of lists
-
-	hard to represent in many languages (but python, java, ruby have this)
-	and hard to represent uniformly across languages
 
 - restrictions on what goes in dictionaries, sets
 
