@@ -438,8 +438,6 @@ class BlobReturnAndCall(ServerTest):
     def testCase(self):
         root = glyph.get(self.endpoint.url)
         b = glyph.blob(BytesIO("TEST"), content_type="Test")
-        do_blob = root.do_blob
-        do_blob.chunked = False
-        b2 = do_blob(b)
+        b2 = root.do_blob(b)
         self.assertEqual(b2.fh.read(), "test")
         self.assertEqual(b2.content_type, "Test")

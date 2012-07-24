@@ -31,7 +31,7 @@ def form(url, method=u'POST',values=None):
             values = funcargs(url)
 
     if values is not None:
-        values = [unicode(v) for v in values]
+        values = [form_input(v) for v in values]
 
     return Extension.__make__(u'form', {u'method':method, u'url':url, u'values':values}, None)
 
@@ -42,7 +42,10 @@ def embedlink(url, content, method=u'GET'):
     return Extension.__make__(u'link', {u'method':method, u'url':url, u'inline':True}, content)
 
 def error(reference, message):
-    return Extension.__make__(u'error', {u'logref':reference, u'message':message}, {})
+    return Extension.__make__(u'error', {u'logref':unicode(reference), u'message':message}, {})
+
+def form_input(name):
+    return Extension.__make__(u'input', {u'name':name}, None)
 
 
 # move to inspect ?
@@ -52,10 +55,10 @@ def ismethod(m, cls=None):
 
 def methodargs(m):
     if ismethod(m):
-        return m.func_code.co_varnames[1:]
+        return m.func_code.co_varnames[1:m.func_code.co_argcount]
 
 def funcargs(m):
-    return m.func_code.co_varnames[:]
+    return m.func_code.co_varnames[:m.func_code.co_argcount]
 
 def get(url, args=None, headers=None):
     if hasattr(url, u'url'):
@@ -203,15 +206,27 @@ class Form(Extension):
     def __call__(self, *args, **kwargs):
         url = self._attributes[u'url']
         data = []
-        names = self._attributes[u'values']
+        names = {}
+        if self._attributes[u'values']:
+            for n in self._attributes[u'values']:
+                if isinstance(n, Input):
+                    names[n.name] = n
+                else:
+                    names[n] = None
+
         if names:
-            for n,v in zip(names, args):
+            for n,v in zip(names.keys(), args):
+                if names[n]:
+                    v = names[n].convert(v)
+                n = unicode(n)
                 data.append((n,v))
         elif args:
             raise StandardError('no unamed arguments')
 
         for k,v in kwargs.items():
             if k in names:
+                if names[k]:
+                    v = names[k].convert(v)
                 data.append((k,v))
             else:
                 raise StandardError('unknown argument')
@@ -258,7 +273,18 @@ class Error(Extension):
     def logref(self):
         return self._attributes[u'logref']
 
+@Extension.register('input')
+class Input(Extension):
+    @property
+    def name(self):
+        return self._attributes[u'name']
 
+    def convert(self, value):
+        return value
+
+@Extension.register('collection')
+class Collection(Extension):
+    pass
 _encoder = Encoder(node=Node, extension=Extension)
 
 dump = _encoder.dump
