@@ -39,8 +39,8 @@ others containing hypermedia: links and forms.
 Links and forms map back to methods at the server.
 
 
-glyph data model
-================
+data model
+==========
 
 glyph natively handles a variety of literals (strings, bytes, 
 numbers, floats, utc datetimes, timedeltas, booleans), 
@@ -515,8 +515,8 @@ extensions with the names: collection, integer, unicode, bytearray, float, datet
 
 
 
-glyph-rpc http mapping
-======================
+http mapping
+============
 
 mime type
 ---------
@@ -647,7 +647,7 @@ grammar
 	end_chunk :== 'c' id_num ';' 
 
 hexadecimal floating point
-==========================
+--------------------------
 
 a hex float has an optional sign, a hex fractional part and a decimal exponent part::
 	
