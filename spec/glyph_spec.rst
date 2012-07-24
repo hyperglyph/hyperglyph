@@ -57,18 +57,19 @@ collections (list, set, dictionary).
 
 ::
 
-	data type	example			encoded
-
-	integer		1			i1;
-	unicode		"hello"			u5:hello;
-	bytearray	[0x31, 0x32, 0x33]	b3:123;
-	list		[1,2,3]			Li1;i2;i3;;
-	set		{1,2,3}			Si1;i2;i3;;
-	dictionary	{1:2, 2:3}		Di1;i2;i3;i4;;
-	singleton	nil true false		N; T; F;
-	float		0.5			f0x1.0000000000000p-1; 
-	datetime	1970-1-1 00:00 UTC	d1970-01-01T00:00:00.000Z;
-	timedelta	3 days			pP0Y0M3DT0H0M0S;
+	data type		example			encoded
+	
+	integer			1			i1;
+	unicode			"hello"			u5:hello;
+	bytearray		[0x31, 0x32, 0x33]	b3:123;
+	list			[1,2,3]			Li1;i2;i3;;
+	set			{1,2,3}			Si1;i2;i3;;
+	dictionary		{1:2, 2:3}		Di1;i2;i3;i4;;
+	ordered_dict		{1:2, 2:3}		Oi1;i2;i3;i4;;
+	singleton		nil true false		N; T; F;
+	float			0.5			f0x1.0000000000000p-1; 
+	datetime		1970-1-1 00:00 UTC	d1970-01-01T00:00:00.000Z;
+	timedelta		3 days			pP0Y0M3DT0H0M0S;
 
 
 glyph also supports special data types:
@@ -90,7 +91,7 @@ followed by chunks.
 	object :== integer | unicode | bytearray | float
 		| datetime | timedelta
 		| nil | true | false
-		| list | set | dictionary
+		| list | set | dictionary | ordered_dict
 		| node | extension | blob
 
 
@@ -179,8 +180,8 @@ nil SHOULD map to null or None or nil.
 collections
 -----------
 
-glyph has three collection types, an ordered list,
-an unordered set, and an unordered dictionary.
+glyph has four collection types, an ordered list,
+an unordered set, and an ordered & unordered dictionary.
 
 sets and dicts MUST NOT have duplicate items,
 clients SHOULD throw an error.
@@ -189,20 +190,22 @@ clients SHOULD throw an error.
 
 	list :== 'L' ws (object ws)* ';'
 	set :== 'S' ws (object ws)* ';'
-	dict :== 'D' ws (object ws object ws)* ';'
+	dictionary :== 'D' ws (object ws object ws)* ';'
+	ordered_dict :== 'O' ws (object ws object ws)* ';'
 
-	object		encoding
+	object			encoding
 
-	list(1,2,3)	Li1;i2;i3;;
-	set(1,2,3)	Si1;i2;i3;;
-	dict(1:2, 3:4)	Di1;i2;i3;i4;;
+	list(1,2,3)		Li1;i2;i3;;
+	set(1,2,3)		Si1;i2;i3;;
+	dict(1:2, 3:4)		Di1;i2;i3;i4;;
+	ordered_dict(1:2, 3:4)	Oi1;i2;i3;i4;;
 
-SUGGESTED: order preserving dictionary type
+lists, ordered_dicts MUST preserve ordering. dicts, sets have no ordering.
 
 datetime
 --------
 
-datetimes MUST be in utc, and MUST be in the following subset of iso-8601/rfc3339 format::
+datetimes MUST be in UTC, and MUST be in the following subset of iso-8601/rfc3339 format::
 
 	datetime :== 'd' iso_datetime ';'
 	iso_datetime :== <date: %Y-%m-%dT%H:%M:%S.%fZ>
@@ -211,9 +214,9 @@ datetimes MUST be in utc, and MUST be in the following subset of iso-8601/rfc333
 
 	1970-1-1	d1970-01-01T00:00:00.000Z;
 
-encoders MUST use UTC timezone of 'Z'.
+encoders MUST use UTC timezone of 'Z'.  decoders MUST only support UTC timestamps,
+but MAY support other offsets.
 
-decoders SHOULD only support UTC timestamps.
 
 timedelta
 ---------
@@ -221,7 +224,7 @@ timedelta
 timedeltas MUST be in the following subset of iso-8601 period format::
 
 	timedelta :== 'p' iso_period ';'
-	iso_period :== <period:  pnynmndtnhnmns>
+	iso_period :== <period:  pnYnMnDTnHnMnS>
 
 	object			encoding
 
@@ -232,12 +235,17 @@ encoders MUST present all leading 0s.
 float
 -----
 
+
 floating point numbers cannot easily be represented 
 in decimal without loss of accuracy. instead of using an endian
-dependent binary format, we use a hexadecimal format from c99
+dependent binary format, we use a hexadecimal format from c99::
 
-(in c99: printf("%a",0.5), in java Double.toHexString(), 
-in python 0.5.hex(), in ruby printf/scanf)
+	float :== 'f' hex_float ';'
+
+	float	encoding
+	0.5	f0x1.0p-1; 
+	-0.5 	f-0x1.0p-1; 
+	0.0	f0x0p0;
 
 a floating point number in hex takes a number of formats::
 
@@ -246,19 +254,6 @@ a floating point number in hex takes a number of formats::
 	+0.0	0x0p0
 	-0.0	-0x0p0
 	1.729	0x1.ba9fbe76c8b44p+0
-
-first there is an optional sign, '+' or '-', then
-the prefix '0x' indicates it is in hex.
-finally, a hex number and its decimal exponent,
-separated by a 'p'. the exponent can have a sign,
-and is a decimal number::
-
-	float :== 'f' hex_float ';'
-
-	float	encoding
-	0.5	f0x1.0p-1; 
-	-0.5 	f-0x1.0p-1; 
-	0.0	f0x0p0;
 
 special values, nan and infinity are serialized as strings::
 
@@ -271,6 +266,7 @@ special values, nan and infinity are serialized as strings::
 decoders MUST ignore case.
 encoders MUST use 'inf' or 'infinity', not 'infin', 'in', etc.
 
+details on the encoding and decoding of hex floats is covered in an appendix.
 
 node
 ----
@@ -300,25 +296,6 @@ nodes can be used to represent an xml dom node::
 
 in the host language, f n is a node, n.foo should map to content[foo].
 
-
-extensions
-----------
-
-extensions are name, attr, content tuples, used internally within glyph
-to describe objects with special handling or meaning, rather than
-application meaning.
-
-name SHOULD be a unicode string, attributes SHOULD be a dictionary::
-
-	extension :== 'H' ws name_obj ws attr_obj ws content_obj ws ';' 
-	name_obj :== string | object
-	attr_obj :== dictionary | object
-	content_obj :== object
-
-extensions are used to represent links, forms, resources, errors
-and blobs within glyph.
-
-decoders SHOULD handle unknown extensions as node types.
 
 blob
 ----
@@ -370,11 +347,31 @@ a blob object should expose a content_type property, and a file like
 object. 
 
 extensions
+----------
+
+extensions are name, attr, content tuples, used internally within glyph
+to describe objects with special handling or meaning, rather than
+application meaning.
+
+name SHOULD be a unicode string, attributes SHOULD be a dictionary::
+
+	extension :== 'H' ws name_obj ws attr_obj ws content_obj ws ';' 
+	name_obj :== string | object
+	attr_obj :== dictionary | object
+	content_obj :== object
+
+extensions are used to represent links, forms, resources, errors
+and blobs within glyph.
+
+decoders SHOULD handle unknown extensions as node types.
+
+
+extensions
 ==========
 
-the following extensions are defined within glyph
+the following extensions are defined within glyph:
 
-note: all names are unicode strings
+note: all strings are unicode strings, all dictionaries are unordered
 
 link
 ----
@@ -383,17 +380,23 @@ a hyperlink with a method and url, optionally with an inlined response
 
 - name 'link'
 - attributes is a dictionary. MUST have the keys 'url', 'method'
- * method SHOULD be 'GET'
- * MAY have the key 'inline'
+ * method MUST be 'GET'
+ * MAY have the entry 'inline' -> true | false
+ * MAY have the entries 'etag' -> string,  'last_modified' -> datetime, 
 - content is an object, which is either nil or the inlined response
 
 links map to functions with no arguments. if the key 'inline' is in the
 attributes and the associated value is true, then the function MAY
-return the associated content object, instead of making a request.
+return the content object, instead of making a request.
 
-	v0.5 proposed: conditional GET handling
-	attributes MAY have the keys 'etag', 'last-modified', 'cache-control'
+if the 'etag', 'last_modified' keys are present, the client MAY
+make a conditional GET request to see if the content object is fresh.
 
+example::
+
+	link(method="GET", url="/foo")
+
+	Hu4:link;du6:method;u3:GET;u3:url;u4:/foo;;n;;
 
 
 form
@@ -407,6 +410,7 @@ like a html form, with a url, method, expected form values.
   * method SHOULD be 'POST'
   * url and method are both unicode keys with unicode values.
   * values is a list of unicode names
+  * MAY have the keys 'if_none_match' 'if_match'
 - content is nil object
 
 forms map to functions with arguments. submitting a form should be calling 
@@ -414,12 +418,14 @@ a function in the host language.
 
 when making a POST request, the data is a list of ('name', 'value') pairs.
 
+if the 'if_none_match' or 'if_match' attributes are present,
+the client MUST add the corresponding HTTP headers to the request. 
 
-	v0.5 proposed: conditional POST handling
-	attributes MAY have the keys 'etag', 'last-modified', 'cache-control'
+example::
 
-	proposed: values list can contain 'input' extension types,
-	which indicate the name, type and default value.
+	form(method="POST", url="/foo", values=['a')
+
+	Hu4:form;du6:method;u4:POST;u3:url;u4:/foo;u6:values;Lu1:a;;;N;;
 
 resource
 --------
@@ -427,18 +433,32 @@ resource
 like a top level webpage. in the host language, resource.foo
 should map to the content dictionary. i.e r.foo is r.content[foo]
 
+glyph maps urls to classes, instances and methods. when
+you fetch a url that maps to an instance, a resource extension is returned
+
 - name 'resource'
 - attributes is a dictionary,
   *  MAY have the keys 'url', 'name'
 - content is a dict of string -> object
-  * objects often forms
+  * objects usually forms
 
-when a method on the server returns a Resource object,
-for example, the GET() method on Resources returns self,
-the server changes it to a resource extension.
+the content dictionary should have the instance data, as well
+as forms or links which map to the instance methods.
 
-the content dictionary should have objects for the instance
-data, as well as forms to map to the instance methods.
+example::
+
+	class Foo {
+		instance data a
+		
+		method b
+	}
+
+	resource(attributes={}, contents = {
+		'a': foo.a,
+		'b': form(.....)
+	})
+
+the specifics of url mapping are covered under `http`
 
 error
 -----
@@ -454,6 +474,14 @@ to failed requests. servers MAY return them.
 logref is a application specific reference for logging, MUST
 be a unicode string, message MUST be a unicode string
 
+reserved extensions
+-------------------
+
+extensions with the names: collection, integer, unicode, bytearray, float, datetime, timedelta, nil, true, false, list, set, dict, dict, ordered_dict, node, extension, blob are reserved.
+
+proposed extensions
+===================
+
 PROPOSED: input
 ---------------
 
@@ -464,17 +492,21 @@ an object that appears in forms, to provide information about a parameter.
   *  MUST have the key  'name'
 - content is nil
 
-PROPOSED: some way to epress types on form inputs, default values
 
 PROPOSED: collection
 --------------------
 
+an object that represents a remote collection of objects
+and SHOULD behave like a normal collection in the host language.
 
+..
+	- size / size_hint
+	- getitem, setitem, delitem
+	- iter/next/prev
+	- range/slice
+	- oh god cursors D:
+	- oh god url construction ?
 
-reserved extensions
--------------------
-
-extensions with the names collection, integer, unicode, bytearray, float, datetime, timedelta, nil, true, false, list, set, dictionary, node, extension, blob are reserved.
 
 
 grammar
@@ -526,7 +558,8 @@ grammar
 
 	list :== 'L' ws (object ws)* ';'
 	set :== 'S' ws (object ws)* ';'
-	dict :== 'D' ws (object ws object ws)* ';'
+	dictionary :== 'D' ws (object ws object ws)* ';'
+	ordered_dict :== 'O' ws (object ws object ws)* ';'
 
 	float :== 'f' hex_float ';'
 
@@ -547,9 +580,32 @@ grammar
 http
 ====
 
+url schema
+----------
+
+The server maps classes, instances, methods to urls.
+URLs are opaque to the client, beyond the initial url
+
+an example mapping::
+
+	object		url
+	a class		/ClassName/
+	an instance 	/ClassName/?GlyphInstanceData
+	a method	/ClassName/method?GlyphInstanceData
+	a function	/Function/
+
+There are no restrictions on how the server maps URLs, clients SHOULD NOT
+not modify or construct URLs, but use them as provided.
+
+requests
+--------
+
 HTTP requests should have the following headers:
 
 - Accept, set to the glyph mime type
+
+responses
+---------
 
 HTTP Responses MUST have an appropriate Content-Type, and
 the code may have special handling:
@@ -570,35 +626,53 @@ gzip encoding.
 Clients SHOULD throw different Errors for 4xx and 5xx responses.
 
 
-appendices
-==========
-
-url schema
-----------
-
-URLs are opaque to the client, beyond the initial url. Normally
-The server maps objects to urls, using something like this::
-
-	/ObjectName/method?<glyph instance data>
-
-There are no conditions on the format of URLs, clients MUST
-not modify them. 
-
-caching
--------
 
 mime type registration
-----------------------
+======================
 
 TODO: profile option in mime type?
 
+appendix: exadecimal floating point
+===================================
 
-extension registry
-------------------
+
+a hex float has an optional sign, a hex fractional part and a decimal exponent part::
+	
+	float <optional sign>0x<hex fractional>e<decimal exponent with sign>
+	sign is '-','+'
+	hex fractional is <leading hexdigits>.<hexdigits> or 0a
+	exponent has explicit sign '+'/'-' for numbers other than zero.
+
+many languages support hex floats already::
+
+	language	example
+
+	C99		sprintf("%a",...) 	scanf("%a",...)
+	Python		5.0.hex()		float.fromhex('...')
+	Java 1.5	Double.toHexString(..)	Double.parseDouble(...)
+	ruby 1.9	sprintf("%a", ...) 	scanf("%a", ...)		
+	Perl 		Data::Float on CPAN
+
+parsing a float can be done manually, using `ldexp`::
 
 
-changelog
-=========
+	# convert hhh.fff into a float
+	fractional = int(leading,16) + (int(hexdigits,16) / (16**len(hexdigits)))
+	# ldexp(f,e) is f + 2**e
+	float = sign *  ldexp(fractional, int(exponent))
+
+creating a float can be done manually using `frexp` and `modf`::
+	
+	# split the float up
+	f,exp = frexp(fractional)
+	# turn 0.hhhh->  hhhhh.0
+	f = int(modf(f * 16**width)[1])
+	# construct hex float
+	hexfloat = sign(f) +  '0x0.' hex(abs(f)) + 'p' + signed_exponent
+
+
+appendix: changelog
+===================
 
 history
 -------
@@ -702,45 +776,11 @@ before embracing hypermedia.
 
 - v0.4
 
-planned changes
----------------
+- added conditional-get in links
 
-- 0.4
+- added conditional-post in forms
 
-- 0.5 grammar/encoding frozen - no more literals, collections added
-
-- 0.6 schema/form inputs type
-
-- 0.8 caching options defined
-- 0.9 all extension type parameters defined
-- 1.0 final
-
-proposed changes
-----------------
-
-- caching information inside of resources	
-
-	resources/embeds CAN contain control headers, freshness information
-        specify key names as being optional
-	expires? cache-control? etag last_modified
-
-- conditional POST/GET? 
-	
-	should clients do conditional get? 
-	way of adding conditions to forms ?
-	
-
-- schema/type information for forms (aka values)
-
-	formargs is a list of string names | input elements
-	input elements have a name, type, optional default value
-
-- collection types
-
-	back/next links? url templates?
-
-	metaobject protocols? i.e __next__ names on forms with special meaning
-	for emulating built in types
+- added ordered dict type
 
 - ordered dictionaries
 
@@ -754,10 +794,35 @@ proposed changes
 
 	pro: in ruby 1.9 dicts are ordered, want to be able to send them back and forth?
 		remember - internal rpc usecase
-		ruby doesn't have unordered hash type :(
+		ruby doesn't have unordered hash type
 	
-         
-	
+- cleaned up hex float explanation, added better appendix
+
+- added examples
+
+planned changes
+---------------
+
+- 0.4 schema/form inputs type
+- 0.5 grammar/encoding frozen - no more literals, collections added
+- 0.9 all extension type parameters defined
+- 1.0 final
+
+proposed changes
+----------------
+
+- schema/type information for forms (aka values)
+
+	formargs is a list of string names | input elements
+	input elements have a name, type, optional default value
+
+- collection types
+
+	back/next links? url templates?
+
+	metaobject protocols? i.e __next__ names on forms with special meaning
+	for emulating built in types
+
 
 rejected changes
 ----------------
@@ -772,6 +837,9 @@ rejected changes
 
 	i.e allow a number of objects as the 'content'
 	effort
+
+	maybe name, attrs, content?
+	implicitly nil ? 
   
 
 - datetime with string timezone
