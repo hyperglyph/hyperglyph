@@ -466,6 +466,11 @@ an object that appears in forms, to provide information about a parameter.
 
 PROPOSED: some way to epress types on form inputs, default values
 
+PROPOSED: collection
+--------------------
+
+
+
 reserved extensions
 -------------------
 
@@ -503,13 +508,15 @@ grammar
 
 	integer :== 'i' sign ascii_number ';'
 
-	unicode :== 'u' ascii_number ':' utf8_bytes ';' | empty_unicode
-	   note :   where len(bytes) = int(ascii_number)
+	unicode :== 'u' ascii_number ':' utf8_bytes ';' 
+	            | empty_unicode
+	  note: where len(bytes) = int(ascii_number)
 
 	empty_unicode :=='u;'
 
-	bytearray :== 'b' ascii_number ':' bytes ';' | empty_bytearray
-		where len(bytes) = int(ascii_number)
+	bytearray :== 'b' ascii_number ':' bytes ';' 
+	              | empty_bytearray
+	    note: where len(bytes) = int(ascii_number)
 
 	empty_bytearray = 'b;'
 
@@ -719,12 +726,21 @@ proposed changes
 
 - conditional POST/GET? 
 	
-	instead of cache control
+	should clients do conditional get? 
+	way of adding conditions to forms ?
+	
 
 - schema/type information for forms (aka values)
 
 	formargs is a list of string names | input elements
 	input elements have a name, type, optional default value
+
+- collection types
+
+	back/next links? url templates?
+
+	metaobject protocols? i.e __next__ names on forms with special meaning
+	for emulating built in types
 
 rejected changes
 ----------------
