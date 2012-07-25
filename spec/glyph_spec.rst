@@ -1,16 +1,23 @@
-===========
- glyph rpc 
-===========
+=======
+ glyph 
+=======
 :Author: tef
 :Date: 2012-07-24
 :Version: 0.5 (DRAFT)
 
-glyph-rpc is a client-server protocol for interacting with
-objects over http, sing machine readable web pages.
+glyph-rpc is a client/server protocol which
+exposes application objects over http, as machine
+readable web pages.
 
-these pages are encoded using a data-interchange format
-with hypermedia elements. the format is called glyph, and
-uses the mime-type 'application/vnd.glyph'
+these pages are encoded using glyph: a data interchange 
+format which can handle strings, numbers, collections. 
+
+The server maps classes, instances, methods to URLs,
+and translates instances and methods to pages and forms.
+
+The client browses the server, using forms to invoke
+methods.
+
 
 .. contents::
 
@@ -21,23 +28,6 @@ requirements
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
 "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
 document are to be interpreted as described in [RFC2119].
-
-introduction
-============
-
-A glyph-rpc server is a web server which serves up glyph
-encoded pages. 
-
-The server maps classes, instances, methods to URLs.
-URLs are opaque to the client, beyond the initial URL.
-
-A glyph-rpc client is a screen scraper which reads glyph
-pages, and follows links and forms to interact with them.
-
-These pages have named attributes, some containing data,
-others containing hypermedia: links and forms. 
-Links and forms map back to methods at the server.
-
 
 data model
 ==========
@@ -112,7 +102,7 @@ it SHOULD throw an error
 unicode
 -------
 
-unicode element is a utf-8 encoded string. MUST NOT include
+a unicode element is a utf-8 encoded string. MUST NOT include
 utf-16 surrogate pairs. Modified UTF-8/CESU-8 MUST NOT be used.
 
 ..
@@ -145,7 +135,7 @@ bytearray
 ---------
 
 a byte array is a string of bytes. no encoding
-is assumed.
+is assumed, i.e, an octet-stream.
 
 ::
 
@@ -177,7 +167,7 @@ glyph has four collection types, an ordered list,
 an unordered set, and an ordered & unordered dictionary.
 
 sets and dicts MUST NOT have duplicate items,
-clients SHOULD throw an error.
+clients SHOULD not recover.
 
 ::
 
@@ -210,7 +200,6 @@ datetimes MUST be in UTC, and MUST be in the following subset of iso-8601/rfc333
 encoders MUST use UTC timezone of 'Z'.  decoders MUST only support UTC timestamps,
 but MAY support other offsets.
 
-
 timedelta
 ---------
 
@@ -228,19 +217,11 @@ encoders MUST present all leading 0s.
 float
 -----
 
-
 floating point numbers cannot easily be represented 
 in decimal without loss of accuracy. instead of using an endian
-dependent binary format, we use a hexadecimal format from c99::
+dependent binary format, we use the hex format from C99::
 
-	float :== 'f' hex_float ';'
-
-	float	encoding
-	0.5	f0x1.0p-1; 
-	-0.5 	f-0x1.0p-1; 
-	0.0	f0x0p0;
-
-a floating point number in hex takes a number of formats::
+	float	hex
 
 	0.5	0x1.0p-1
 	-0.5 	-0x1.0p-1 
@@ -248,9 +229,15 @@ a floating point number in hex takes a number of formats::
 	-0.0	-0x0p0
 	1.729	0x1.ba9fbe76c8b44p+0
 
-special values, nan and infinity are serialized as strings::
+Hex floats are supported natively by a number of languages.
+glyph uses hex floats, except for special values: nan and infinity::
+
+	float :== 'f' hex_float ';'
 
 	float		encoding
+	0.5		f0x1.0p-1; 
+	-0.5 		f-0x1.0p-1; 
+	0.0		f0x0p0;
 
 	Infinity	finf; fInfinity; finfinity;
 	-Infinity	f-inf; f-infinity; f-Infinity;
@@ -286,8 +273,6 @@ nodes can be used to represent an xml dom node::
 
 	xml			encoded
 	<xml a=1>1</xml>	Xu3:xmlDu1:ai1;;
-
-in the host language, f n is a node, n.foo should map to content[foo].
 
 
 blob
@@ -366,6 +351,24 @@ the following extensions are defined within glyph:
 
 note: all strings are unicode strings, all dictionaries are unordered
 
+error
+-----
+
+errors provide a generic object for messages in response
+to failed requests. servers MAY return them.
+
+- name 'error'
+- attributes is a dictionary with the keys 'logref', 'message'
+- MAY have the attributes 'url', 'code'
+- content SHOULD be a dict of string -> object, MAY be empty.
+
+logref is a application specific reference for logging, MUST
+be a unicode string, message MUST be a unicode string
+
+if the error object has a 'url' attribute, the client MUST
+use this url for resolving relative links in any contained
+links, forms and other extensions.
+
 link
 ----
 
@@ -373,7 +376,7 @@ a hyperlink with a method and url, optionally with an inlined response
 
 - name 'link'
 - attributes is a dictionary. MUST have the keys 'url', 'method'
- * method MUST be 'GET'
+ * method SHOULD be 'GET', urls MAY be relative.
  * MAY have the entry 'inline' -> true | false
  * MAY have the entries 'etag' -> string,  'last_modified' -> datetime, 
 - content is an object, which is either nil or the inlined response
@@ -391,6 +394,8 @@ example::
 
 	Hu4:link;du6:method;u3:GET;u3:url;u4:/foo;;n;;
 
+the url MAY be relative to the page url, or to a parent object.
+
 input
 -----
 
@@ -402,8 +407,38 @@ an object that appears in forms, to provide information about a parameter.
   *  MAY have the keys 'value', 'type'
 - content is nil
 
-the type attribute MAY be a unicode string, defining the expected
-input, using the names defined in the gramar.
+the type attribute, if present, SHOULD be unicode string,
+defining the expected type for this parameter.
+if the type is not present or known, the client can
+assume it to be 'object'
+
+types are defined for the names in the grammar::
+
+	object integer unicode bytearray float
+	datetime timedelta nil true false
+	list set dict ordered_dict
+	node extension blob
+
+additionally, the type 'bool' is defined to mean 'true' or 'false'.
+types may have a trailing '?' to indicate that nil is also acceptable
+
+types MAY be space separated list of types in postfix order, to 
+define the internal type of collections. for example::
+
+	'unicode'			a unicode string 
+	'integer?'			an integer or nil
+	'list'				a list of objects
+	'string list'  			a list of strings
+	'object string dict' 		a dict of string to object
+	'float list? string dict' 	a dict of string, to nil or a list of floats
+	'float integer list dict'	a dict of a integer list, to a float
+
+sets and lists 
+
+the value attribute if present, is the default value.
+if no value is provided, clients MUST use this value in
+form submission.
+
 
 form
 ----
@@ -413,18 +448,19 @@ like a html form, with a url, method, expected form values.
 - name 'form'
 - attributes is a dictionary
   * MUST have the keys 'url', 'method' , 'values'
-  * method SHOULD be 'POST'
+  * method SHOULD be 'POST', urls MAY be relative.
   * url and method are both unicode keys with unicode values.
   * values is a list of parameter names,  unicode strings or input objects
-  * MAY have the keys 'if_none_match' 'if_match'
+  * MAY have the keys 'if_none_match' 'if_match', 'profile'
 - content is nil object
 
 forms map to functions with arguments. function signatures map to the values
 parameter. invoking a form object should make a POST request,
 with the arguments encoded in glyph.
 
-arguments are encoded in a list of list of `[name, value]` pairs,
-using the parameter names in the form, in the same order.
+on submission, arguments are encoded in a list of list of `[name, value]` pairs,
+using the parameter names in the form, in the same order, using default
+values where necessary.
 
 the parameter names are either encoded as a unicode string,
 or as an input object, with a name attribute. input
@@ -432,11 +468,16 @@ or as an input object, with a name attribute. input
 if the 'if_none_match' or 'if_match' attributes are present,
 the client MUST add the corresponding HTTP headers to the request. 
 
+forms do not support GET requests.
+	
+
 example::
 
 	form(method="POST", url="/foo", values=['a')
 
 	Hu4:form;du6:method;u4:POST;u3:url;u4:/foo;u6:values;Lu1:a;;;N;;
+
+the url MAY be relative to the page url, or to a parent object.
 
 resource
 --------
@@ -449,7 +490,7 @@ you fetch a url that maps to an instance, a resource extension is returned
 
 - name 'resource'
 - attributes is a dictionary,
-  *  MAY have the keys 'url', 'name'
+  *  MAY have the keys 'url', 'name', 'profile'
 - content is a dict of string -> object
   * objects usually forms
 
@@ -471,31 +512,34 @@ example::
 
 the specifics of url mapping are covered under `http`
 
-error
------
-
-errors provide a generic object for messages in response
-to failed requests. servers MAY return them.
-
-- name 'error'
-- attributes is a dictionary with the keys 'logref', 'message'
-- MAY have the attribute 'url'
-- content SHOULD be a dict of string -> object, MAY be empty.
-
-logref is a application specific reference for logging, MUST
-be a unicode string, message MUST be a unicode string
+if the resource has a 'url' attribute, the client MUST
+use this url for resolving relative links in any contained
+links, forms and other extensions.
 
 
 collection
 ----------
 
-an object that represents a remote collection of objects
-and SHOULD behave like a normal collection in the host language.
+used to paginate collections across requests, 
 
 - name 'collection'
 - attributes is a dictionary,
-  * MAY have the attributes 'range', 'get', 'del', 'set', 'next', 'prev', 'url','first','last'
+  * MAY have the attributes 'range', 'url',
+  * MAY have the attrs 'getitem', 'delitem', 'setitem',
+  * MAY have the attrs 'getrange', 'delrange', 'setrange',
+  * MAY have the attrs 'next', 'prev','first','last'
 - content is optionally an ordered collection, or nil
+
+getitem: a form with one argument: 'key',
+
+setitem: a form with two arguments, 'key', 'value',
+
+delitem: a form with one argument: 'key'
+
+next, prev, first, list: links 
+
+range: a two element list defining the range covered by the content object, non-inclusive.
+nil, nil means all of the collection. 
 
 collections may optionally have a range of the items contained within.
 
@@ -507,12 +551,17 @@ collections may optionally have a range of the items contained within.
 	- oh god cursors D:
 	- oh god url construction ?
 
+if the collection has a 'url' attribute, the client MUST
+use this url for resolving relative links in any contained
+links, forms and other extensions.
+
+collections SHOULD behave like a normal collection in the host language,
+where possible.
 
 reserved extensions
 -------------------
 
-extensions with the names: collection, integer, unicode, bytearray, float, datetime, timedelta, nil, true, false, list, set, dict, dict, ordered_dict, node, extension, blob are reserved.
-
+extensions with the names: collection, integer, unicode, bytearray, float, datetime, timedelta, nil, true, false, list, set, dict, dict, ordered_dict, node, extension, blob, bool are reserved.
 
 
 http mapping
@@ -547,14 +596,24 @@ HTTP requests should have the following headers:
 
 - Accept, set to the glyph mime type
 
+GET request - made from a link object, may be
+cached or conditional, MUST be safe
+
+POST request - used in forms, may be conditional.
+
+HTTP verbs: PUT. PATCH, DELETE, OPTIONS, currently undefined
+
+glyph clients SHOULD return an response with an unknown encoding as a blob,
+and SHOULD set the url attribute of the blob object.
+
 responses
 ---------
 
 HTTP Responses MUST have an appropriate Content-Type, and
 the code may have special handling:
 
-- 201 Created. This is equivilent to returning a link
-  as the body.
+- 201 Created. Client should treat this as 
+  returning a link, with the url from the Location header
 
 - 204, No Content. This is equivilent to a 200 with a nil as the body.
   A server SHOULD change a nil response into a 204
@@ -563,10 +622,21 @@ the code may have special handling:
 - 303 See Other. Redirects should be followed automatically,
   using a GET. A server SHOULD allow methods to return a redirect
 
+
+Clients SHOULD throw different Errors for 4xx and 5xx responses,
+the body of error responses SHOULD be a error extension object.
+
+a glyph server SHOULD transform a response of a solitary blob object into a 
+http response, using the content-type attribute.
+
+glyph responses MAY use relative urls.
+
+general
+-------
+
 A server SHOULD allow gzip encoding, and clients MUST understand
 gzip encoding.
 
-Clients SHOULD throw different Errors for 4xx and 5xx responses.
 
 
 appendix
@@ -797,8 +867,6 @@ before embracing hypermedia.
 
 - added ordered dict type
 
-- ordered dictionaries
-
 	hard to represent in many languages (but python, java, ruby have this)
 	and hard to represent uniformly across languages
 
@@ -824,10 +892,18 @@ before embracing hypermedia.
 
 - 0.5 grammar/encoding frozen - no more literals, collections added
 
+- relative url handling 
+
+- input type parameters added
+
 planned changes
 ---------------
 
-- 0.6 add extensions:  schema/form inputs type, collections
+- 0.6 complete extensions:  schema/form inputs type, collections
+	fill out collection type
+	define forms for GET, and other verbs.
+	fill out http mapping, more examples
+
 - 0.9 extensions frozen
 - 1.0 final
 

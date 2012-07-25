@@ -1,5 +1,8 @@
-glyph-rpc
-=========
+===========================
+ glyph-rpc: duck typed rpc
+===========================
+
+*no stubs, no schemas*
 
 glyph-rpc is yet another http rpc library, but it tries to exploit http rather
 than simply tunnel requests over it. glyph builds webpages out of objects, for
@@ -14,23 +17,27 @@ a talk at src fringe 2012 was given and is online: http://vimeo.com/45474360
 
 come say hello: ##glyph on freenode
 
-note
-----
+glyph was designed and built for loose coupled distributed programs. it's 
+been in use in production for a year, but for internal services only.
 
-glyph-rpc is still under development. the underlying serialization format (glyph) is 
-considered unstable. not yet recommended for public apis.
+in development
+--------------
 
-the serialization format is being finalized and documented and may 
-change during review, but most of the work is done, just
-edge cases to fully document.
+glyph-rpc is under development. the underlying serialization format (glyph) is 
+considered unfinished. not yet recommended for public apis, as the wire
+format is stablizing.
 
-the code has been used in production internally. 
+currently the specification is in draft from, th grammar
+is complete and details are being fixed. specifications are
+effort.
+
+glyph is ok to use if you control both the client and server
+deployments, but once the format is stable and documented,
+this will not matter.
+
 
 example
 =======
-
-glyph-rpc is still under development. the underlying serialization format is 
-currently unstable. not recommended for public apis.
 
 To show, rather than tell, let's begin with some server code::
 
