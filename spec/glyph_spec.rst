@@ -433,7 +433,8 @@ define the internal type of collections. for example::
 	'float list? string dict' 	a dict of string, to nil or a list of floats
 	'float integer list dict'	a dict of a integer list, to a float
 
-sets and lists 
+sets and lists take a single type parameter, dicts and ordered_dicts take
+two, if available. missing type parameters are assumed to be object.
 
 the value attribute if present, is the default value.
 if no value is provided, clients MUST use this value in
@@ -525,16 +526,15 @@ used to paginate collections across requests,
 - name 'collection'
 - attributes is a dictionary,
   * MAY have the attributes 'range', 'url',
-  * MAY have the attrs 'getitem', 'delitem', 'setitem',
-  * MAY have the attrs 'getrange', 'delrange', 'setrange',
+  * MAY have the attrs 'get', 'del', 'set',
   * MAY have the attrs 'next', 'prev','first','last'
 - content is optionally an ordered collection, or nil
 
-getitem: a form with one argument: 'key',
+get: a form with args 'key', 'range'
 
-setitem: a form with two arguments, 'key', 'value',
+set: a form with args 'key', 'range', 'value',
 
-delitem: a form with one argument: 'key'
+del: a form with args 'key', 'range'
 
 next, prev, first, list: links 
 
@@ -843,18 +843,22 @@ before embracing hypermedia.
 - made utc mandatory rather than recommendation
 
 - encoding consolidation
+
 	use ; as terminator everywhere
 	TFN -> T;F;N;
 
 - add timedelta/period type:
+
 	p<iso period format>;
 	problems: timedeltas are sometimes int millis or float days or specific object
 
 - unify link and embed extension
+
 	add 'cached':True as attribute
 	means content can be returned in lieu of fetching
 
 - blob/chunks as attachments for large file handling
+
 	add top level blob, chunk type
 
 - empty versions of bytestring, unicode
@@ -899,11 +903,43 @@ before embracing hypermedia.
 planned changes
 ---------------
 
-- 0.6 complete extensions:  schema/form inputs type, collections
-	fill out collection type
-	define forms for GET, and other verbs.
-	fill out http mapping, more examples
+- 0.6 complete extensions:
+
+	fill out collection type with methods/forms
+
+	define behaviour for other HTTP methods on links, forms
+	
+	fill out http mapping, more examples for status codes.
+	
+	profile url
+
+	error handling
+
+	caching information/recommendations
+
+	pretty printing
+
+	worked example
 
 - 0.9 extensions frozen
 - 1.0 final
+
+- add references
+
+	utf-8 rfc
+
+	datetime rfc, iso
+
+	rfc of terms
+
+	http rfc
+
+	c99 hex floats
+
+	mime types
+
+	profiles
+
+	url
+
 
