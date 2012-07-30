@@ -5,10 +5,20 @@ import io
 import os
 import itertools
 import operator
-import isodate
 import tempfile
 
 from pytz import utc
+
+try:
+    # Code for older deployments that do not have isodate
+    from isodate import duration_isoformat, parse_duration
+except ImportError:
+    # todo? consider replacing isodate
+    def duration_isoformat(dt):
+        raise NotImplementedError()
+    def parse_duration(string):
+        raise NotImplementedError()
+
 
 CONTENT_TYPE='application/vnd.glyph'
 
@@ -228,7 +238,7 @@ class Encoder(object):
             yield END_ITEM
         elif isinstance(obj, timedelta):
             yield PER
-            yield isodate.duration_isoformat(obj)
+            yield duration_isoformat(obj)
             yield END_ITEM
 
         else:
@@ -344,7 +354,7 @@ class Encoder(object):
             return ext
         elif c == PER:
             period = _read_until(fh, END_ITEM)[0]
-            return isodate.parse_duration(period)
+            return parse_duration(period)
         elif c == DTM:
             datestring =  _read_until(fh, END_ITEM)[0]
             if datestring[-1].lower() == 'z':
