@@ -45,7 +45,8 @@ def error(reference, message):
     return Extension.__make__(u'error', {u'logref':unicode(reference), u'message':message}, {})
 
 def form_input(name):
-    return Extension.__make__(u'input', {u'name':name}, None)
+    return unicode(name)
+    #return Extension.__make__(u'input', {u'name':name}, None)
 
 
 # move to inspect ?
