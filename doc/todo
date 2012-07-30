@@ -8,17 +8,19 @@
 	blob handling
 		blob takes a fh/stringio, not a bytestring.
 
-	4xx vs 5xx determines exception thrown, client or server error
-
 next commits:
 	
 	spec parity -
 		ordered dict in ruby
 		relative url handling in extensions
+		form input element
+		collection element
 
 	error type fleshed out
 		exception mapping
 		client error /server error
+		i.e 4xx vs 5xx determines exception thrown, client or server error
+
 
 next commits:
 	session handler injected into forms rather than being global

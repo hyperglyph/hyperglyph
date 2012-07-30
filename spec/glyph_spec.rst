@@ -2,8 +2,8 @@
  glyph 
 =======
 :Author: tef
-:Date: 2012-07-24
-:Version: 0.5 (DRAFT)
+:Date: 2012-07-30
+:Version: 0.6
 
 glyph-rpc is a client/server protocol which
 exposes application objects over http, as machine
@@ -17,6 +17,12 @@ and translates instances and methods to pages and forms.
 
 The client browses the server, using forms to invoke
 methods.
+
+status
+======
+
+- syntax is considered frozen
+- semantics for extensions are being completed
 
 
 .. contents::
@@ -229,6 +235,7 @@ dependent binary format, we use the hex format from C99::
 	-0.0	-0x0p0
 	1.729	0x1.ba9fbe76c8b44p+0
 
+details on the encoding and decoding of hex floats is covered in an appendix.
 Hex floats are supported natively by a number of languages.
 glyph uses hex floats, except for special values: nan and infinity::
 
@@ -246,7 +253,6 @@ glyph uses hex floats, except for special values: nan and infinity::
 decoders MUST ignore case.
 encoders MUST use 'inf' or 'infinity', not 'infin', 'in', etc.
 
-details on the encoding and decoding of hex floats is covered in an appendix.
 
 node
 ----
@@ -372,29 +378,86 @@ links, forms and other extensions.
 link
 ----
 
-a hyperlink with a method and url, optionally with an inlined response
+a hyperlink with a method and url, optionally with an inlined response.
+links MUST be safe (and idempotent) requests.
 
 - name 'link'
-- attributes is a dictionary. MUST have the keys 'url', 'method'
- * method SHOULD be 'GET', urls MAY be relative.
+- attributes is a dictionary. MAY have the keys 'method', 'url'
+ * url MAY be relative, to the response or a parent object.
  * MAY have the entry 'inline' -> true | false
  * MAY have the entries 'etag' -> string,  'last_modified' -> datetime, 
 - content is an object, which is either nil or the inlined response
 
-links map to functions with no arguments. if the key 'inline' is in the
-attributes and the associated value is true, then the function MAY
-return the content object, instead of making a request.
+
+links normally describe a GET request, under http. links SHOULD be 
+transformed into functions in the host language, where invoking
+the function makes the request.
+
+if the key 'inline' is in the attributes and the associated value is true, 
+then the function MAY return the content object, instead of making a request.
 
 if the 'etag', 'last_modified' keys are present, the client MAY
-make a conditional GET request to see if the content object is fresh.
+make a conditional request to see if the content object is fresh.
+
+specific details on how to handle methods and urls and invoke a response is detailed
+in the mapping for that protocol. http mapping is defined later.
 
 example::
 
 	link(method="GET", url="/foo")
 
-	Hu4:link;du6:method;u3:GET;u3:url;u4:/foo;;n;;
+	Hu4:link;Du6:method;u3:GET;u3:url;u4:/foo;;n;;
+
+if the url is empty or not present, it is assumed to be the parent
+object url or the response url
+
+form
+----
+
+like a html form, with a url, method, expected form values.
+forms make unsafe requests.
+
+- name 'form'
+- attributes is a dictionary
+  * MUST have the keys 'url', 'method' , 'values'
+    - urls MAY be relative to the base url or a parent object.
+    - url and method are both unicode keys with unicode values.
+    - values is a list of parameter names,  unicode strings or input objects
+  * MAY have the keys 'headers', 'profile'
+    - headers is a dictionary of unicode strings
+    - profile is a unicode string
+  * MAY have the keys 'safe', 'idempotent'
+    - both boolean values, default to false
+- content is nil object
+
+forms normally describe a POST request, under http. forms SHOULD be 
+transformed into functions in the host language, where invoking
+the function with arguments makes the request.
+
+the 'values' attribute describes the arguments for the request,
+as a list of names or input elements. the client uses this list
+to constuct the data for the request.
+
+the request data is a list of pairs '[[name, value], [name, value]]`,
+where the names are in the same order as the 'values' attribute,
+using the unicode string as the name, or the input element's name
+attribute. this data is normally glyph encoded.
+ 
+details on how to handle methods and urls and invoke a response is detailed
+in the mapping for that protocol. http mapping is defined later
+
+example::
+
+	form(method="POST", url="/foo", values=['a'])
+
+	Hu4:form;Du6:method;u4:POST;u3:url;u4:/foo;u6:values;Lu1:a;;;N;;
 
 the url MAY be relative to the page url, or to a parent object.
+
+the header attribute is a dictionary of headers clients SHOULD add to the
+request, if they are allowed by the mapping. if the client cannot add
+the header, the request MUST not be made, and an ERROR must be raised.
+
 
 input
 -----
@@ -407,10 +470,18 @@ an object that appears in forms, to provide information about a parameter.
   *  MAY have the keys 'value', 'type'
 - content is nil
 
+the value attribute is the default value for this argument.
+if a client does not provide a value for this argument, the
+default SHOULD be used instead.
+
 the type attribute, if present, SHOULD be unicode string,
 defining the expected type for this parameter.
-if the type is not present or known, the client can
-assume it to be 'object'
+
+clients MAY parse this string to find out the expected
+type for the argument. the intent is for building browsers
+or inspectors for apis. clients MAY use this information
+to convert a parameter. if the type is not present or known, the client can
+assume it to be 'object'.
 
 types are defined for the names in the grammar::
 
@@ -422,63 +493,20 @@ types are defined for the names in the grammar::
 additionally, the type 'bool' is defined to mean 'true' or 'false'.
 types may have a trailing '?' to indicate that nil is also acceptable
 
-types MAY be space separated list of types in postfix order, to 
-define the internal type of collections. for example::
+types may take some other types as parameters, this is indicated by
+the form `typename/arity`. so, the type `integer list/1` represents a 
+`list` of `integer`. the types are specified as a space separated list
+in postfix order::
 
 	'unicode'			a unicode string 
 	'integer?'			an integer or nil
-	'list'				a list of objects
-	'string list'  			a list of strings
-	'object string dict' 		a dict of string to object
-	'float list? string dict' 	a dict of string, to nil or a list of floats
-	'float integer list dict'	a dict of a integer list, to a float
-
-sets and lists take a single type parameter, dicts and ordered_dicts take
-two, if available. missing type parameters are assumed to be object.
-
-the value attribute if present, is the default value.
-if no value is provided, clients MUST use this value in
-form submission.
+	'list/0'				a list of objects
+	'string list/1'  			a list of strings
+	'object string dict/2' 		a dict of string to object
+	'float list?/1 string dict/2' 	a dict of string, to nil or a list of floats
+	'float integer list/1 dict/2'	a dict of a integer list, to a float
 
 
-form
-----
-
-like a html form, with a url, method, expected form values.
-
-- name 'form'
-- attributes is a dictionary
-  * MUST have the keys 'url', 'method' , 'values'
-  * method SHOULD be 'POST', urls MAY be relative.
-  * url and method are both unicode keys with unicode values.
-  * values is a list of parameter names,  unicode strings or input objects
-  * MAY have the keys 'if_none_match' 'if_match', 'profile'
-- content is nil object
-
-forms map to functions with arguments. function signatures map to the values
-parameter. invoking a form object should make a POST request,
-with the arguments encoded in glyph.
-
-on submission, arguments are encoded in a list of list of `[name, value]` pairs,
-using the parameter names in the form, in the same order, using default
-values where necessary.
-
-the parameter names are either encoded as a unicode string,
-or as an input object, with a name attribute. input
-
-if the 'if_none_match' or 'if_match' attributes are present,
-the client MUST add the corresponding HTTP headers to the request. 
-
-forms do not support GET requests.
-	
-
-example::
-
-	form(method="POST", url="/foo", values=['a')
-
-	Hu4:form;du6:method;u4:POST;u3:url;u4:/foo;u6:values;Lu1:a;;;N;;
-
-the url MAY be relative to the page url, or to a parent object.
 
 resource
 --------
@@ -522,6 +550,8 @@ collection
 ----------
 
 used to paginate collections across requests, 
+
+currently under development, this element should be considered unstable.
 
 - name 'collection'
 - attributes is a dictionary,
@@ -567,41 +597,54 @@ extensions with the names: collection, integer, unicode, bytearray, float, datet
 http mapping
 ============
 
+glyph-rpc uses HTTP/1.1
+
 mime type
 ---------
 
-glyph uses the mime type: 'application/vnd.glyph'
-
-url schema
-----------
-
-The server maps classes, instances, methods to urls.
-URLs are opaque to the client, beyond the initial url
-
-an example mapping::
-
-	object		url
-	a class		/ClassName/
-	an instance 	/ClassName/?GlyphInstanceData
-	a method	/ClassName/method?GlyphInstanceData
-	a function	/Function/
-
-There are no restrictions on how the server maps URLs, clients SHOULD NOT
-not modify or construct URLs, but use them as provided.
+glyph data has the mime type: 'application/vnd.glyph'
 
 requests
 --------
 
+methods in links and forms may be known http methods,
+or unknown methods. clients MUST support 'GET' and 'POST' methods,
+and MAY support 'PATCH', 'PUT', or 'DELETE'.
+
+for links and forms, if the method is unsupported or unknown, 
+the client MUST use either 'GET' for links or 'POST' for forms, with
+the original method name in a header  called 'Method'.
+
+links MUST always be safe, idempotent requests.
+ if the method is not present, it is assumed to be 'GET'. 
+
+forms represent unsafe requests by default, and if the method is
+not present, it is assumed to be 'POST'.
+
+
+if the method for a form is 'GET', arguments are glyph encoded,
+then urlencoded, and used as the query parameters for the request.
+i.e a request is made to <form-url-without-query>?<urlencoded data>
+
+otherwise, the arguments are sent in the body of the request,
+with the appropriate content-type set.
+
+form requests can be safe or idempotent, if the method is known to be,
+or the form has the 'safe' or 'idempotent' attributes, set.
+
+if the method is not known, clients MAY add a 'Safe' header, or 'Idempotent' 
+header to the request, alonside the 'Method' header.
+
+Servers MUST treat the `Method` header as the method for the request,
+if present for 'GET' or 'POST' requests.
+
 HTTP requests should have the following headers:
 
-- Accept, set to the glyph mime type
+- Accept, set to the glyph mime type, if not overridden
 
-GET request - made from a link object, may be
-cached or conditional, MUST be safe
-
-POST request - used in forms, may be conditional.
-
-HTTP verbs: PUT. PATCH, DELETE, OPTIONS, currently undefined
+forms and links may provide the following headers in requests:
+- forms can have the headers 'If-None-Match', 'Accept', 'If-Match'
+- links can have the headers 'Accept'
 
 glyph clients SHOULD return an response with an unknown encoding as a blob,
 and SHOULD set the url attribute of the blob object.
@@ -637,6 +680,26 @@ general
 A server SHOULD allow gzip encoding, and clients MUST understand
 gzip encoding.
 
+url schema
+----------
+
+The server maps classes, instances, methods to urls.
+URLs are opaque to the client, beyond the initial url
+
+an example mapping::
+
+	object		url
+	a class		/ClassName/
+	an instance 	/ClassName/?GlyphInstanceData
+	a method	/ClassName/method?GlyphInstanceData
+	a function	/Function/
+
+There are no restrictions on how the server maps URLs, clients SHOULD NOT
+not modify or construct URLs, but use them as provided.
+
+Servers MAY use the method field to represent the method, instead of
+using GET, POST and  encoding it in the URL. Clients MUST translate
+these, adding a 'Method' header, as detailed above.
 
 
 appendix
@@ -900,20 +963,27 @@ before embracing hypermedia.
 
 - input type parameters added
 
+- adding a header argument
+
+- adding arity to type descriptors 
+
+- define behaviour for other HTTP methods on links, forms
+
+- 0.6 
+
 planned changes
 ---------------
 
-- 0.6 complete extensions:
-
+- 0.7 complete extensions:
+	
 	fill out collection type with methods/forms
-
-	define behaviour for other HTTP methods on links, forms
 	
 	fill out http mapping, more examples for status codes.
+	(errors in particular)
 	
-	profile url
+	profile url/link
 
-	error handling
+	error handling/mapping
 
 	caching information/recommendations
 
@@ -925,6 +995,8 @@ planned changes
 - 1.0 final
 
 - add references
+
+	safe rfc 2310
 
 	utf-8 rfc
 
