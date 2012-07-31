@@ -1,20 +1,12 @@
-	add error type:
-		returns message
-	add blob type:
-		has content-type, other http headers, contents
-		remove bytestring type?
-
-
-	blob handling
-		blob takes a fh/stringio, not a bytestring.
 
 next commits:
 	
 	spec parity -
+		http method handling, GET, POST, *
 		ordered dict in ruby
-		relative url handling in extensions
-		form input element
-		collection element
+		relative url handling in extensions, ruby,python
+		form input element, ruby, python
+		collection element in ruby, python
 
 	error type fleshed out
 		exception mapping
@@ -29,7 +21,7 @@ next commits:
 
 	glyph from scratch:
 		implement everything by spec
-		class instead of builder for router
+		perhaps? class instead of builder for router
 		simplify mapper code, less flexible.
 
 	caching:
@@ -72,7 +64,7 @@ pagination
 
 
 http semantics:
-	support HEAD
+	support HEAD, OPTIONS?
 
 html serialization
 	javascript
@@ -94,4 +86,3 @@ different transports
 
 	coap over datagram, http over streams
 
-§
