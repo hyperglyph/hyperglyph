@@ -2,6 +2,7 @@ from urlparse import urljoin
 import datetime
 import io
 import requests
+import collections
 
 from pytz import utc
 
@@ -208,7 +209,7 @@ class Form(Extension):
     def __call__(self, *args, **kwargs):
         url = self._attributes[u'url']
         data = []
-        names = {}
+        names = collections.OrderedDict()
         if self._attributes[u'values']:
             for n in self._attributes[u'values']:
                 if isinstance(n, Input):

@@ -341,6 +341,11 @@ class FunctionTest(ServerTest):
         def bar(a,b):
             return a*b
 
+        @m.add()
+        def baz(a,b,c):
+            return a,b,c
+
+
 
         return m
 
@@ -348,6 +353,7 @@ class FunctionTest(ServerTest):
         root = glyph.get(self.endpoint.url)
         self.assertEqual(root.foo(1,1), 2)
         self.assertEqual(root.bar(1,1), 1)
+        self.assertEqual(root.baz(1,2,3), [1,2,3])
 
 class FunctionRedirectTest(ServerTest):
 
