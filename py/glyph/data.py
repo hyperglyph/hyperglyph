@@ -166,6 +166,9 @@ class BaseNode(object):
     def __make__(cls, name, attributes, content):
         return cls(name,attributes, content)
 
+    def __resolve__(self, resolver):
+        pass
+
 class Node(BaseNode):
     def __getattr__(self, name):
         try:
@@ -199,8 +202,6 @@ class Extension(BaseNode):
     def __repr__(self):
         return '<ext:%s %s %s>'%(self._name, repr(self._attributes), repr(self._content))
 
-    def __resolve__(self, resolver):
-        pass
 
 @Extension.register('form')
 class Form(Extension):
