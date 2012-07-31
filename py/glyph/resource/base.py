@@ -1,4 +1,5 @@
 import types
+import traceback
 
 from urllib import quote_plus, unquote_plus
 
@@ -113,9 +114,8 @@ class ClassMapper(BaseMapper):
                 # no instance found, use default handler
                 attr = self.default_method(verb)
 
-        except StandardError:
-            import traceback
-            traceback.print_exc()
+        except StandardError as e:
+            router.log_error(e, traceback.format_exc())
             raise BadRequest()
 
         return Handler.call(attr, request, router)

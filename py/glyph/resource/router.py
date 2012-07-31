@@ -1,4 +1,6 @@
 import weakref
+import sys
+import traceback
 
 from werkzeug.utils import redirect as Redirect
 from werkzeug.wrappers import Request, Response
@@ -42,14 +44,19 @@ class Router(object):
         except (StopIteration, GeneratorExit, SystemExit, KeyboardInterrupt):
             raise
         except HTTPException as r:
-            import traceback;
-            traceback.print_exc()
             response = r
+            self.log_error(r, traceback.format_exc())
         except Exception as e:
-            import traceback;
-            traceback.print_exc()
-            response = Response(traceback.format_exc(), status='500 not ok')
+            trace = traceback.format_exc()
+            self.log_error(e, trace)
+            response = self.error_response(e, trace)
         return response(environ, start_response)
+
+    def log_error(self, exception, trace):
+        print >> sys.stderr, trace
+
+    def error_response(self, exception, trace):
+        return Response(trace, status='500 not ok (%s)'%exception)
 
 
     def url_mapper(self, path):
