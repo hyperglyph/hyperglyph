@@ -20,6 +20,8 @@ come say hello: ##glyph on freenode
 glyph was designed and built for loose coupled distributed programs. it's 
 been in use in production for a year, but for internal services only.
 
+glyph is released under the MIT license
+
 in development
 --------------
 

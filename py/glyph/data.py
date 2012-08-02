@@ -46,8 +46,8 @@ def error(reference, message):
     return Extension.__make__(u'error', {u'logref':unicode(reference), u'message':message}, {})
 
 def form_input(name):
-    return unicode(name)
-    #return Extension.__make__(u'input', {u'name':name}, None)
+    #return unicode(name)
+    return Extension.__make__(u'input', {u'name':unicode(name)}, None)
 
 
 # move to inspect ?
@@ -117,10 +117,15 @@ class chunk_fh(object):
 
         return self.state > 0
                 
-def fetch(method, url, args=None, data=None, headers=None):
+def fetch(method, url, args=None, data=None, headers=None, force_method=None):
     if headers is None:
         headers = {}
     headers.update(HEADERS)
+
+    if force_method and method != force_method:
+        headers['Method'] = method
+        method = force_method
+
     if args is None:
         args = {}
     if data is not None:
@@ -208,33 +213,47 @@ class Extension(BaseNode):
 class Form(Extension):
     def __call__(self, *args, **kwargs):
         url = self._attributes[u'url']
-        data = []
-        names = collections.OrderedDict()
+
+        parameters = collections.OrderedDict()
+
+        # convert all inputs to a ord-dict of form inputs
         if self._attributes[u'values']:
             for n in self._attributes[u'values']:
                 if isinstance(n, Input):
-                    names[n.name] = n
+                    parameters[n.name] = n
                 else:
-                    names[n] = None
+                    parameters[n] = form_input(n)
 
-        if names:
-            for n,v in zip(names.keys(), args):
-                if names[n]:
-                    v = names[n].convert(v)
-                n = unicode(n)
-                data.append((n,v))
-        elif args:
-            raise StandardError('no unamed arguments')
 
-        for k,v in kwargs.items():
-            if k in names:
-                if names[k]:
-                    v = names[k].convert(v)
-                data.append((k,v))
-            else:
-                raise StandardError('unknown argument')
+        # build the form arguments
+        data = collections.OrderedDict()
 
-        return fetch(self._attributes.get(u'method',u'POST'), url, data=data)
+        if parameters:
+            args = list(args)
+            kwargs = dict(kwargs)
+
+            for p,i in parameters.iteritems():
+                if args:
+                    data[p] = i.convert(args.pop(0))
+                elif p in kwargs:
+                    data[p] = i.convert(kwargs.pop(p))
+                elif i.has_default():
+                    data[p] = i.default()
+                else:
+                    raise TypeError('argument %s missing'%p)
+            if args:
+                raise TypeError('function passed %d extra parameter(s)'%len(args))
+            elif kwargs:
+                raise TypeError('function passed %d extra named parameter(s)'%len(kwargs))
+                
+        elif args or kwargs:
+            raise TypeError('function takes 0 arguments')
+
+        data = [(k,v) for k,v in data.iteritems()]
+
+        headers = {}
+
+        return fetch(self._attributes.get(u'method',u'POST'), url, data=data, force_method=u'POST')
 
     def __resolve__(self, resolver):
         self._attributes[u'url'] = unicode(resolver(self._attributes[u'url']))
@@ -246,7 +265,7 @@ class Link(Extension):
             return self._content
         else:
             url = self._attributes[u'url']
-            return fetch(self._attributes.get(u'method',u'GET'),url)
+            return fetch(self._attributes.get(u'method',u'GET'),url, force_method=u'GET')
 
     def url(self):
         return self._attributes[u'url']
@@ -284,6 +303,12 @@ class Input(Extension):
 
     def convert(self, value):
         return value
+
+    def has_default(self):
+        return u'value' in self._attributes
+
+    def default(self):
+        return self._attributes[u'value']
 
 @Extension.register('collection')
 class Collection(Extension):

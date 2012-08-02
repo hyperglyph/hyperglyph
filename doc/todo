@@ -3,7 +3,7 @@ next commits:
 	
 	spec parity -
 		http method handling, GET, POST, *
-		ordered dict in ruby
+		ordered dict in ruby ?
 		relative url handling in extensions, ruby,python
 		form input element, ruby, python
 		collection element in ruby, python
@@ -13,13 +13,15 @@ next commits:
 		client error /server error
 		i.e 4xx vs 5xx determines exception thrown, client or server error
 
+	handle unknown content types as blob
+
 
 next commits:
 	session handler injected into forms rather than being global
 		can pass in a 'null' session handler, that serializes,
 		deserializes & fetches by calling directly.
 
-	glyph from scratch:
+	glyph from scratch?
 		implement everything by spec
 		perhaps? class instead of builder for router
 		simplify mapper code, less flexible.

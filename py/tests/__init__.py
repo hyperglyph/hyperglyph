@@ -354,6 +354,8 @@ class FunctionTest(ServerTest):
         self.assertEqual(root.foo(1,1), 2)
         self.assertEqual(root.bar(1,1), 1)
         self.assertEqual(root.baz(1,2,3), [1,2,3])
+        self.assertEqual(root.baz(c=3,b=2,a=1), [1,2,3])
+        self.assertEqual(root.baz(1,c=3,b=2), [1,2,3])
 
 class FunctionRedirectTest(ServerTest):
 

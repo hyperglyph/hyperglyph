@@ -98,7 +98,9 @@ class BaseMapper(object):
 class ClassMapper(BaseMapper):
     def handle(self,request, router):
         path = request.path.split(self.prefix)[1]
-        verb = request.method.upper()
+        verb = request.method.upper() 
+        if 'Method' in request.headers:
+            verb = request.headers['Method']
 
         try:
             if path:
@@ -140,6 +142,8 @@ class ClassMapper(BaseMapper):
 
 
     def default_method(self, verb):
+        if verb not in VERBS:
+            raise MethodNotAllowed(verb)
         try:
             return getattr(self, verb)
         except:
