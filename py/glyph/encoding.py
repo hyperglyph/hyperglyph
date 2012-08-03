@@ -50,16 +50,17 @@ BLOB = 'B'
 CHUNK = 'c'
 
 def blob(content, content_type=u"application/octet-stream"):
+    if isinstance(content, unicode):
+        content = io.StringIO(content)
+        content_type = "text/plain; charset=utf-8"
+    elif isinstance(content, str):
+        content = io.BytesIO(content)
+        content_type = "text/plain"
     return Blob(content, {u'content-type':content_type,})
 
 class Blob(object):
     def __init__(self, content, attributes):
         self._attributes = attributes
-        if not isinstance(content, io.IOBase):
-            if isinstance(content, unicode):
-                content = io.StringIO(content)
-            else:
-                content = io.BytesIO(content)
         self.fh = content
 
     @property
@@ -101,6 +102,9 @@ class Encoder(object):
         self.node = node
         self.extension = extension
         self.max_blob_mem_size = kwargs.get("max_blob_mem_size", 1024*1024*2)
+
+    def temp_file(self):
+        return tempfile.SpooledTemporaryFile(max_size=self.max_blob_mem_size)
 
     def dump(self, obj, resolver=identity, inline=fail):
         return self.dump_buf(obj, resolver, inline).read()
@@ -371,7 +375,7 @@ class Encoder(object):
             blob_id, first = _read_until(fh, LEN_SEP, parse=int)
             first = read_first(fh)
             attr  = self._read_one(fh, first, resolver, blobs)
-            blob = Blob(io.BytesIO(), attr)
+            blob = Blob(self.temp_file(), attr)
             first = read_first(fh)
             if first != END_ITEM:
                     raise StandardError('blob')
@@ -393,23 +397,9 @@ class Encoder(object):
                 else:
                     size, first = _read_until(fh, LEN_SEP, parse=int)
                     blob = blobs[blob_id]
-                    byte_count[blob_id] += blob.write(fh.read(size))
-                    should_transfer = [
-                        self.max_blob_mem_size is None,
-                        byte_count[blob_id] >= self.max_blob_mem_size,
-                    ]
-                    if not isinstance(blob.fh, TemporaryFile) and any(should_transfer):
-                        blob.seek(0)
-                        finished = False
-                        try:
-                            tmp = TemporaryFile(suffix=str(blob_id))
-                            tmp.write(blob.read())
-                            finished = True
-                        finally:
-                            if not finished:
-                                tmp.close()
-                        blob.truncate(0)
-                        blob.fh = tmp
+                    buf = fh.read(size)
+                    blob.write(buf)
+                    byte_count[blob_id] += len(buf)
                     first = read_first(fh)
 
                 if first != END_ITEM:
@@ -426,20 +416,3 @@ class Encoder(object):
         result = self._read_one(fh, first, resolver, blobs)
         self._read_blobs(fh, blobs)
         return result
-
-
-class TemporaryFile(object):
-    
-    def __init__(self, *args, **kwargs):
-        self.fd, self.name = tempfile.mkstemp(*args, **kwargs)
-        self.file = io.open(self.fd, "w+b")
-    
-    def __repr__(self):
-        return "<%s.%s object at %s>" % (self.__class__.__module__, self.__class__.__name__, self.name)
-    
-    def __getattr__(self, attr):
-        return getattr(self.__dict__["file"], attr)
-    
-    def close(self):
-        self.file.close()
-        os.unlink(self.name)
