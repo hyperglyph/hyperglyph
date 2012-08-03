@@ -249,9 +249,9 @@ class Form(Extension):
         elif args or kwargs:
             raise TypeError('function takes 0 arguments')
 
-        data = [(k,v) for k,v in data.iteritems()]
-
         headers = {}
+
+        #data = [(k,v) for k,v in data.iteritems()]
 
         return fetch(self._attributes.get(u'method',u'POST'), url, data=data, force_method=u'POST')
 

@@ -2,8 +2,8 @@
  glyph 
 =======
 :Author: tef
-:Date: 2012-07-30
-:Version: 0.6
+:Date: 2012-08-03
+:Version: 0.7
 
 glyph-rpc is a client/server protocol which
 exposes application objects over http, as machine
@@ -17,12 +17,6 @@ and translates instances and methods to pages and forms.
 
 The client browses the server, using forms to invoke
 methods.
-
-status
-======
-
-- syntax is considered frozen
-- semantics for extensions are being completed
 
 
 .. contents::
@@ -104,6 +98,9 @@ integers of arbitrary precision, sign is optional, and either '+' or '-'
 
 note: if the decoder cannot represent the number without overflow, 
 it SHOULD throw an error
+
+encoders MUST NOT produce numbers with leading 0s. decoders MUST
+ignore leading zeros.
 
 unicode
 -------
@@ -260,7 +257,7 @@ node
 nodes are generic named containers for application use:
 tuples of name, attributes and content objects.
 
-name SHOULD be a unicode string, attributes SHOULD be a dictionary::
+name SHOULD be a unicode string, attributes SHOULD be a dictionary (possibly ordered)::
 
 	node :== 'X' ws name_obj ws attr_obj ws content_obj ws ';'
 
@@ -337,7 +334,7 @@ extensions are name, attr, content tuples, used internally within glyph
 to describe objects with special handling or meaning, rather than
 application meaning.
 
-name SHOULD be a unicode string, attributes SHOULD be a dictionary::
+name SHOULD be a unicode string, attributes SHOULD be a dictionary or ordered dictionary::
 
 	extension :== 'H' ws name_obj ws attr_obj ws content_obj ws ';' 
 	name_obj :== string | object
@@ -355,7 +352,7 @@ extensions
 
 the following extensions are defined within glyph:
 
-note: all strings are unicode strings, all dictionaries are unordered
+note: all strings are unicode strings, all dictionaries can be unordered, or ordered.
 
 error
 -----
@@ -423,9 +420,8 @@ forms make unsafe requests.
     - urls MAY be relative to the base url or a parent object.
     - url and method are both unicode keys with unicode values.
     - values is a list of parameter names,  unicode strings or input objects
-  * MAY have the keys 'headers', 'profile'
+  * MAY have the key 'headers'
     - headers is a dictionary of unicode strings
-    - profile is a unicode string
   * MAY have the keys 'safe', 'idempotent'
     - both boolean values, default to false
 - content is nil object
@@ -438,7 +434,7 @@ the 'values' attribute describes the arguments for the request,
 as a list of names or input elements. the client uses this list
 to constuct the data for the request.
 
-the request data is a list of pairs '[[name, value], [name, value]]`,
+the request data is a ordered dictionary `{name:value, name1: value1}`,
 where the names are in the same order as the 'values' attribute,
 using the unicode string as the name, or the input element's name
 attribute. this data is normally glyph encoded.
@@ -520,6 +516,7 @@ you fetch a url that maps to an instance, a resource extension is returned
 - name 'resource'
 - attributes is a dictionary,
   *  MAY have the keys 'url', 'name', 'profile'
+    - profile, name, url all unicode strings.
 - content is a dict of string -> object
   * objects usually forms
 
@@ -545,53 +542,29 @@ if the resource has a 'url' attribute, the client MUST
 use this url for resolving relative links in any contained
 links, forms and other extensions.
 
+the 'profile' attribute, if present SHOULD be a URI
+relating to the type of resource returned.
+
 
 collection
 ----------
 
-used to paginate collections across requests, 
-
-currently under development, this element should be considered unstable.
+a reserved extension type. this will provide a 'pagination' alike
+mechanism for browsing collections on the server.
 
 - name 'collection'
 - attributes is a dictionary,
-  * MAY have the attributes 'range', 'url',
-  * MAY have the attrs 'get', 'del', 'set',
-  * MAY have the attrs 'next', 'prev','first','last'
 - content is optionally an ordered collection, or nil
-
-get: a form with args 'key', 'range'
-
-set: a form with args 'key', 'range', 'value',
-
-del: a form with args 'key', 'range'
-
-next, prev, first, list: links 
-
-range: a two element list defining the range covered by the content object, non-inclusive.
-nil, nil means all of the collection. 
-
-collections may optionally have a range of the items contained within.
-
-..
-	- size / size_hint
-	- getitem, setitem, delitem
-	- iter/next/prev
-	- range/slice
-	- oh god cursors D:
-	- oh god url construction ?
 
 if the collection has a 'url' attribute, the client MUST
 use this url for resolving relative links in any contained
 links, forms and other extensions.
 
-collections SHOULD behave like a normal collection in the host language,
-where possible.
 
 reserved extensions
 -------------------
 
-extensions with the names: collection, integer, unicode, bytearray, float, datetime, timedelta, nil, true, false, list, set, dict, dict, ordered_dict, node, extension, blob, bool are reserved.
+extensions with the names: integer, unicode, string, bytearray, float, datetime, timedelta, nil, true, false, list, set, dict, dict, ordered_dict, node, extension, blob, bool are reserved.
 
 
 http mapping
@@ -674,10 +647,10 @@ http response, using the content-type attribute.
 
 glyph responses MAY use relative urls.
 
-general
--------
+gzip
+----
 
-A server SHOULD allow gzip encoding, and clients MUST understand
+A server SHOULD allow gzip encoding, and clients SHOULD understand
 gzip encoding.
 
 url schema
@@ -959,7 +932,7 @@ before embracing hypermedia.
 
 - 0.5 grammar/encoding frozen - no more literals, collections added
 
-- relative url handling 
+- relative url handling (e.g resources are used as base url for contained links)
 
 - input type parameters added
 
@@ -971,6 +944,16 @@ before embracing hypermedia.
 
 - 0.6 
 
+- leading zeros ignored for integers.
+
+- ordered dictonary used for form data
+
+- collection type is now reserved
+
+- profile is only on resources
+
+- 0.7
+
 planned changes
 ---------------
 
@@ -978,40 +961,38 @@ planned changes
 	
 	fill out collection type with methods/forms
 	
-	fill out http mapping, more examples for status codes.
-	(errors in particular)
 	
-	profile url/link
-
-	error handling/mapping
-
-	caching information/recommendations
-
-	pretty printing
-
-	worked example
 
 - 0.9 extensions frozen
 - 1.0 final
 
-- add references
+TODO
+====
 
-	safe rfc 2310
+fill out http mapping, more examples for status codes.
+error handling/mapping
 
-	utf-8 rfc
+caching information/recommendations
 
-	datetime rfc, iso
+pretty printing
 
-	rfc of terms
+worked example
+safe rfc 2310
 
-	http rfc
+utf-8 rfc
 
-	c99 hex floats
+datetime rfc, iso
 
-	mime types
+rfc of terms
 
-	profiles
+http rfc
 
-	url
+c99 hex floats
+
+mime types
+
+profiles
+
+url
 
 

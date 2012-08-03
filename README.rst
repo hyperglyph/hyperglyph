@@ -33,9 +33,19 @@ currently the specification is in draft from, th grammar
 is complete and details are being fixed. specifications are
 effort.
 
+the spec is versioned, and the code is catching up while
+we collate details. currently v0.7, and backwards incompatible
+with earlier releases.
+
+when the spec hits v1.0, future minor versions *will* be
+backwards compatible.
+
 glyph is ok to use if you control both the client and server
 deployments, but once the format is stable and documented,
 this will not matter.
+
+the python version is kept up to date with the spec,
+the ruby version trails behind. 
 
 
 example

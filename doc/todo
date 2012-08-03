@@ -1,22 +1,30 @@
 
 next commits:
-	
-	spec parity -
-		http method handling, GET, POST, *
-		ordered dict in ruby ?
-		relative url handling in extensions, ruby,python
-		form input element, ruby, python
-		collection element in ruby, python
+	ruby: 
+		avoid to_sym
+		form input support
+			default value support
+		better ordered dictionaries
+		relative url handling
+		error mapping
+		blob support for returns, etc
 
-	error type fleshed out
-		exception mapping
-		client error /server error
-		i.e 4xx vs 5xx determines exception thrown, client or server error
+	python:
+		relative url handling (+tests for url less forms in resources)
+			new encoder/decoder w/ dependencies & resolver / constructors
+			maybe py2/
+		error mapping
+			client error /server error
+		handle unknown content types as blob
+		http 1.1 server
+		method names in method not in url mapping
 
-	handle unknown content types as blob
+	spec:
+		allow ordered dicts in places, including form args/data
+		flesh out collection type - add useful methods?
 
 
-next commits:
+speculative commits:
 	session handler injected into forms rather than being global
 		can pass in a 'null' session handler, that serializes,
 		deserializes & fetches by calling directly.
@@ -26,8 +34,7 @@ next commits:
 		perhaps? class instead of builder for router
 		simplify mapper code, less flexible.
 
-	caching:
-		
+	caching/wsgiserver
 
 	hack: revision numbers in content-type until stable.
 
@@ -79,6 +86,7 @@ rewrite for python:
 	class mapper only needs root element, rest are ephemeral?
 ports
 	node.js
+	objective-c
 	erlang/riak
 	jquery plugin?
 

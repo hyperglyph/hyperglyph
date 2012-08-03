@@ -267,6 +267,8 @@ module Glyph
   class Extension < Node
     def self.make(name, attrs, content)
       return case name
+        when "input"
+          return Input.new(name, attrs, content)
         when "form"
           return Form.new(name, attrs, content)
         when "link"
@@ -318,7 +320,9 @@ module Glyph
   end
   class Form < Extension
     def call(*args, &block)
-      args = @attrs['values'] ? @attrs['values'].zip(args) : []
+      names = @attrs['values'] ? @attrs['values'] : []
+
+      args = Hash[names.zip args]
       ret = Glyph.fetch(@attrs['method'], @attrs['url'], args)
       if block
         block.call(ret)
@@ -328,6 +332,11 @@ module Glyph
     end
   end
 
+  class Input < Extension
+    def name
+      @attrs['name']
+    end
+  end
   class Link < Extension
     def call(*args, &block)
       if @attrs['inline']
@@ -396,7 +405,7 @@ module Glyph
     elsif Set === o
       "S#{o.map{|o| Glyph.dump_one(o, resolve, inline, blobs) }.join};"
     elsif Hash === o
-      "D#{o.map{|k,v| [Glyph.dump_one(k, resolve, inline, blobs), Glyph.dump_one(v, resolve, inline, blobs)]}.join};"
+      "O#{o.map{|k,v| [Glyph.dump_one(k, resolve, inline, blobs), Glyph.dump_one(v, resolve, inline, blobs)]}.join};"
     elsif TrueClass === o
       "T;"
     elsif FalseClass === o

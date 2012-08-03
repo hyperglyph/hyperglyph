@@ -1,5 +1,6 @@
 import types
 import sys
+import collections
 
 from werkzeug.wrappers import Response
 from werkzeug.exceptions import HTTPException, NotFound, BadRequest, NotImplemented, MethodNotAllowed
@@ -100,7 +101,7 @@ class Handler(object):
             result = attr()
         elif verb == 'POST' and not cls.is_safe(attr):
             try:
-                data = dict(cls.parse(attr, get_stream(request)))
+                data = collections.OrderedDict(cls.parse(attr, get_stream(request)))
             except StandardError:
                 raise
                 raise BadRequest()
