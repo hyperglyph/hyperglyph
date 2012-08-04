@@ -484,7 +484,11 @@ module Glyph
       TimeDelta.iso_parse(per)
     when ?f
       num = scanner.scan_until(/;/)
-      num.chop.hex_to_f
+      if num.index('x')
+        num.chop.hex_to_f
+      else
+        num.chop.to_f
+      end
     when ?u
       num = scanner.scan_until(/[:;]/)
       if num.end_with? ':'

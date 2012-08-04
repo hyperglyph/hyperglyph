@@ -295,7 +295,11 @@ class Encoder(object):
             return _read_until(fh, END_ITEM, parse=int)[0]
 
         elif c == FLT:
-            return _read_until(fh, END_ITEM, parse=float.fromhex)[0]
+            f = _read_until(fh, END_ITEM)[0]
+            if 'x' in f:
+                return float.fromhex(f)
+            else:
+                return float(f)
 
         elif c == SET:
             first = read_first(fh)

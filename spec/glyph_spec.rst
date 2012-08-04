@@ -18,6 +18,8 @@ and translates instances and methods to pages and forms.
 The client browses the server, using forms to invoke
 methods.
 
+0.7 is not backwards compatible with 0.6 or earlier.
+
 
 .. contents::
 
@@ -46,7 +48,7 @@ and collections (list, set, dict).  ::
 	dict			{1:2, 2:4}		Di1;i2;i3;i4;;
 	ordered_dict		ordered(1:2, 2:4)	Oi1;i2;i3;i4;;
 	singleton		nil true false		N; T; F;
-	float			0.5			f0x1.0000000000000p-1; 
+	float			0.5			f0x1.0000000000000p-1;  or f0.5;
 	datetime		1970-1-1 00:00 UTC	d1970-01-01T00:00:00.000Z;
 	timedelta		3 days			pP0Y0M3DT0H0M0S;
 
@@ -220,35 +222,43 @@ encoders MUST present all leading 0s.
 float
 -----
 
-floating point numbers cannot easily be represented 
-in decimal without loss of accuracy. instead of using an endian
-dependent binary format, we use the hex format from C99::
+floating point numbers can be represented in decimal or
+hexadecimal. hexadecimal floats were introduced by C99,
+and provide a way for accurate, endian free 
+representation of floats. for example::
 
-	float	hex
 
-	0.5	0x1.0p-1
-	-0.5 	-0x1.0p-1 
-	+0.0	0x0p0
-	-0.0	-0x0p0
-	1.729	0x1.ba9fbe76c8b44p+0
+	float	hex			decimal
 
-details on the encoding and decoding of hex floats is covered in an appendix.
-Hex floats are supported natively by a number of languages.
-glyph uses hex floats, except for special values: nan and infinity::
+	0.5	0x1.0p-1		f0.5;
+	-0.5 	-0x1.0p-1 		f-0.5;
+	+0.0	0x0p0			f+0.0;
+	-0.0	-0x0p0			f-0.0;
+	1.729	0x1.ba9fbe76c8b44p+0	f1.729;
 
-	float :== 'f' hex_float ';'
+hex floats are `<sign.?>0x<hex>.<hex>e<sign><decimal>`, where
+the first number is the fractional part in hex, and the latter is the exponent
+in decimal.  details on the encoding and decoding of hex floats is covered in an appendix.
 
-	float		encoding
-	0.5		f0x1.0p-1; 
-	-0.5 		f-0x1.0p-1; 
-	0.0		f0x0p0;
+glyph uses hex or decimal floats, except for the special floating
+point values: nan and infinity::
 
-	Infinity	finf; fInfinity; finfinity;
-	-Infinity	f-inf; f-infinity; f-Infinity;
-	NaN		fnan; fNaN;
+	float :== 'f' hex_float ';' | 'f' decimal_float ';' | 'f' named_float ';'
+
+	float		encoding	
+	0.5		f0x1.0p-1; 	or	f0.5;
+	-0.5 		f-0x1.0p-1; 	or 	f-0.5;
+	0.0		f0x0p0;		or 	f0.0;
+
+	Infinity	finf; 	or 	fInfinity;	or 	finfinity;
+	-Infinity	f-inf; 	or 	f-infinity;	or	f-Infinity;
+	NaN		fnan; 	or 	fNaN;
 
 decoders MUST ignore case.
 encoders MUST use 'inf' or 'infinity', not 'infin', 'in', etc.
+
+decoders MUST support hex and decimal floats. encoders
+SHOULD use hex floats instead of decimal.
 
 
 node
@@ -564,13 +574,20 @@ links, forms and other extensions.
 reserved extensions
 -------------------
 
-extensions with the names: integer, unicode, string, bytearray, float, datetime, timedelta, nil, true, false, list, set, dict, dict, ordered_dict, node, extension, blob, bool are reserved.
+the following extension names are reserved, and should not be used for 
+application or vendor specific extensions::
+
+	integer, unicode, string, bytearray, float, datetime,
+	timedelta, nil, true, false, list, set, dict, 
+	ordered_dict, node, extension, blob, bool, 	
+	request, response
 
 
 http mapping
 ============
 
-glyph-rpc uses HTTP/1.1
+glyph-rpc uses HTTP/1.1, although mappings to other protocols,
+or transports is possible.
 
 mime type
 ---------
@@ -953,6 +970,8 @@ before embracing hypermedia.
 - profile is only on resources
 
 - 0.7
+
+- allow decimal floats because i'm not that cruel
 
 planned changes
 ---------------

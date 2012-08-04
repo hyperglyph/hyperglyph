@@ -1,14 +1,5 @@
 
 next commits:
-	ruby: 
-		avoid to_sym
-		form input support
-			default value support
-		better ordered dictionaries
-		relative url handling
-		error mapping
-		blob support for returns, etc
-
 	python:
 		relative url handling (+tests for url less forms in resources)
 			new encoder/decoder w/ dependencies & resolver / constructors
@@ -16,12 +7,27 @@ next commits:
 		error mapping
 			client error /server error
 		handle unknown content types as blob
-		http 1.1 server
 		method names in method not in url mapping
+			handled, but not used.
+		http 1.1 server
+		refactor?
+			glyph.client, glyph, resource, server
+			py.test over unittest
+		blob support for returns, etc
+			client/server if allow="*"
+
+	ruby: 
+		done: avoid to_sym
+		form input support
+			somewhat: no names or default value support
+		better ordered dictionaries
+			done
+		relative url handling
+		error mapping
 
 	spec:
-		allow ordered dicts in places, including form args/data
-		flesh out collection type - add useful methods?
+		done: allow ordered dicts in places, including form args/data
+		rejected: flesh out collection type - add useful methods?
 
 
 speculative commits:
