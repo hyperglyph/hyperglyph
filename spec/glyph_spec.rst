@@ -380,7 +380,7 @@ be a unicode string, message MUST be a unicode string
 
 if the error object has a 'url' attribute, the client MUST
 use this url for resolving relative links in any contained
-links, forms and other extensions.
+links, forms and other extensions, within the content object.
 
 link
 ----
@@ -415,8 +415,12 @@ example::
 
 	Hu4:link;Du6:method;u3:GET;u3:url;u4:/foo;;n;;
 
+the url MAY be relative to the page url, or to a parent object.
+
 if the url is empty or not present, it is assumed to be the parent
-object url or the response url
+object url or the response url.if the url is present, the client MUST
+use this url for resolving relative links in any contained
+links, forms and other extensions, within the content object.
 
 form
 ----
@@ -460,10 +464,14 @@ example::
 
 the url MAY be relative to the page url, or to a parent object.
 
+if the url is empty or not present, it is assumed to be the parent
+object url or the response url.if the url is present, the client MUST
+use this url for resolving relative links in any contained
+links, forms and other extensions, within the content object.
+
 the header attribute is a dictionary of headers clients SHOULD add to the
 request, if they are allowed by the mapping. if the client cannot add
 the header, the request MUST not be made, and an ERROR must be raised.
-
 
 input
 -----
@@ -548,9 +556,10 @@ example::
 
 the specifics of url mapping are covered under `http`
 
-if the resource has a 'url' attribute, the client MUST
+if the url is empty or not present, it is assumed to be the parent
+object url or the response url.if the url is present, the client MUST
 use this url for resolving relative links in any contained
-links, forms and other extensions.
+links, forms and other extensions, within the content object.
 
 the 'profile' attribute, if present SHOULD be a URI
 relating to the type of resource returned.
@@ -972,6 +981,8 @@ before embracing hypermedia.
 - 0.7
 
 - allow decimal floats because i'm not that cruel
+
+- relative url handling is constrained to the content object within extensions
 
 planned changes
 ---------------

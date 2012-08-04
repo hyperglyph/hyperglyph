@@ -6,7 +6,6 @@ next commits:
 			maybe py2/
 		error mapping
 			client error /server error
-		handle unknown content types as blob
 		method names in method not in url mapping
 			handled, but not used.
 		http 1.1 server
@@ -14,15 +13,16 @@ next commits:
 			glyph.client, glyph, resource, server
 			py.test over unittest
 		blob support for returns, etc
-			client/server if allow="*"
+			handle unknown content types as blob
+			client if allow="*"
 
 	ruby: 
 		done: avoid to_sym
-		form input support
-			somewhat: no names or default value support
 		better ordered dictionaries
 			done
 		relative url handling
+		form input support
+			somewhat: no names or default value support
 		error mapping
 
 	spec:

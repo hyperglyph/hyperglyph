@@ -3,6 +3,7 @@ import datetime
 import io
 import requests
 import collections
+from urlparse import urljoin
 
 from pytz import utc
 
@@ -148,7 +149,7 @@ def fetch(method, url, args=None, data=None, headers=None, force_method=None):
     result.raise_for_status()
     data = result.content
     if result.headers['Content-Type'].startswith(CONTENT_TYPE):
-        data = parse(data, join)
+        data = parse(data, base_url=result.url)
     return data
 
 
@@ -175,6 +176,10 @@ class BaseNode(object):
     def __resolve__(self, resolver):
         pass
 
+    @staticmethod
+    def __rebase__(name, attr, base_url):
+        return attr, base_url
+
 class Node(BaseNode):
     def __getattr__(self, name):
         try:
@@ -192,7 +197,7 @@ class Extension(BaseNode):
     _exts = {}
     @classmethod
     def __make__(cls, name, attributes, content):
-        ext = cls._exts.get(name, node)
+        ext = cls._exts.get(name, Node)
         return ext(name,attributes, content)
     
     @classmethod
@@ -208,6 +213,13 @@ class Extension(BaseNode):
     def __repr__(self):
         return '<ext:%s %s %s>'%(self._name, repr(self._attributes), repr(self._content))
 
+    @staticmethod
+    def __rebase__(name, attr, base_url):
+        if u'url' in attr: #and name in (u"form", u"link", u"resource", u"error"):
+            attr[u'url'] = urljoin(base_url, attr[u'url'])
+            return attr, attr[u'url']
+        else:
+            return attr, base_url
 
 @Extension.register('form')
 class Form(Extension):
@@ -273,6 +285,8 @@ class Link(Extension):
     def __resolve__(self, resolver):
         self._attributes[u'url'] = unicode(resolver(self._attributes[u'url']))
 
+
+
 @Extension.register('resource')
 class Resource(Extension):
         
@@ -285,6 +299,7 @@ class Resource(Extension):
         except KeyError:
             raise AttributeError(name)
 
+
 @Extension.register('error')
 class Error(Extension):
     @property
@@ -294,6 +309,7 @@ class Error(Extension):
     @property
     def logref(self):
         return self._attributes[u'logref']
+
 
 @Extension.register('input')
 class Input(Extension):

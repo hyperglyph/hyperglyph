@@ -135,10 +135,6 @@ class Encoder(object):
             yield buf.getvalue()
         
 
-    def parse(self, stream, resolver=identity):
-        if not hasattr(stream, "read"):
-            stream = io.BytesIO(stream)
-        return self.read(stream, resolver)
 
     def _dump(self, obj, resolver, inline):
         blobs = []
@@ -266,7 +262,21 @@ class Encoder(object):
             yield END_ITEM
 
 
-    def _read_one(self, fh, c, resolver, blobs):
+    def parse(self, stream, base_url=None):
+        if not hasattr(stream, "read"):
+            stream = io.BytesIO(stream)
+        return self.read(stream, base_url)
+        
+    def read(self, fh, base_url=None):
+        blobs = {}
+        first = read_first(fh)
+        if first == '':
+            raise EOFError()
+        result = self._read_one(fh, first, blobs, base_url)
+        self._read_blobs(fh, blobs)
+        return result
+
+    def _read_one(self, fh, c, blobs, base_url=None):
         if c == NONE:
             _read_until(fh, END_ITEM)
             return None
@@ -305,7 +315,7 @@ class Encoder(object):
             first = read_first(fh)
             out = set()
             while first != END_SET:
-                item = self._read_one(fh, first, resolver, blobs)
+                item = self._read_one(fh, first, blobs, base_url)
                 if item not in out:
                     out.add(item)
                 else:
@@ -317,7 +327,7 @@ class Encoder(object):
             first = read_first(fh)
             out = []
             while first != END_LIST:
-                out.append(self._read_one(fh, first, resolver, blobs))
+                out.append(self._read_one(fh, first, blobs, base_url))
                 first = read_first(fh)
             return out
 
@@ -328,9 +338,9 @@ class Encoder(object):
             else:
                 out = {}
             while first != END_DICT:
-                f = self._read_one(fh, first, resolver, blobs)
+                f = self._read_one(fh, first, blobs, base_url)
                 second = read_first(fh)
-                g = self._read_one(fh, second, resolver, blobs)
+                g = self._read_one(fh, second, blobs, base_url)
                 new = out.setdefault(f,g)
                 if new is not g:
                     raise StandardError('duplicate key')
@@ -338,27 +348,31 @@ class Encoder(object):
             return out
         elif c == NODE:
             first = read_first(fh)
-            name = self._read_one(fh, first, resolver, blobs)
+            name = self._read_one(fh, first, blobs, base_url)
             first = read_first(fh)
-            attr  = self._read_one(fh, first, resolver, blobs)
+            attr  = self._read_one(fh, first, blobs, base_url)
             first = read_first(fh)
-            content = self._read_one(fh, first, resolver, blobs)
+            content = self._read_one(fh, first, blobs, base_url)
             first = read_first(fh)
             if first != END_NODE:
                     raise StandardError('NODE')
             return self.node.__make__(name, attr, content)
         elif c == EXT:
             first = read_first(fh)
-            name = self._read_one(fh, first, resolver, blobs)
+            name = self._read_one(fh, first, blobs, base_url)
             first = read_first(fh)
-            attr  = self._read_one(fh, first, resolver, blobs)
+            attr  = self._read_one(fh, first, blobs, base_url)
+
+            attr, new_base = self.extension.__rebase__(name, attr, base_url )
+
             first = read_first(fh)
-            content = self._read_one(fh, first, resolver, blobs)
+            content = self._read_one(fh, first, blobs, new_base)
+
             first = read_first(fh)
             if first != END_EXT:
                     raise StandardError('ext')
+
             ext= self.extension.__make__(name, attr, content)
-            ext.__resolve__(resolver)
             return ext
         elif c == PER:
             period = _read_until(fh, END_ITEM)[0]
@@ -378,7 +392,7 @@ class Encoder(object):
         elif c == BLOB:
             blob_id, first = _read_until(fh, LEN_SEP, parse=int)
             first = read_first(fh)
-            attr  = self._read_one(fh, first, resolver, blobs)
+            attr  = self._read_one(fh, first, blobs, base_url)
             blob = Blob(self.temp_file(), attr)
             first = read_first(fh)
             if first != END_ITEM:
@@ -412,11 +426,3 @@ class Encoder(object):
             else:
                 raise StandardError('chunk')
 
-    def read(self, fh, resolver=identity):
-        blobs = {}
-        first = read_first(fh)
-        if first == '':
-            raise EOFError()
-        result = self._read_one(fh, first, resolver, blobs)
-        self._read_blobs(fh, blobs)
-        return result

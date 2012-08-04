@@ -75,7 +75,7 @@ module Glyph
       
     def call(env)
       path = env['PATH_INFO'].split "/"
-      method = env['REQUEST_METHOD']
+      method = env['HTTP_METHOD'] || env['REQUEST_METHOD']
       data = env['rack.input']
 
       response = nil
@@ -194,11 +194,13 @@ module Glyph
   end
 
   def self.get(url) 
-    fetch("GET", url, nil)
+    fetch("GET", url, nil, nil)
   end
 
-  def self.fetch(method, url, data)
+  def self.fetch(method, url, data, force_method)
     uri = URI(url)
+      
+    # todo handle adding Method: header
     req = case method.downcase
       when "post"
         path = (uri.query) ? "#{uri.path}?#{uri.query}" : uri.path
@@ -321,6 +323,7 @@ module Glyph
   class Form < Extension
     def call(*args, &block)
       names = @attrs['values'] ? @attrs['values'] : []
+      # todo, handling inputs as well as strings
 
       args = Hash[names.zip args]
       ret = Glyph.fetch(@attrs['method'], @attrs['url'], args)
@@ -540,12 +543,14 @@ module Glyph
     when ?H
       name = parse_one(scanner, url, blobs)
       attrs = parse_one(scanner, url, blobs)
-      content = parse_one(scanner, url, blobs)
+      if attrs['url']
+        attrs['url']=URI.join(url,attrs['url']).to_s
+        content = parse_one(scanner, attrs['url'], blobs)
+      else
+        content = parse_one(scanner, url, blobs)
+      end
       scanner.scan(/;/)
       e = Extension.make(name, attrs, content)
-      if url
-        e.resolve(url)
-      end
       e
     when ?B
       bid = scanner.scan_until(/:/).chop.to_i
