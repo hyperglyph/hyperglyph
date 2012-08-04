@@ -1,33 +1,47 @@
 
 next commits:
-	python:
-		relative url handling (+tests for url less forms in resources)
-			new encoder/decoder w/ dependencies & resolver / constructors
-			maybe py2/
-		error mapping
-			client error /server error
-		method names in method not in url mapping
-			handled, but not used.
-		http 1.1 server
-		refactor?
-			glyph.client, glyph, resource, server
-			py.test over unittest
-		blob support for returns, etc
-			handle unknown content types as blob
-			client if allow="*"
-
-	ruby: 
-		done: avoid to_sym
-		better ordered dictionaries
-			done
-		relative url handling
-		form input support
-			somewhat: no names or default value support
-		error mapping
 
 	spec:
 		done: allow ordered dicts in places, including form args/data
+		done: decimal floats
 		rejected: flesh out collection type - add useful methods?
+		form envelope type
+
+	python spec compliance:
+
+		done:
+			relative url handling 
+			decimal floats, ordered dictionaries for form arms,
+			non post handling for forms, 
+		todo: 
+			headers in forms, links
+			form envelope types
+
+	post spec 1.0 python refactor?
+
+		http 1.1 server - support OPTIONS, HEAD too.
+		glyph.client, glyph, resource, server
+		py.test over unittest
+		new encoder/decoder w/ dependencies & resolver / constructors
+		method names in method not in url mapping
+		error mapping/client error /server error
+		blob support for returns, etc
+			handle unknown content types as blob
+			client if allow="*"
+		caching headers
+		non glyph data support in client/server - json/html
+
+	ruby spec compliance: 
+		done: avoid to_sym
+		done: better ordered dictionaries
+		done: decimal floats
+		
+		todo: relative url handling
+		todo: form input support, names and values
+		todo: form envelope type
+		todo: error mapping
+		todo: blob support for clients/servers (returning/inlining)
+
 
 
 speculative commits:
@@ -35,61 +49,12 @@ speculative commits:
 		can pass in a 'null' session handler, that serializes,
 		deserializes & fetches by calling directly.
 
-	glyph from scratch?
-		implement everything by spec
-		perhaps? class instead of builder for router
-		simplify mapper code, less flexible.
+glyph 1.1:
+	url templates, collections
 
-	caching/wsgiserver
+	xhtml serialization, json/hal serialization
+	form
 
-	hack: revision numbers in content-type until stable.
-
-
-encoding:
-	see encoding.rst
-	add data-url/mime blobs
-
-exceptions:
-	mapping exceptions inside the mapper to error codes
-	throwing an exception returns that error code
-	with an 'error' type (similar to 'resource')
-
-caching
-	caching headers added to responses
-	@cache(max_age=....)
-	change url schema to avoid ?
-
-	expires information in resource/embed
-	Glyph.refresh?
-
-forms/links
-	type args? default values? schema
-	i expect a thing with these values
-
-	url templates for forms with GET method
-
-classes/resources
-	use a different encoding for them?
-	rather than possible subelements, they have a url
-	children is a dict?
-	remove all instance vars from dict?
-	have to expose it through @embed?
-
-pagination
-
-
-http semantics:
-	support HEAD, OPTIONS?
-
-html serialization
-	javascript
-	json for query args perhaps?
-	 or form values
-	
-	
-
-rewrite for python:
-	class mapper only needs root element, rest are ephemeral?
 ports
 	node.js
 	objective-c
@@ -98,7 +63,5 @@ ports
 
 
 different transports
-	udp, openpgm, 0mq?
-
-	coap over datagram, http over streams
+	udp, openpgm, 0mq, coap?
 

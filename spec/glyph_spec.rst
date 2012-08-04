@@ -2,8 +2,8 @@
  glyph 
 =======
 :Author: tef
-:Date: 2012-08-03
-:Version: 0.7
+:Date: 2012-08-04
+:Version: 0.8
 
 glyph-rpc is a client/server protocol which
 exposes application objects over http, as machine
@@ -18,7 +18,7 @@ and translates instances and methods to pages and forms.
 The client browses the server, using forms to invoke
 methods.
 
-0.7 is not backwards compatible with 0.6 or earlier.
+0.8 is not backwards compatible with 0.6 or earlier.
 
 
 .. contents::
@@ -60,9 +60,9 @@ glyph also supports special data types:
 
 the encoding format glyph aims to be: 
 
- - endian independent
- - straight forward to implement
- - allow human inspection
+- endian independent
+- straight forward to implement
+- allow human inspection
 
 top level
 ---------
@@ -347,41 +347,28 @@ application meaning.
 name SHOULD be a unicode string, attributes SHOULD be a dictionary or ordered dictionary::
 
 	extension :== 'H' ws name_obj ws attr_obj ws content_obj ws ';' 
-	name_obj :== string | object
-	attr_obj :== dict | object
+	name_obj :== unicode
+	attr_obj :== dict | ordered_dict
 	content_obj :== object
 
 extensions are used to represent links, forms, resources, errors
 and blobs within glyph.
 
 decoders SHOULD handle unknown extensions as node types.
+decoders SHOULD handle extensions where the name is not a unicode string,
+and the attributes is not a (possibly ordered) dictionary, and MAY handle
+them as nodes.
 
 
 extensions
 ==========
 
-the following extensions are defined within glyph:
+the following extensions are defined within glyph::
 
-note: all strings are unicode strings, all dictionaries can be unordered, or ordered.
+	link, input, form, resource, error
 
-error
------
-
-errors provide a generic object for messages in response
-to failed requests. servers MAY return them.
-
-- name 'error'
-- attributes is a dictionary with the keys 'logref', 'message'
-- MAY have the attributes 'url', 'code'
-- content SHOULD be a dict of string -> object, MAY be empty.
-
-logref is a application specific reference for logging, MUST
-be a unicode string, message MUST be a unicode string
-
-if the error object has a 'url' attribute, the client MUST
-use this url for resolving relative links in any contained
-links, forms and other extensions, within the content object.
-
+for these extensions, name MUST be a unicode string, attributes MUST be a dictionary or ordered dictionary.
+ 
 link
 ----
 
@@ -390,9 +377,11 @@ links MUST be safe (and idempotent) requests.
 
 - name 'link'
 - attributes is a dictionary. MAY have the keys 'method', 'url'
- * url MAY be relative, to the response or a parent object.
- * MAY have the entry 'inline' -> true | false
- * MAY have the entries 'etag' -> string,  'last_modified' -> datetime, 
+
+  * url MAY be relative, to the response or a parent object.
+  * MAY have the entry 'inline' -> true | false
+  * MAY have the entries 'etag' -> string,  'last_modified' -> datetime, 
+
 - content is an object, which is either nil or the inlined response
 
 
@@ -430,14 +419,25 @@ forms make unsafe requests.
 
 - name 'form'
 - attributes is a dictionary
+
   * MUST have the keys 'url', 'method' , 'values'
+
     - urls MAY be relative to the base url or a parent object.
     - url and method are both unicode keys with unicode values.
     - values is a list of parameter names,  unicode strings or input objects
+
   * MAY have the key 'headers'
+
     - headers is a dictionary of unicode strings
+
   * MAY have the keys 'safe', 'idempotent'
+
     - both boolean values, default to false
+
+  * MAY have the key 'envelope'
+  
+    - a unicode string, describing how to construct a request
+
 - content is nil object
 
 forms normally describe a POST request, under http. forms SHOULD be 
@@ -448,13 +448,29 @@ the 'values' attribute describes the arguments for the request,
 as a list of names or input elements. the client uses this list
 to constuct the data for the request.
 
-the request data is a ordered dictionary `{name:value, name1: value1}`,
+the envelope attribute describes how to build a request from
+the url, method, and form argument names/values. envelopes
+are defined by the protocol mapping. for HTTP, 'form','blob', 'none', and 'query' are defined:
+
+for the envelope 'form', the body of the request is a ordered dictionary `{name:value, name1: value1}`,
 where the names are in the same order as the 'values' attribute,
 using the unicode string as the name, or the input element's name
-attribute. this data is normally glyph encoded.
+attribute. 
+
+for the envelope 'blob', the form must have a single argument, and the body
+of the request is the blob object.
+
+for the envelope 'none', the form must take no arguments, and there is no
+request body.
+
+for the envelope 'query', the form arguments are serialized like in 'form',
+but the data is encoded in the request url, rather than the request body.
+
+if the envelope is missing, then the default mapping for the method is used.
+
+specifics of envelopes, their interaction with methods, 
+along with building a request, are covered in the http mapping below.
  
-details on how to handle methods and urls and invoke a response is detailed
-in the mapping for that protocol. http mapping is defined later
 
 example::
 
@@ -480,8 +496,10 @@ an object that appears in forms, to provide information about a parameter.
 
 - name 'input'
 - attributes is a dictionary,
+
   *  MUST have the key 'name'
   *  MAY have the keys 'value', 'type'
+
 - content is nil
 
 the value attribute is the default value for this argument.
@@ -564,6 +582,23 @@ links, forms and other extensions, within the content object.
 the 'profile' attribute, if present SHOULD be a URI
 relating to the type of resource returned.
 
+error
+-----
+
+errors provide a generic object for messages in response
+to failed requests. servers MAY return them.
+
+- name 'error'
+- attributes is a dictionary with the keys 'logref', 'message'
+- MAY have the attributes 'url', 'code'
+- content SHOULD be a dict of string -> object, MAY be empty.
+
+logref is a application specific reference for logging, MUST
+be a unicode string, message MUST be a unicode string
+
+if the error object has a 'url' attribute, the client MUST
+use this url for resolving relative links in any contained
+links, forms and other extensions, within the content object.
 
 collection
 ----------
@@ -603,6 +638,32 @@ mime type
 
 glyph data has the mime type: 'application/vnd.glyph'
 
+gzip
+----
+A server SHOULD allow gzip encoding, and clients SHOULD understand
+gzip encoding.
+
+url schema
+----------
+
+The server maps classes, instances, methods to urls.
+URLs are opaque to the client, beyond the initial url
+
+an example mapping::
+
+	object		url
+	a class		/ClassName/
+	an instance 	/ClassName/?GlyphInstanceData
+	a method	/ClassName/method?GlyphInstanceData
+	a function	/Function/
+
+There are no restrictions on how the server maps URLs, clients SHOULD NOT
+not modify or construct URLs, but use them as provided.
+
+Servers MAY use the method field to represent the method, instead of
+using GET, POST and  encoding it in the URL. Clients MUST translate
+these, adding a 'Method' header, as detailed above.
+
 requests
 --------
 
@@ -611,42 +672,30 @@ or unknown methods. clients MUST support 'GET' and 'POST' methods,
 and MAY support 'PATCH', 'PUT', or 'DELETE'.
 
 for links and forms, if the method is unsupported or unknown, 
-the client MUST use either 'GET' for links or 'POST' for forms, with
+the client MUST use either 'GET' or 'POST', with
 the original method name in a header  called 'Method'.
 
-links MUST always be safe, idempotent requests.
- if the method is not present, it is assumed to be 'GET'. 
-
-forms represent unsafe requests by default, and if the method is
-not present, it is assumed to be 'POST'.
-
-
-if the method for a form is 'GET', arguments are glyph encoded,
-then urlencoded, and used as the query parameters for the request.
-i.e a request is made to <form-url-without-query>?<urlencoded data>
-
-otherwise, the arguments are sent in the body of the request,
-with the appropriate content-type set.
-
-form requests can be safe or idempotent, if the method is known to be,
-or the form has the 'safe' or 'idempotent' attributes, set.
-
-if the method is not known, clients MAY add a 'Safe' header, or 'Idempotent' 
-header to the request, alonside the 'Method' header.
-
 Servers MUST treat the `Method` header as the method for the request,
-if present for 'GET' or 'POST' requests.
+if present.
+
+Servers SHOULD treat the `X-HTTP-Method` and `X-HTTP-Method-Override` header
+values as the method for the request.
 
 HTTP requests should have the following headers:
 
 - Accept, set to the glyph mime type, if not overridden
 
-forms and links may provide the following headers in requests:
-- forms can have the headers 'If-None-Match', 'Accept', 'If-Match'
+forms and links MAY provide the following headers in requests:
+
+- forms can have the headers 'If-None-Match', 'Accept', 'If-Match', 'If-Unmodified-Since', 'If-Modified-Since'
 - links can have the headers 'Accept'
 
-glyph clients SHOULD return an response with an unknown encoding as a blob,
-and SHOULD set the url attribute of the blob object.
+if the request data is a single 'blob' object, the client MAY send the blob contents
+ as the request body, setting the appropriate content-type header.
+
+servers SHOULD handle arbitrary request data as if it were a single 'blob' object.
+
+servers SHOULD support HEAD requests, and MAY support OPTIONS requests.
 
 responses
 ---------
@@ -673,32 +722,103 @@ http response, using the content-type attribute.
 
 glyph responses MAY use relative urls.
 
-gzip
-----
+links
+-----
 
-A server SHOULD allow gzip encoding, and clients SHOULD understand
-gzip encoding.
+links MUST always be safe, idempotent requests.
 
-url schema
+if the method is not present, it is assumed to be 'GET'. if 
+the method is not 'GET', it should set the `Method` Header and
+use 'GET'
+
+forms
+-----
+
+forms represent unsafe requests by default, and if the method is
+not present, it is assumed to be 'POST'. 
+
+form requests can be safe or idempotent, if the method is known to be,
+or the form has the 'safe' or 'idempotent' attributes, set.
+
+
+form envelopes
+--------------
+
+for 'none', the request MUST have no body, and the form MUST NOT have arguments.
+if arguments are present, clients SHOULD raise an error.
+
+for 'blob', the client MUST send the blob contents as the request body,
+setting the appropriate content-type header.
+
+for 'form', the request body MUST be a glyph encoded ordered
+dictionary of (name->value) entries.
+
+for 'query', the request MUST have no body, and the request url is
+constructed from the form url, and the form arguments as the query string.
+
+this query string is a urlencoded, glyph encoded
+ordered dictionary, of (name->value) entries.
+i.e. /form/url/without/query?Ou4%3Aname%3Bu5%3Avalue%3B%3B
+
+form: POST
 ----------
 
-The server maps classes, instances, methods to urls.
-URLs are opaque to the client, beyond the initial url
+for the 'POST' method, the envelopes 'none', 'form', 'blob' are allowed.
+POST methods default to 'form'. POST requests may send an empty 
+body, e.g 'Content-Length: 0', instead of no body.
 
-an example mapping::
+form: GET
+---------
 
-	object		url
-	a class		/ClassName/
-	an instance 	/ClassName/?GlyphInstanceData
-	a method	/ClassName/method?GlyphInstanceData
-	a function	/Function/
+for the 'GET'  method, the envelopes 'none', 'query' are allowed,
+the default is 'query'. 
 
-There are no restrictions on how the server maps URLs, clients SHOULD NOT
-not modify or construct URLs, but use them as provided.
+forms with 'GET' methods MUST NOT send conditional-get
+requests as a result of headers provided in the form.
 
-Servers MAY use the method field to represent the method, instead of
-using GET, POST and  encoding it in the URL. Clients MUST translate
-these, adding a 'Method' header, as detailed above.
+GET requests MUST not have message bodies.
+
+form: PUT
+---------
+
+for the 'PUT' method, the envelopes 'blob', 'form' are allowed,
+and work like 'POST'. if not present, the default is 'blob'
+
+if the client cannot send a PUT request, it MAY send a POST
+request with the header `Method: PUT`. 
+
+
+form: DELETE
+------------
+
+DELETE allows the envelopes 'none', 'query', 'blob', 'form',
+and uses them like POST
+
+DELETE methods default to 'none'. DELETE requests may send an empty 
+body, e.g 'Content-Length: 0', instead of no body.
+
+if the client cannot send a DELETE request (or a DELETE request with
+a body), it MAY send a POST request with the header `Method: DELETE`. 
+
+
+form: PATCH
+-----------
+
+for the 'PATCH' method, the envelopes 'blob', 'form' are allowed,
+and work like 'POST'. if not present, the default is 'blob'
+
+if the client cannot send a PATCH request, it MAY send a POST
+request with the header `Method: PATCH`. 
+
+form: any other method
+----------------------
+
+The `Method:` header is set and the request is made using 'POST',
+the default envelope is 'form', and 'none', 'query', 'blob' are
+allowed, too.
+
+clients MAY add a 'Safe: true' header, or 'Idempotent: true',
+header to the request, alonside the 'Method' header.
 
 
 appendix
@@ -833,168 +953,177 @@ before embracing hypermedia.
 	json didn't support binary data without mangling
 	didn't support utf-8 without mangling 
 
-- booleans, datetimes, nil added
-
-	creature comforts
-
-- forms, links, embeds added
-
-  	hypermedia is neat
-
-- use b for byte array instead of s
-
-	less confusing
-
-- remove bencode ordering constraint on dictionaries
-
-	as there isn't the same dict keys must be string restrictions
-
-
-- changed terminators/separators to '\n'
-
-	idea for using 'readline' in decoders, but made things ugly
-
-- sets added
-	
-	creature comforts
-
-- used utf-8 strings everywhere instead of bytestrings
-
-	python made it easy not to care about using unicode.
-
-
-- resources added
-
-	instead of using nodes to represent resources
-	use extension type
+  - booleans, datetimes, nil added
+  
+  	creature comforts
+  
+  - forms, links, embeds added
+  
+    	hypermedia is neat
+  
+  - use b for byte array instead of s
+  
+  	less confusing
+  
+  - remove bencode ordering constraint on dictionaries
+  
+  	as there isn't the same dict keys must be string restrictions
+  
+  
+  - changed terminators/separators to '\n'
+  
+  	idea for using 'readline' in decoders, but made things ugly
+  
+  - sets added
+  	
+  	creature comforts
+  
+  - used utf-8 strings everywhere instead of bytestrings
+  
+  	python made it easy not to care about using unicode.
+  
+  
+  - resources added
+  
+  	instead of using nodes to represent resources
+  	use extension type
 
 - v0.1 
 
 	encoding spec started in lieu of implementation based
 	specification. declare current impl 0.1
 
-- blob, error types added
+  - blob, error types added
 	
 	blob can be used to encapsulate mime data.
 	errors as a generic template for error messages.
 
 - v0.2
 
-- separator changed to ':' ,changed terminator to ';' 
-
-	new lines make for ugly query strings, 
-	and no semantic whitespace means easier pretty printing 
-
-- unicode normalization as a recommendation
-
-	perhaps should be mandatory.
-
-- remove whitespace between prefix ... ;
-	
-	allowing whitespace inside objects is confusing
-	for non container types.
-
-- add redundant terminators
-	
-	put a ';' at the end of strings, bytearrays
-	put a 'E' at the end of nodes, extensions
-	consistency and ease for human inspection of data
-
+  - separator changed to ':' ,changed terminator to ';' 
+  
+  	new lines make for ugly query strings, 
+  	and no semantic whitespace means easier pretty printing 
+  
+  - unicode normalization as a recommendation
+  
+  	perhaps should be mandatory.
+  
+  - remove whitespace between prefix ... ;
+  	
+  	allowing whitespace inside objects is confusing
+  	for non container types.
+  
+  - add redundant terminators
+  	
+  	put a ';' at the end of strings, bytearrays
+  	put a 'E' at the end of nodes, extensions
+  	consistency and ease for human inspection of data
+  
 - v0.3
 
-- made utc mandatory rather than recommendation
-
-- encoding consolidation
-
-	use ; as terminator everywhere
-	TFN -> T;F;N;
-
-- add timedelta/period type:
-
-	p<iso period format>;
-	problems: timedeltas are sometimes int millis or float days or specific object
-
-- unify link and embed extension
-
-	add 'cached':True as attribute
-	means content can be returned in lieu of fetching
-
-- blob/chunks as attachments for large file handling
-
-	add top level blob, chunk type
-
-- empty versions of bytestring, unicode
+  - made utc mandatory rather than recommendation
+  
+  - encoding consolidation
+  
+  	use ; as terminator everywhere
+  	TFN -> T;F;N;
+  
+  - add timedelta/period type:
+  
+  	p<iso period format>;
+  	problems: timedeltas are sometimes int millis or float days or specific object
+  
+  - unify link and embed extension
+  
+  	add 'cached':True as attribute
+  	means content can be returned in lieu of fetching
+  
+  - blob/chunks as attachments for large file handling
+  
+  	add top level blob, chunk type
+  
+  - empty versions of bytestring, unicode
 
 - v0.4
 
-- added conditional-get in links
-
-- added conditional-post in forms
-
-- added ordered dict type
-
-	hard to represent in many languages (but python, java, ruby have this)
-	and hard to represent uniformly across languages
-
-	counterpoint: iso periods are the same, have to write as if we've got better languages
-		timedeltas are wildly inconsistent
-
-	counterpoint: sets aren't there in other languages either
-
-	pro: in ruby 1.9 dicts are ordered, want to be able to send them back and forth?
-		remember - internal rpc usecase
-		ruby doesn't have unordered hash type
-	
-- cleaned up hex float explanation, added better appendix
-
-- added examples
-
-- schema/type information for forms (aka values)
-
-	formargs is a list of string names | input elements
-	input elements have a name, type, optional default value
-
-- collection types
+  - added conditional-get in links
+  
+  - added conditional-post in forms
+  
+  - added ordered dict type
+  
+  	hard to represent in many languages (but python, java, ruby have this)
+  	and hard to represent uniformly across languages
+  
+  	counterpoint: iso periods are the same, have to write as if we've got better languages
+  		timedeltas are wildly inconsistent
+  
+  	counterpoint: sets aren't there in other languages either
+  
+  	pro: in ruby 1.9 dicts are ordered, want to be able to send them back and forth?
+  		remember - internal rpc usecase
+  		ruby doesn't have unordered hash type
+  	
+  - cleaned up hex float explanation, added better appendix
+  
+  - added examples
+  
+  - schema/type information for forms (aka values)
+  
+  	formargs is a list of string names | input elements
+  	input elements have a name, type, optional default value
+  
+  - collection types
 
 - 0.5 grammar/encoding frozen - no more literals, collections added
 
-- relative url handling (e.g resources are used as base url for contained links)
-
-- input type parameters added
-
-- adding a header argument
-
-- adding arity to type descriptors 
-
-- define behaviour for other HTTP methods on links, forms
+  - relative url handling (e.g resources are used as base url for contained links)
+  
+  - input type parameters added
+  
+  - adding a header argument
+  
+  - adding arity to type descriptors 
+  
+  - define behaviour for other HTTP methods on links, forms
 
 - 0.6 
-
-- leading zeros ignored for integers.
-
-- ordered dictonary used for form data
-
-- collection type is now reserved
-
-- profile is only on resources
+  
+  - leading zeros ignored for integers.
+  
+  - ordered dictonary used for form data
+  
+  - collection type is now reserved
+  
+  - profile is only on resources
 
 - 0.7
 
-- allow decimal floats because i'm not that cruel
+  - allow decimal floats because i'm not that cruel
 
-- relative url handling is constrained to the content object within extensions
+  - relative url handling is constrained to the content object within extensions
+
+  - form envelope types
+
+- 0.8
 
 planned changes
 ---------------
 
-- 0.7 complete extensions:
-	
-	fill out collection type with methods/forms
-	
+
+- 0.9 extensions frozen, http mapping frozen
 	
 
-- 0.9 extensions frozen
-- 1.0 final
+- 1.0 compatibility promise
+
+- 1.1 
+
+	add paginated collection extension
+	envelopes: url templates? 
+	canonical html/json serialization,
+	support for form-data/urlencoded as envelope www-data
+	
 
 TODO
 ====
@@ -1007,22 +1136,17 @@ caching information/recommendations
 pretty printing
 
 worked example
-safe rfc 2310
 
-utf-8 rfc
+references to fill in:
 
-datetime rfc, iso
-
-rfc of terms
-
-http rfc
-
-c99 hex floats
-
-mime types
-
-profiles
-
-url
+	safe rfc 2310
+	utf-8 rfc
+	datetime rfc, iso
+	rfc of terms
+	http rfc
+	c99 hex floats
+	mime types
+	profile rel rfc
+	url rfc
 
 
