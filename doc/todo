@@ -4,7 +4,8 @@ next commits:
 	spec:
 		done: allow ordered dicts in places, including form args/data
 		done: decimal floats
-		rejected: flesh out collection type - add useful methods?
+		rejected: flesh out collection type - add useful methods? - postpone
+			  until other things, like templates, in place.
 		form envelope type
 
 	python spec compliance:
@@ -13,6 +14,7 @@ next commits:
 			relative url handling 
 			decimal floats, ordered dictionaries for form arms,
 			non post handling for forms, 
+			placeholders for headers, envelopes
 		todo: 
 			headers in forms, links
 			form envelope types

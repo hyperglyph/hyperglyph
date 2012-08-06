@@ -224,6 +224,12 @@ class Extension(BaseNode):
 @Extension.register('form')
 class Form(Extension):
     def __call__(self, *args, **kwargs):
+        if self._attributes.get(u'headers'):
+            raise NotImplementedError('TODO 0.5 headers in forms')
+
+        if self._attributes.get(u'envelope', u'form') != u'form':
+            raise NotImplementedError('TODO 0.8 envelope types in forms')
+
         url = self._attributes[u'url']
 
         parameters = collections.OrderedDict()
@@ -273,6 +279,9 @@ class Form(Extension):
 @Extension.register('link')
 class Link(Extension):
     def __call__(self, *args, **kwargs):
+        if self._attributes.get(u'headers'):
+            raise NotImplementedError('TODO 0.5 headers in forms')
+
         if self._attributes.get(u'inline', False):
             return self._content
         else:

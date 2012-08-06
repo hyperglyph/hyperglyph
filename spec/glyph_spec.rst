@@ -458,7 +458,7 @@ using the unicode string as the name, or the input element's name
 attribute. 
 
 for the envelope 'blob', the form must have a single argument, and the body
-of the request is the blob object.
+of the request is the content of the blob object.
 
 for the envelope 'none', the form must take no arguments, and there is no
 request body.
@@ -498,7 +498,7 @@ an object that appears in forms, to provide information about a parameter.
 - attributes is a dictionary,
 
   *  MUST have the key 'name'
-  *  MAY have the keys 'value', 'type'
+  *  MAY have the keys 'value', 'type', 'envelope'
 
 - content is nil
 
@@ -509,34 +509,37 @@ default SHOULD be used instead.
 the type attribute, if present, SHOULD be unicode string,
 defining the expected type for this parameter.
 
-clients MAY parse this string to find out the expected
-type for the argument. the intent is for building browsers
-or inspectors for apis. clients MAY use this information
-to convert a parameter. if the type is not present or known, the client can
-assume it to be 'object'.
+this parameter SHOULD be ignored by clients.
 
-types are defined for the names in the grammar::
+..
+	clients MAY parse this string to find out the expected
+	type for the argument. the intent is for building browsers
+	or inspectors for apis. clients MAY use this information
+	to convert a parameter. if the type is not present or known, the client can
+	assume it to be 'object'.
 
-	object integer unicode bytearray float
-	datetime timedelta nil true false
-	list set dict ordered_dict
-	node extension blob
+	types are defined for the names in the grammar::
 
-additionally, the type 'bool' is defined to mean 'true' or 'false'.
-types may have a trailing '?' to indicate that nil is also acceptable
+		object integer unicode bytearray float
+		datetime timedelta nil true false
+		list set dict ordered_dict
+		node extension blob
 
-types may take some other types as parameters, this is indicated by
-the form `typename/arity`. so, the type `integer list/1` represents a 
-`list` of `integer`. the types are specified as a space separated list
-in postfix order::
+	additionally, the type 'bool' is defined to mean 'true' or 'false'.
+	types may have a trailing '?' to indicate that nil is also acceptable
 
-	'unicode'			a unicode string 
-	'integer?'			an integer or nil
-	'list/0'				a list of objects
-	'string list/1'  			a list of strings
-	'object string dict/2' 		a dict of string to object
-	'float list?/1 string dict/2' 	a dict of string, to nil or a list of floats
-	'float integer list/1 dict/2'	a dict of a integer list, to a float
+	types may take some other types as parameters, this is indicated by
+	the form `typename/arity`. so, the type `integer list/1` represents a 
+	`list` of `integer`. the types are specified as a space separated list
+	in postfix order::
+
+		'unicode'			a unicode string 
+		'integer?'			an integer or nil
+		'list/0'				a list of objects
+		'string list/1'  			a list of strings
+		'object string dict/2' 		a dict of string to object
+		'float list?/1 string dict/2' 	a dict of string, to nil or a list of floats
+		'float integer list/1 dict/2'	a dict of a integer list, to a float
 
 
 
@@ -1108,18 +1111,25 @@ before embracing hypermedia.
 
 - 0.8
 
+  - types removed
+
 planned changes
 ---------------
 
 
 - 0.9 extensions frozen, http mapping frozen
+	envelopes on inputs?
+		i.e the blob/query case
+	www-data on forms?
 	
 
 - 1.0 compatibility promise
+	1.1 should not break things
 
 - 1.1 
 
 	add paginated collection extension
+	types for form inputs
 	envelopes: url templates? 
 	canonical html/json serialization,
 	support for form-data/urlencoded as envelope www-data
