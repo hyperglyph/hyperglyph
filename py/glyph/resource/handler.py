@@ -7,7 +7,7 @@ from werkzeug.exceptions import HTTPException, NotFound, BadRequest, NotImplemen
 from werkzeug.utils import redirect as Redirect
 from werkzeug.datastructures import ResponseCacheControl
 
-from ..data import CONTENT_TYPE, dump, parse, get, form, link, node, embedlink,  ismethod, methodargs
+from ..data import CONTENT_TYPE, dump, parse, get, form, link, embedlink,  ismethod, methodargs
 
 
 def get_stream(request):

@@ -241,16 +241,13 @@ module Glyph
     Blob.new  obj, {'content-type' => content_type}
   end
 
-  class BaseNode
+  class Node
     def initialize(name, attrs, content)
       @name = name
       @attrs = attrs
       @content = content
     end
-  end
 
-
-  class Node < BaseNode
     def method_missing(method, *args, &block)
         attr= @content[method.to_s]
         if attr and attr.respond_to?(:call)
@@ -430,10 +427,6 @@ module Glyph
     elsif Extension === o
       o.instance_eval {
         @attrs['url'] = resolve.call(@attrs['url']) if not String === @attrs['url']
-        "H#{Glyph.dump_one(@name, resolve, inline, blobs)}#{Glyph.dump_one(@attrs, resolve, inline, blobs)}#{Glyph.dump_one(@content,resolve, inline, blobs)};"
-      }
-    elsif Node === o 
-      o.instance_eval {
         "X#{Glyph.dump_one(@name, resolve, inline, blobs)}#{Glyph.dump_one(@attrs, resolve, inline, blobs)}#{Glyph.dump_one(@content,resolve, inline, blobs)};"
       }
     else
@@ -534,13 +527,6 @@ module Glyph
       end
       lst
     when ?X
-      name = parse_one(scanner, url, blobs)
-      attrs = parse_one(scanner, url, blobs)
-      content = parse_one(scanner, url, blobs)
-      scanner.scan(/;/)
-      n = Node.new(name, attrs, content)
-      n
-    when ?H
       name = parse_one(scanner, url, blobs)
       attrs = parse_one(scanner, url, blobs)
       if attrs['url']

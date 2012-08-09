@@ -3,7 +3,7 @@
 =======
 :Author: tef
 :Date: 2012-08-04
-:Version: 0.8
+:Version: 0.9 - draft
 
 glyph-rpc is a client/server protocol which
 exposes application objects over http, as machine
@@ -18,7 +18,7 @@ and translates instances and methods to pages and forms.
 The client browses the server, using forms to invoke
 methods.
 
-0.8 is not backwards compatible with 0.6 or earlier.
+0.9 is not backwards compatible with 0.8 or earlier.
 
 
 .. contents::
@@ -54,9 +54,8 @@ and collections (list, set, dict).  ::
 
 glyph also supports special data types:
 
-- a 'node' tuple type (name, attributes, content).
 - an 'extension' type used to define objects with special behaviour or meaning
-- a 'blob' and 'chunk' type, used to attach large files to an object
+- a 'blob' and 'chunk' type, used to encode large files
 
 the encoding format glyph aims to be: 
 
@@ -79,7 +78,7 @@ followed by chunks ::
 		| datetime | timedelta
 		| nil | true | false
 		| list | set | dict | ordered_dict
-		| node | extension | blob
+		| extension | blob
 
 
 integer
@@ -261,33 +260,6 @@ decoders MUST support hex and decimal floats. encoders
 SHOULD use hex floats instead of decimal.
 
 
-node
-----
-
-nodes are generic named containers for application use:
-tuples of name, attributes and content objects.
-
-name SHOULD be a unicode string, attributes SHOULD be a dictionary (possibly ordered)::
-
-	node :== 'X' ws name_obj ws attr_obj ws content_obj ws ';'
-
-	name_obj :== string | object
-	attr_obj :== dict | object
-	content_obj :== object
-
-decoders MUST handle nodes with arbitrary objects for
-name, attributes and content
-
-decoders normally transform nodes into wrapper objects
-where object attributes are matched to the content_obj
-i.e forwarding node[blah] and node.blah to content_obj[blah]
-
-nodes can be used to represent an xml dom node::
-
-	xml			encoded
-	<xml a=1>1</xml>	Xu3:xmlDu1:ai1;;
-
-
 blob
 ----
 
@@ -346,18 +318,13 @@ application meaning.
 
 name SHOULD be a unicode string, attributes SHOULD be a dictionary or ordered dictionary::
 
-	extension :== 'H' ws name_obj ws attr_obj ws content_obj ws ';' 
+	extension :== 'X' ws name_obj ws attr_obj ws content_obj ws ';' 
 	name_obj :== unicode
 	attr_obj :== dict | ordered_dict
 	content_obj :== object
 
 extensions are used to represent links, forms, resources, errors
 and blobs within glyph.
-
-decoders SHOULD handle unknown extensions as node types.
-decoders SHOULD handle extensions where the name is not a unicode string,
-and the attributes is not a (possibly ordered) dictionary, and MAY handle
-them as nodes.
 
 
 extensions
@@ -429,10 +396,6 @@ forms make unsafe requests.
   * MAY have the key 'headers'
 
     - headers is a dictionary of unicode strings
-
-  * MAY have the keys 'safe', 'idempotent'
-
-    - both boolean values, default to false
 
   * MAY have the key 'envelope'
   
@@ -509,7 +472,8 @@ default SHOULD be used instead.
 the type attribute, if present, SHOULD be unicode string,
 defining the expected type for this parameter.
 
-this parameter SHOULD be ignored by clients.
+this parameter SHOULD be ignored by clients, and is reserved for
+future use.
 
 ..
 	clients MAY parse this string to find out the expected
@@ -523,7 +487,7 @@ this parameter SHOULD be ignored by clients.
 		object integer unicode bytearray float
 		datetime timedelta nil true false
 		list set dict ordered_dict
-		node extension blob
+		extension blob
 
 	additionally, the type 'bool' is defined to mean 'true' or 'false'.
 	types may have a trailing '?' to indicate that nil is also acceptable
@@ -626,7 +590,7 @@ application or vendor specific extensions::
 
 	integer, unicode, string, bytearray, float, datetime,
 	timedelta, nil, true, false, list, set, dict, 
-	ordered_dict, node, extension, blob, bool, 	
+	ordered_dict, extension, blob, bool, 	
 	request, response
 
 
@@ -663,20 +627,13 @@ an example mapping::
 There are no restrictions on how the server maps URLs, clients SHOULD NOT
 not modify or construct URLs, but use them as provided.
 
-Servers MAY use the method field to represent the method, instead of
-using GET, POST and  encoding it in the URL. Clients MUST translate
-these, adding a 'Method' header, as detailed above.
-
 requests
 --------
 
-methods in links and forms may be known http methods,
-or unknown methods. clients MUST support 'GET' and 'POST' methods,
-and MAY support 'PATCH', 'PUT', or 'DELETE'.
+clients MUST support 'GET' and 'POST' methods.
 
-for links and forms, if the method is unsupported or unknown, 
-the client MUST use either 'GET' or 'POST', with
-the original method name in a header  called 'Method'.
+the client MAY support 'PATCH', 'PUT', or 'DELETE', directly, 
+or using POST, with the the original method name in a header  called 'Method'.
 
 Servers MUST treat the `Method` header as the method for the request,
 if present.
@@ -730,18 +687,14 @@ links
 
 links MUST always be safe, idempotent requests.
 
-if the method is not present, it is assumed to be 'GET'. if 
-the method is not 'GET', it should set the `Method` Header and
-use 'GET'
+if the method is not present, it is assumed to be 'GET'. 
+
 
 forms
 -----
 
 forms represent unsafe requests by default, and if the method is
 not present, it is assumed to be 'POST'. 
-
-form requests can be safe or idempotent, if the method is known to be,
-or the form has the 'safe' or 'idempotent' attributes, set.
 
 
 form envelopes
@@ -813,16 +766,6 @@ and work like 'POST'. if not present, the default is 'blob'
 if the client cannot send a PATCH request, it MAY send a POST
 request with the header `Method: PATCH`. 
 
-form: any other method
-----------------------
-
-The `Method:` header is set and the request is made using 'POST',
-the default envelope is 'form', and 'none', 'query', 'blob' are
-allowed, too.
-
-clients MAY add a 'Safe: true' header, or 'Idempotent: true',
-header to the request, alonside the 'Method' header.
-
 
 appendix
 ========
@@ -855,7 +798,6 @@ grammar
 		| set
 		| dict
 		| ordered_dict
-		| node
 		| extension
 		| blob
 
@@ -890,9 +832,7 @@ grammar
 	datetime :== 'd' iso_datetime ';'
 	timedelta :== 'p' iso_period ';'
 
-	node :== 'X' ws name_obj ws attr_obj ws content_obj ws ';'
-
-	extension :== 'H' ws name_obj ws attr_obj ws content_obj ws ';' 
+	extension :== 'X' ws name_obj ws attr_obj ws content_obj ws ';' 
 	
 	blob :== 'B' id_num ':' attr_dict ';'
 
@@ -1113,6 +1053,10 @@ before embracing hypermedia.
 
   - types removed
 
+  - removed nodes - xml should be inside a blob, or a new extension type.
+
+  - removed non http method support. 
+
 planned changes
 ---------------
 
@@ -1120,7 +1064,8 @@ planned changes
 - 0.9 extensions frozen, http mapping frozen
 	envelopes on inputs?
 		i.e the blob/query case
-	www-data on forms?
+	www-data on forms? www-query
+	remove non http method support (or make it less obvious)
 	
 
 - 1.0 compatibility promise

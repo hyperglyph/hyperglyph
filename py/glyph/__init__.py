@@ -22,7 +22,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
 
-from .data import CONTENT_TYPE, dump, dump_iter, parse, get, node, form, link, utcnow, embedlink, error
+from .data import CONTENT_TYPE, dump, dump_iter, parse, get, form, link, utcnow, embedlink, error
 from .encoding import blob
 from .resource.handler import safe, embed, redirect, hidden
 from .resource.transient import TransientResource
@@ -34,7 +34,7 @@ from .server import  Server
 __all__ = [
     'CONTENT_TYPE','Server','redirect','hidden',
     'get', 'Router','Resource','r', 'safe', 'embed', 'utcnow',
-    'parse','dump','node','form','link','embedlink', 'blob', 'error',
+    'parse','dump','form','link','embedlink', 'blob', 'error',
     'TransientResource', 'PersistentResource', 
     'ClassMapper',
 ]

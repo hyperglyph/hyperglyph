@@ -44,8 +44,7 @@ TRUE='T'
 FALSE='F'
 NONE='N'
 
-NODE='X'
-EXT='H'
+EXT='X'
 BLOB = 'B'
 CHUNK = 'c'
 
@@ -98,8 +97,7 @@ def read_first(fh):
 
 
 class Encoder(object):
-    def __init__(self, node, extension, **kwargs):
-        self.node = node
+    def __init__(self, extension, **kwargs):
         self.extension = extension
         self.max_blob_mem_size = kwargs.get("max_blob_mem_size", 1024*1024*2)
 
@@ -167,14 +165,6 @@ class Encoder(object):
             for r in self._dump_one(content, resolver, inline, blobs):
                 yield r
             yield END_EXT
-        
-        elif isinstance(obj, (self.node,)):
-            yield NODE
-            name, attributes, content = obj.__getstate__()
-            for r in self._dump_one(name, resolver, inline, blobs): yield r
-            for r in self._dump_one(attributes, resolver, inline, blobs): yield r
-            for r in self._dump_one(content, resolver, inline, blobs): yield r
-            yield END_NODE
         
         elif isinstance(obj, (str, buffer)):
             yield BSTR
@@ -346,17 +336,6 @@ class Encoder(object):
                     raise StandardError('duplicate key')
                 first = read_first(fh)
             return out
-        elif c == NODE:
-            first = read_first(fh)
-            name = self._read_one(fh, first, blobs, base_url)
-            first = read_first(fh)
-            attr  = self._read_one(fh, first, blobs, base_url)
-            first = read_first(fh)
-            content = self._read_one(fh, first, blobs, base_url)
-            first = read_first(fh)
-            if first != END_NODE:
-                    raise StandardError('NODE')
-            return self.node.__make__(name, attr, content)
         elif c == EXT:
             first = read_first(fh)
             name = self._read_one(fh, first, blobs, base_url)

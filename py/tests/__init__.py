@@ -44,10 +44,9 @@ class BlobEncodingTest(unittest2.TestCase):
         self.assertEqual(s, b.fh.read())
 
 
-class NodeTest(unittest2.TestCase):
+class ExtTest(unittest2.TestCase):
     def testCase(self):
         cases = [
-            glyph.node('doc',attributes=dict(aa=1,b="toot")),
             glyph.form("http://example.org",values=['a','b']),
             glyph.link("http://toot.org")
         ]

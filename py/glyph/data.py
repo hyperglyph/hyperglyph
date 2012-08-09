@@ -17,9 +17,6 @@ def utcnow():
     return datetime.datetime.utcnow().replace(tzinfo=utc)
 
 
-def node(name, attributes, content=None):
-    return Node(unicode(name), attributes, content)
-
 def robj(obj, contents):
     return Extension.__make__(u'resource', {u'name':unicode(obj.__class__.__name__), u'url': obj}, contents)
 
@@ -180,24 +177,11 @@ class BaseNode(object):
     def __rebase__(name, attr, base_url):
         return attr, base_url
 
-class Node(BaseNode):
-    def __getattr__(self, name):
-        try:
-            return self._content[name]
-        except KeyError:
-            raise AttributeError(name)
-
-    def __getitem__(self, name):
-        return self._content[name]
-
-    def __repr__(self):
-        return '<node:%s %s %s>'%(self._name, repr(self._attributes), repr(self._content))
-
 class Extension(BaseNode):
     _exts = {}
     @classmethod
     def __make__(cls, name, attributes, content):
-        ext = cls._exts.get(name, Node)
+        ext = cls._exts[name]
         return ext(name,attributes, content)
     
     @classmethod
@@ -338,7 +322,7 @@ class Input(Extension):
 @Extension.register('collection')
 class Collection(Extension):
     pass
-_encoder = Encoder(node=Node, extension=Extension)
+_encoder = Encoder(extension=Extension)
 
 dump = _encoder.dump
 dump_iter = _encoder.dump_iter
