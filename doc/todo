@@ -15,9 +15,11 @@ next commits:
 			decimal floats, ordered dictionaries for form arms,
 			non post handling for forms, 
 			placeholders for headers, envelopes
+			node removal
 		todo: 
 			headers in forms, links
 			form envelope types
+			PUT, DELETE, PATCH in forms.
 
 	post spec 1.0 python refactor?
 
@@ -37,6 +39,7 @@ next commits:
 		done: avoid to_sym
 		done: better ordered dictionaries
 		done: decimal floats
+		done: node removal
 		
 		todo: relative url handling
 		todo: form input support, names and values

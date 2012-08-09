@@ -401,6 +401,10 @@ forms make unsafe requests.
   
     - a unicode string, describing how to construct a request
 
+  * MAY have the key 'content_type'
+
+    - if present, MUST be the glyph mime type.
+
 - content is nil object
 
 forms normally describe a POST request, under http. forms SHOULD be 
@@ -650,11 +654,6 @@ forms and links MAY provide the following headers in requests:
 - forms can have the headers 'If-None-Match', 'Accept', 'If-Match', 'If-Unmodified-Since', 'If-Modified-Since'
 - links can have the headers 'Accept'
 
-if the request data is a single 'blob' object, the client MAY send the blob contents
- as the request body, setting the appropriate content-type header.
-
-servers SHOULD handle arbitrary request data as if it were a single 'blob' object.
-
 servers SHOULD support HEAD requests, and MAY support OPTIONS requests.
 
 responses
@@ -682,10 +681,14 @@ http response, using the content-type attribute.
 
 glyph responses MAY use relative urls.
 
+the methods `OPTIONS`, `TRACE`, `HEAD` are not used. 
+
 links
 -----
 
-links MUST always be safe, idempotent requests.
+links MUST always be safe, idempotent requests. the methods
+`PUT`, `POST`, `DELETE`, `PATCH`, are not valid.
+
 
 if the method is not present, it is assumed to be 'GET'. 
 
@@ -704,7 +707,9 @@ for 'none', the request MUST have no body, and the form MUST NOT have arguments.
 if arguments are present, clients SHOULD raise an error.
 
 for 'blob', the client MUST send the blob contents as the request body,
-setting the appropriate content-type header.
+setting the appropriate content-type header. The client
+MUST add the header 'Content-Disposition: form-data; name="...";',
+with the name of the input set.
 
 for 'form', the request body MUST be a glyph encoded ordered
 dictionary of (name->value) entries.
@@ -1057,15 +1062,13 @@ before embracing hypermedia.
 
   - removed non http method support. 
 
+  - added content-type to forms
+
 planned changes
 ---------------
 
 
 - 0.9 extensions frozen, http mapping frozen
-	envelopes on inputs?
-		i.e the blob/query case
-	www-data on forms? www-query
-	remove non http method support (or make it less obvious)
 	
 
 - 1.0 compatibility promise
@@ -1074,6 +1077,7 @@ planned changes
 - 1.1 
 
 	add paginated collection extension
+	envelope: mixed; allow envelope on form inputs
 	types for form inputs
 	envelopes: url templates? 
 	canonical html/json serialization,
