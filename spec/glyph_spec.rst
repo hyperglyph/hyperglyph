@@ -3,7 +3,7 @@
 =======
 :Author: tef
 :Date: 2012-08-04
-:Version: 0.9 - draft
+:Version: 0.9
 
 glyph-rpc is a client/server protocol which
 exposes application objects over http, as machine
@@ -642,9 +642,6 @@ or using POST, with the the original method name in a header  called 'Method'.
 Servers MUST treat the `Method` header as the method for the request,
 if present.
 
-Servers SHOULD treat the `X-HTTP-Method` and `X-HTTP-Method-Override` header
-values as the method for the request.
-
 HTTP requests should have the following headers:
 
 - Accept, set to the glyph mime type, if not overridden
@@ -653,8 +650,6 @@ forms and links MAY provide the following headers in requests:
 
 - forms can have the headers 'If-None-Match', 'Accept', 'If-Match', 'If-Unmodified-Since', 'If-Modified-Since'
 - links can have the headers 'Accept'
-
-servers SHOULD support HEAD requests, and MAY support OPTIONS requests.
 
 responses
 ---------
@@ -1079,9 +1074,10 @@ planned changes
 	add paginated collection extension
 	envelope: mixed; allow envelope on form inputs
 	types for form inputs
+	content_types on forms other than glyph
+	support for form-data/urlencoded 
 	envelopes: url templates? 
 	canonical html/json serialization,
-	support for form-data/urlencoded as envelope www-data
 	
 
 TODO
