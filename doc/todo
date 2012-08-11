@@ -7,6 +7,7 @@ next commits:
 		rejected: flesh out collection type - add useful methods? - postpone
 			  until other things, like templates, in place.
 		form envelope type
+			maybe mixed type, content_types other than glyph?
 
 	python spec compliance:
 
@@ -17,9 +18,9 @@ next commits:
 			placeholders for headers, envelopes
 			node removal
 		todo: 
-			headers in forms, links
-			form envelope types
-			PUT, DELETE, PATCH in forms.
+			allow headers in forms, links
+			allow form envelope types
+			allow PUT, DELETE, PATCH in forms.
 
 	post spec 1.0 python refactor?
 
@@ -45,7 +46,10 @@ next commits:
 		todo: form input support, names and values
 		todo: form envelope type
 		todo: error mapping
+
 		todo: blob support for clients/servers (returning/inlining)
+
+	when 1.0 rename to hyperglyph
 
 
 

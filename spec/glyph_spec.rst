@@ -1,11 +1,11 @@
-=======
- glyph 
-=======
+============
+ hyperglyph 
+============
 :Author: tef
-:Date: 2012-08-04
-:Version: 0.9
+:Date: 2012-08-12
+:Version: 1.0
 
-glyph-rpc is a client/server protocol which
+hyperglyph is a client/server protocol which
 exposes application objects over http, as machine
 readable web pages.
 
@@ -18,7 +18,7 @@ and translates instances and methods to pages and forms.
 The client browses the server, using forms to invoke
 methods.
 
-0.9 is not backwards compatible with 0.8 or earlier.
+1.0 is not backwards compatible with 0.x.
 
 
 .. contents::
@@ -48,7 +48,7 @@ and collections (list, set, dict).  ::
 	dict			{1:2, 2:4}		Di1;i2;i3;i4;;
 	ordered_dict		ordered(1:2, 2:4)	Oi1;i2;i3;i4;;
 	singleton		nil true false		N; T; F;
-	float			0.5			f0x1.0000000000000p-1;  or f0.5;
+	float			0.5			f0x1.0p-1;  or f0.5;
 	datetime		1970-1-1 00:00 UTC	d1970-01-01T00:00:00.000Z;
 	timedelta		3 days			pP0Y0M3DT0H0M0S;
 
@@ -473,13 +473,14 @@ the value attribute is the default value for this argument.
 if a client does not provide a value for this argument, the
 default SHOULD be used instead.
 
-the type attribute, if present, SHOULD be unicode string,
-defining the expected type for this parameter.
+the 'type', 'envelope' parameters are reserved.
 
-this parameter SHOULD be ignored by clients, and is reserved for
-future use.
 
 ..
+	1.1:
+	the type attribute, if present, SHOULD be unicode string,
+	defining the expected type for this parameter.
+
 	clients MAY parse this string to find out the expected
 	type for the argument. the intent is for building browsers
 	or inspectors for apis. clients MAY use this information
@@ -601,7 +602,7 @@ application or vendor specific extensions::
 http mapping
 ============
 
-glyph-rpc uses HTTP/1.1, although mappings to other protocols,
+hyperglyph uses HTTP/1.1, although mappings to other protocols,
 or transports is possible.
 
 mime type

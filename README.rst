@@ -1,10 +1,10 @@
-===========================
- glyph-rpc: duck typed rpc
-===========================
+============================
+ hyperglyph: duck typed rpc
+============================
 
 *no stubs, no schemas*
 
-glyph-rpc is yet another http rpc library, but it tries to exploit http rather
+hyperglyph is yet another http ipc library, but it tries to exploit http rather
 than simply tunnel requests over it. glyph builds webpages out of objects, for
 computers, and as a result:
 
@@ -14,18 +14,19 @@ computers, and as a result:
 - glyph can take advantage of http tools like caches and load-balancers
 
 a talk at src fringe 2012 was given and is online: http://vimeo.com/45474360
+(before the project changed its name)
 
 come say hello: ##glyph on freenode
 
-glyph was designed and built for loose coupled distributed programs. it's 
+hyperglyph was designed and built for loose coupled distributed programs. it's 
 been in use in production for a year, but for internal services only.
 
-glyph is released under the MIT license
+hyperglyph is released under the MIT license
 
 in development
 --------------
 
-glyph-rpc is under development. the underlying serialization format (glyph) is 
+hyperglyph is under development. the underlying serialization format (glyph) is 
 considered unfinished. not yet recommended for public apis, as the wire
 format is stablizing.
 
@@ -40,7 +41,7 @@ with earlier releases.
 when the spec hits v1.0, future minor versions *will* be
 backwards compatible.
 
-glyph is ok to use if you control both the client and server
+hyperglyph is ok to use if you control both the client and server
 deployments, but once the format is stable and documented,
 this will not matter.
 
