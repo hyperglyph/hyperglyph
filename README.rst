@@ -1,5 +1,5 @@
 ============================
- hyperglyph: duck typed rpc
+ hyperglyph: duck typed ipc
 ============================
 
 *no stubs, no schemas*
