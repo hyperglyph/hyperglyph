@@ -1060,6 +1060,13 @@ before embracing hypermedia.
 
   - added content-type to forms
 
+- 0.9
+ 
+  - clarified reserved terms
+
+- 1.0
+
+
 planned changes
 ---------------
 
