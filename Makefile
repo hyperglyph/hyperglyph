@@ -5,8 +5,8 @@ python_test: py/
 	python py/setup.py test
 
 ruby_test: rb/
-	rm -f rb/glyph*.gem
-	cd rb && gem build glyph.gemspec
-	gem install rb/glyph*.gem
-	${RUBY}  rb/tests.rb; gem uninstall glyph
+	rm -f rb/hyperglyph*.gem
+	cd rb && gem build hyperglyph.gemspec
+	gem install rb/hyperglyph*.gem
+	${RUBY}  rb/tests.rb; gem uninstall hyperglyph
 
