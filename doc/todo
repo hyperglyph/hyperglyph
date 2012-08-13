@@ -4,9 +4,9 @@ next commits:
 	spec:
 		done: allow ordered dicts in places, including form args/data
 		done: decimal floats
-		rejected: flesh out collection type - add useful methods? - postpone
+		defered: flesh out collection type - add useful methods? - postpone
 			  until other things, like templates, in place.
-		form envelope type
+		defered: form envelope type
 			maybe mixed type, content_types other than glyph?
 
 	python spec compliance:
@@ -21,20 +21,8 @@ next commits:
 			allow headers in forms, links
 			allow form envelope types
 			allow PUT, DELETE, PATCH in forms.
-
-	post spec 1.0 python refactor?
-
-		http 1.1 server - support OPTIONS, HEAD too.
-		glyph.client, glyph, resource, server
-		py.test over unittest
-		new encoder/decoder w/ dependencies & resolver / constructors
-		method names in method not in url mapping
-		error mapping/client error /server error
-		blob support for returns, etc
-			handle unknown content types as blob
-			client if allow="*"
-		caching headers
-		non glyph data support in client/server - json/html
+		todo:
+			http 1.1 server from cherrypy
 
 	ruby spec compliance: 
 		done: avoid to_sym
@@ -45,11 +33,25 @@ next commits:
 		todo: relative url handling
 		todo: form input support, names and values
 		todo: form envelope type
-		todo: error mapping
 
+	post spec 1.0 python refactor?
+
+		http 1.1 server - support OPTIONS, HEAD too.
+		rename internals: glyph.client, glyph, resource, server
+		move to py.test over unittest
+		refactor encoder/decoder w/ dependencies & resolver / constructors
+		error mapping/client error /server error
+		blob support for returns, etc
+			handle unknown content types as blob
+			client if allow="*"
+		caching headers on resources
+		non glyph data support in client/server - json/html
+
+
+	post 1.0 ruby - python feature parity
+		todo: error mapping
 		todo: blob support for clients/servers (returning/inlining)
 
-	when 1.0 rename to hyperglyph
 
 
 

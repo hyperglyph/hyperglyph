@@ -115,14 +115,11 @@ class chunk_fh(object):
 
         return self.state > 0
                 
-def fetch(method, url, args=None, data=None, headers=None, force_method=None):
-    if headers is None:
-        headers = {}
-    headers.update(HEADERS)
-
-    if force_method and method != force_method:
-        headers['Method'] = method
-        method = force_method
+def fetch(method, url, args=None, data=None, headers=None):
+    h = dict(HEADERS)
+    if headers:
+        h.update(headers)
+    headers = h
 
     if args is None:
         args = {}
@@ -147,6 +144,10 @@ def fetch(method, url, args=None, data=None, headers=None, force_method=None):
     data = result.content
     if result.headers['Content-Type'].startswith(CONTENT_TYPE):
         data = parse(data, base_url=result.url)
+    else:
+        attr = dict(((unicode(k).lower(), v) for k,v in result.headers.iteritems()))
+        data = Blob(data, attr)
+
     return data
 
 
@@ -207,12 +208,11 @@ class Extension(BaseNode):
 
 @Extension.register('form')
 class Form(Extension):
+    HEADERS = set([ 'If-None-Match', 'Accept', 'If-Match', 'If-Unmodified-Since', 'If-Modified-Since'])
     def __call__(self, *args, **kwargs):
-        if self._attributes.get(u'headers'):
-            raise NotImplementedError('TODO 0.5 headers in forms')
+        headers = self._attributes.get(u'headers', {})
+        headers = dict(((unicode(k),unicode(v)) for k,v in headers.iteritems() if k in self.HEADERS))
 
-        if self._attributes.get(u'envelope', u'form') != u'form':
-            raise NotImplementedError('TODO 0.8 envelope types in forms')
 
         url = self._attributes[u'url']
 
@@ -255,22 +255,44 @@ class Form(Extension):
 
         #data = [(k,v) for k,v in data.iteritems()]
 
-        return fetch(self._attributes.get(u'method',u'POST'), url, data=data, force_method=u'POST')
+        method = self._attributes.get(u'envelope', u'POST')
+        default_envelope = {
+            u'GET': u'query',
+            u'POST': u'form',
+            u'PUT': u'blob',
+            u'PATCH': u'blob',
+            u'DELETE': u'none',
+        }[method]
+        
+        envelope = self._attributes.get(u'envelope', default_envelope)
+
+        if envelope == u'form' and method != u'GET':
+            return fetch(method, url, data=data)
+        elif envelope == u'none' and method not in [u'PUT', u'PATCH']:
+            return fetch(method, url)
+        elif envelope == u'query' and method not in [u'POST', u'PUT', u'PATCH']:
+            return fetch(method, url, args=data)
+        elif envelope == u'blob' and method not in [u'GET'] and len(data) == 1:
+            data = list(data.values())[0]
+            return fetch(method, url, data=data)
+        else:
+            raise StandardError('unsupported method/envelope/input combination')
 
     def __resolve__(self, resolver):
         self._attributes[u'url'] = unicode(resolver(self._attributes[u'url']))
 
 @Extension.register('link')
 class Link(Extension):
+    HEADERS = set(['Accept'])
     def __call__(self, *args, **kwargs):
-        if self._attributes.get(u'headers'):
-            raise NotImplementedError('TODO 0.5 headers in forms')
+        headers = self._attributes.get(u'headers', {})
+        headers = dict(((unicode(k),unicode(v)) for k,v in headers.iteritems() if k in self.HEADERS))
 
         if self._attributes.get(u'inline', False):
             return self._content
         else:
             url = self._attributes[u'url']
-            return fetch(self._attributes.get(u'method',u'GET'),url, force_method=u'GET')
+            return fetch(self._attributes.get(u'method',u'GET'),url, headers=headers)
 
     def url(self):
         return self._attributes[u'url']
