@@ -121,14 +121,14 @@ module Glyph
         ins = []
         method = resource.name
         obj.instance_variables.each do |n|
-          ins.push([n, obj.instance_variable_get(n)])
+          ins.push(obj.instance_variable_get(n))
         end
         ins = dump_args(ins)
       elsif Resource === resource
         cls=resource.class
         ins = []
         resource.instance_variables.each do |n|
-          ins.push([n,resource.instance_variable_get(n)])
+          ins.push(resource.instance_variable_get(n))
         end
         method = ''
         ins = dump_args(ins)
@@ -194,10 +194,10 @@ module Glyph
   end
 
   def self.get(url) 
-    fetch("GET", url, nil, nil)
+    fetch("GET", url, nil)
   end
 
-  def self.fetch(method, url, data, force_method)
+  def self.fetch(method, url, data)
     uri = URI(url)
       
     # todo handle adding Method: header
@@ -322,25 +322,22 @@ module Glyph
       names = @attrs['values'] ? @attrs['values'] : []
       a = args.clone
 
-      names.each {|x|
-        name = if Input == x
+      data = names.map {|x|
+        name = if Input === x
           x.name
         else
           x
         end
         val = if a.empty?
-          a.pop
-        else
           x.default
+        else
+          a.pop
         end
         [name,val] 
       }
         
-        
-      # todo, handling inputs as well as strings
-
-      args = Hash[names.zip args]
-      ret = Glyph.fetch(@attrs['method'], @attrs['url'], args)
+      data = Hash[data]
+      ret = Glyph.fetch(@attrs['method'], @attrs['url'], data)
       if block
         block.call(ret)
       else
@@ -355,6 +352,7 @@ module Glyph
     end
 
     def default
+      # should raise error
       @attrs['default']
     end
   end
@@ -367,7 +365,7 @@ module Glyph
           @content
         end
       else
-        ret = Glyph.fetch(@attrs['method'], @attrs['url'], nil)
+        ret = Glyph.fetch(@attrs['method'], @attrs['url'])
         if block
           block.call(ret)
         else
@@ -396,19 +394,11 @@ module Glyph
         "u;"
       end
     elsif String === o
-      if o.encoding == Encoding.find('ASCII-8BIT')
-        if o.length >0
-          "b#{o.length}:#{o};"
-        else 
-          "b;"
-        end
-      else
-        u = o.encode('utf-8')
-        if u.bytesize > 0
-          "u#{u.bytesize}:#{u};"
-        else 
-          "u;"
-        end
+      u = o.encode('utf-8')
+      if u.bytesize > 0
+        "u#{u.bytesize}:#{u};"
+      else 
+        "u;"
       end
     elsif Integer === o
       "i#{o};"
