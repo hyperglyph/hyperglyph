@@ -320,6 +320,23 @@ module Glyph
   class Form < Extension
     def call(*args, &block)
       names = @attrs['values'] ? @attrs['values'] : []
+      a = args.clone
+
+      names.each {|x|
+        name = if Input == x
+          x.name
+        else
+          x
+        end
+        val = if a.empty?
+          a.pop
+        else
+          x.default
+        end
+        [name,val] 
+      }
+        
+        
       # todo, handling inputs as well as strings
 
       args = Hash[names.zip args]
@@ -335,6 +352,10 @@ module Glyph
   class Input < Extension
     def name
       @attrs['name']
+    end
+
+    def default
+      @attrs['default']
     end
   end
   class Link < Extension

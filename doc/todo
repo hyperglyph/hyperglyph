@@ -21,8 +21,8 @@ next commits:
 			allow form envelope types
 			allow PUT, DELETE, PATCH in forms.
 		todo:
-			http 1.1 server from cherrypy
 			tests for all 1.0 features.
+			http 1.1 server from cherrypy
 
 	ruby spec compliance: 
 		done: avoid to_sym
@@ -30,9 +30,12 @@ next commits:
 		done: decimal floats
 		done: node removal
 		
-		todo: relative url handling
+		done: relative url handling
 		todo: form input support, names and values
-		todo: form envelope type
+		todo: form envelope type, methods
+
+	idea:
+		cgi-bin/file:// support ?
 
 	post spec 1.0 python refactor?
 
