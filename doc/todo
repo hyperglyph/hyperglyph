@@ -17,12 +17,12 @@ next commits:
 			non post handling for forms, 
 			placeholders for headers, envelopes
 			node removal
-		todo: 
 			allow headers in forms, links
 			allow form envelope types
 			allow PUT, DELETE, PATCH in forms.
 		todo:
 			http 1.1 server from cherrypy
+			tests for all 1.0 features.
 
 	ruby spec compliance: 
 		done: avoid to_sym

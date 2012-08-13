@@ -2,51 +2,62 @@
  hyperglyph: duck typed ipc
 ============================
 
-*no stubs, no schemas*
+hyperglyph is ipc for dynamic, duck typed languages. unlike
+other ipc libraries, the server can return different objects
+to the client, without the client breaking.
 
-hyperglyph is yet another http ipc library, but it tries to exploit http rather
-than simply tunnel requests over it. glyph builds webpages out of objects, for
-computers, and as a result:
+the protocol supports a reasonable selection of primitive datatypes, 
+including integers, floating point, lists, sets, dictionaries, ordered
+dictonaries, utf-8 strings, byte arrays, and datetimes/timedeltas.
 
-- there is no wsdl/code generation/url construction
-- new methods and objects can be added without breaking clients
-- glyph services can redirect/link to other services on other hosts
-- glyph can take advantage of http tools like caches and load-balancers
+hyperglyph works with existing http tools like caches and load balancers
+to grow services, as well as supporting redirecting or linking 
+to services on other hosts.
 
-a talk at src fringe 2012 was given and is online: http://vimeo.com/45474360
+a talk at src-fringe 2012 was given and is online: http://vimeo.com/45474360
 (before the project changed its name)
 
-come say hello: ##glyph on freenode
 
-hyperglyph was designed and built for loose coupled distributed programs. it's 
-been in use in production for a year, but for internal services only.
+license
+-------
 
 hyperglyph is released under the MIT license
 
-in development
---------------
 
-hyperglyph is under development. the underlying serialization format (glyph) is 
-considered unfinished. not yet recommended for public apis, as the wire
-format is stablizing.
+status
+------
 
-currently the specification is in draft from, th grammar
-is complete and details are being fixed. specifications are
-effort.
+hyperglyph is pre 1.0 software and so should be considered unstable
+and experimental. however, earlier versions have been successfully
+used in production for more than a year.
 
-the spec is versioned, and the code is catching up while
-we collate details. currently v0.7, and backwards incompatible
-with earlier releases.
+the underlying specification has been finalized, and the reference
+implementations are catching up.
 
-when the spec hits v1.0, future minor versions *will* be
-backwards compatible.
+the ruby version trails behind the python version.
 
-hyperglyph is ok to use if you control both the client and server
-deployments, but once the format is stable and documented,
-this will not matter.
+1.0 roadmap
+-----------
 
-the python version is kept up to date with the spec,
-the ruby version trails behind. 
+- finalize spec (done)
+
+- python implementation to spec (in progress)
+
+  - client is complete
+  - server does not make use of all the spec
+
+- ruby implementation to spec (in progress, but slower)
+
+  - client, server  is incomplete
+
+- full coverage of specification by tests (in progress, but slower)
+
+  - ruby, python individually tested
+  - need cross implementation tests
+
+- 1.0 release
+
+  - documentation, tests, and two implementations complete
 
 
 example
