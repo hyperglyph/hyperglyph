@@ -22,7 +22,7 @@ next commits:
 			allow PUT, DELETE, PATCH in forms.
 		todo:
 			tests for all 1.0 features.
-			http 1.1 server from cherrypy
+			ugh-maybe http 1.1 server from cherrypy
 
 	ruby spec compliance: 
 		done: avoid to_sym
@@ -31,7 +31,7 @@ next commits:
 		done: node removal
 		
 		done: relative url handling
-		todo: form input support, names and values
+		done: form input support, names and values
 		todo: form envelope type, methods
 
 	idea:

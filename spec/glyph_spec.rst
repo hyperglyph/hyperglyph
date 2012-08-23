@@ -369,7 +369,7 @@ example::
 
 	link(method="GET", url="/foo")
 
-	Hu4:link;Du6:method;u3:GET;u3:url;u4:/foo;;n;;
+	Xu4:link;Du6:method;u3:GET;u3:url;u4:/foo;;n;;
 
 the url MAY be relative to the page url, or to a parent object.
 
@@ -443,7 +443,7 @@ example::
 
 	form(method="POST", url="/foo", values=['a'])
 
-	Hu4:form;Du6:method;u4:POST;u3:url;u4:/foo;u6:values;Lu1:a;;;N;;
+	Xu4:form;Du6:method;u4:POST;u3:url;u4:/foo;u6:values;Lu1:a;;;N;;
 
 the url MAY be relative to the page url, or to a parent object.
 
