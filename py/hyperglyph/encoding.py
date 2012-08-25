@@ -20,7 +20,7 @@ except ImportError:
         raise NotImplementedError()
 
 
-CONTENT_TYPE='application/vnd.glyph'
+CONTENT_TYPE='application/vnd.hyperglyph'
 
 UNICODE_CHARSET="utf-8"
 

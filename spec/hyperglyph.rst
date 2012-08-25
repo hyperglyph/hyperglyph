@@ -9,7 +9,7 @@ hyperglyph is a client/server protocol which
 exposes application objects over http, as machine
 readable web pages.
 
-these pages are encoded using glyph: a data interchange 
+these pages are encoded using hyperglyph: a data interchange 
 format which can handle strings, numbers, collections. 
 
 The server maps classes, instances, methods to URLs,
@@ -34,7 +34,7 @@ document are to be interpreted as described in [RFC2119].
 data model
 ==========
 
-glyph natively handles a variety of literals (strings, bytes, 
+hyperglyph natively handles a variety of literals (strings, bytes, 
 numbers, floats, utc datetimes, timedeltas, booleans), 
 and collections (list, set, dict).  ::
 
@@ -52,12 +52,12 @@ and collections (list, set, dict).  ::
 	datetime		1970-1-1 00:00 UTC	d1970-01-01T00:00:00.000Z;
 	timedelta		3 days			pP0Y0M3DT0H0M0S;
 
-glyph also supports special data types:
+hyperglyph also supports special data types:
 
 - an 'extension' type used to define objects with special behaviour or meaning
 - a 'blob' and 'chunk' type, used to encode large files
 
-the encoding format glyph aims to be: 
+the encoding format hyperglyph aims to be: 
 
 - endian independent
 - straight forward to implement
@@ -66,7 +66,7 @@ the encoding format glyph aims to be:
 top level
 ---------
 
-a glyph encoded message consists of a single object, optionally
+a hyperglyph encoded message consists of a single object, optionally
 followed by chunks ::
 	
 	root :== ws object ws (trailer ws)* 
@@ -156,7 +156,7 @@ is assumed, i.e, an octet-stream.
 singletons
 ----------
 
-glyph has three singleton types: true, false, and nil::
+hyperglyph has three singleton types: true, false, and nil::
 
 	true :== 'T;'
 	false :== 'F;'
@@ -167,7 +167,7 @@ nil SHOULD map to null or None or nil.
 collections
 -----------
 
-glyph has four collection types, an ordered list,
+hyperglyph has four collection types, an ordered list,
 an unordered set, and an ordered & unordered dictionary.
 
 sets and dicts MUST NOT have duplicate items,
@@ -239,7 +239,7 @@ hex floats are `<sign.?>0x<hex>.<hex>e<sign><decimal>`, where
 the first number is the fractional part in hex, and the latter is the exponent
 in decimal.  details on the encoding and decoding of hex floats is covered in an appendix.
 
-glyph uses hex or decimal floats, except for the special floating
+hyperglyph uses hex or decimal floats, except for the special floating
 point values: nan and infinity::
 
 	float :== 'f' hex_float ';' | 'f' decimal_float ';' | 'f' named_float ';'
@@ -300,10 +300,10 @@ for each blob, a number of chunks must appear in the trailer,
 including a final end_chunk. chunks for different files
 MAY be interweaved. 
 
-a glyph server SHOULD transform a response of a solitary blob object into a 
+a hyperglyph server SHOULD transform a response of a solitary blob object into a 
 http response, using the content-type attribute.
 
-glyph clients SHOULD return an response with an unknown encoding as a blob,
+hyperglyph clients SHOULD return an response with an unknown encoding as a blob,
 and SHOULD set the url attribute of the blob object.
 
 a blob object should expose a content_type property, and a file like
@@ -312,7 +312,7 @@ object.
 extensions
 ----------
 
-extensions are name, attr, content tuples, used internally within glyph
+extensions are name, attr, content tuples, used internally within hyperglyph
 to describe objects with special handling or meaning, rather than
 application meaning.
 
@@ -324,13 +324,13 @@ name SHOULD be a unicode string, attributes SHOULD be a dictionary or ordered di
 	content_obj :== object
 
 extensions are used to represent links, forms, resources, errors
-and blobs within glyph.
+and blobs within hyperglyph.
 
 
 extensions
 ==========
 
-the following extensions are defined within glyph::
+the following extensions are defined within hyperglyph::
 
 	link, input, form, resource, error
 
@@ -403,7 +403,7 @@ forms make unsafe requests.
 
   * MAY have the key 'content_type'
 
-    - if present, MUST be the glyph mime type.
+    - if present, MUST be the hyperglyph mime type.
 
 - content is nil object
 
@@ -518,7 +518,7 @@ resource
 like a top level webpage. in the host language, resource.foo
 should map to the content dictionary. i.e r.foo is r.content[foo]
 
-glyph maps urls to classes, instances and methods. when
+hyperglyph maps urls to classes, instances and methods. when
 you fetch a url that maps to an instance, a resource extension is returned
 
 - name 'resource'
@@ -608,7 +608,7 @@ or transports is possible.
 mime type
 ---------
 
-glyph data has the mime type: 'application/vnd.glyph'
+hyperglyph data has the mime type: 'application/vnd.hyperglyph'
 
 gzip
 ----
@@ -645,7 +645,7 @@ if present.
 
 HTTP requests should have the following headers:
 
-- Accept, set to the glyph mime type, if not overridden
+- Accept, set to the hyperglyph mime type, if not overridden
 
 forms and links MAY provide the following headers in requests:
 
@@ -672,10 +672,10 @@ the code may have special handling:
 Clients SHOULD throw different Errors for 4xx and 5xx responses,
 the body of error responses SHOULD be a error extension object.
 
-a glyph server SHOULD transform a response of a solitary blob object into a 
+a hyperglyph server SHOULD transform a response of a solitary blob object into a 
 http response, using the content-type attribute.
 
-glyph responses MAY use relative urls.
+hyperglyph responses MAY use relative urls.
 
 the methods `OPTIONS`, `TRACE`, `HEAD` are not used. 
 
@@ -707,13 +707,13 @@ setting the appropriate content-type header. The client
 MUST add the header 'Content-Disposition: form-data; name="...";',
 with the name of the input set.
 
-for 'form', the request body MUST be a glyph encoded ordered
+for 'form', the request body MUST be a hyperglyph encoded ordered
 dictionary of (name->value) entries.
 
 for 'query', the request MUST have no body, and the request url is
 constructed from the form url, and the form arguments as the query string.
 
-this query string is a urlencoded, glyph encoded
+this query string is a urlencoded, hyperglyph encoded
 ordered dictionary, of (name->value) entries.
 i.e. /form/url/without/query?Ou4%3Aname%3Bu5%3Avalue%3B%3B
 
@@ -888,7 +888,7 @@ changelog
 history
 -------
 
-glyph started out as a simple encoding for rpc over http,
+hyperglyph started out as a simple encoding for rpc over http,
 before embracing hypermedia.
 
 - unversioned
@@ -1066,6 +1066,8 @@ before embracing hypermedia.
 
 - 1.0
 
+  - mime type changed to vnd.hyperglyph
+
 
 planned changes
 ---------------
@@ -1082,7 +1084,7 @@ planned changes
 	add paginated collection extension
 	envelope: mixed; allow envelope on form inputs
 	types for form inputs
-	content_types on forms other than glyph
+	content_types on forms other than hyperglyph
 	support for form-data/urlencoded 
 	envelopes: url templates? 
 	canonical html/json serialization,

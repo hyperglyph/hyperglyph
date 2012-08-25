@@ -12,7 +12,7 @@ require 'hexfloat.rb'
 
 # node, extension
 module Hyperglyph
-  CONTENT_TYPE = "application/vnd.glyph"
+  CONTENT_TYPE = "application/vnd.hyperglyph"
 
   class TimeDelta
     def initialize(period)
