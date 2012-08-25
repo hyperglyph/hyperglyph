@@ -1,5 +1,5 @@
 import unittest2
-import glyph
+import hyperglyph as glyph
 import datetime
 import collections
 

@@ -11,7 +11,7 @@ require 'hexfloat.rb'
 
 
 # node, extension
-module Glyph
+module Hyperglyph
   CONTENT_TYPE = "application/vnd.glyph"
 
   class TimeDelta
@@ -67,10 +67,10 @@ module Glyph
       return load(URI.unescape(str))
     end
     def load(str)
-      Glyph::load(str)
+      Hyperglyph::load(str)
     end
     def dump(obj)
-      Glyph::dump(obj, self.method(:url), self.method(:inline))
+      Hyperglyph::dump(obj, self.method(:url), self.method(:inline))
     end
       
     def call(env)
@@ -209,7 +209,7 @@ module Glyph
         path = (uri.query) ? "#{uri.path}?#{uri.query}" : uri.path
         Net::HTTP::Get.new(path)
       else
-        raise Glyph::FetchError, 'baws'
+        raise Hyperglyph::FetchError, 'baws'
     end
     if method.downcase == "post"
       req.body = dump(data)
@@ -226,13 +226,13 @@ module Glyph
           return nil
         when Net::HTTPSuccess
           scanner = StringScanner.new(res.body)
-          return Glyph.parse(scanner, uri.to_s)
+          return Hyperglyph.parse(scanner, uri.to_s)
         when Net::HTTPRedirection
           uri = URI.join(uri.to_s, res['location'])
           path = (uri.query) ? "#{uri.path}?#{uri.query}" : uri.path
           req = Net::HTTP::Get.new(path)
         else
-          raise Glyph::FetchError, res
+          raise Hyperglyph::FetchError, res
       end
     end
   end
@@ -337,7 +337,7 @@ module Glyph
       }
         
       data = Hash[data]
-      ret = Glyph.fetch(@attrs['method'], @attrs['url'], data)
+      ret = Hyperglyph.fetch(@attrs['method'], @attrs['url'], data)
       if block
         block.call(ret)
       else
@@ -365,7 +365,7 @@ module Glyph
           @content
         end
       else
-        ret = Glyph.fetch(@attrs['method'], @attrs['url'])
+        ret = Hyperglyph.fetch(@attrs['method'], @attrs['url'])
         if block
           block.call(ret)
         else
@@ -412,11 +412,11 @@ module Glyph
     elsif Float === o
       "f#{o.to_hex};"
     elsif Array === o
-      "L#{o.map{|o| Glyph.dump_one(o, resolve, inline, blobs) }.join};"
+      "L#{o.map{|o| Hyperglyph.dump_one(o, resolve, inline, blobs) }.join};"
     elsif Set === o
-      "S#{o.map{|o| Glyph.dump_one(o, resolve, inline, blobs) }.join};"
+      "S#{o.map{|o| Hyperglyph.dump_one(o, resolve, inline, blobs) }.join};"
     elsif Hash === o
-      "O#{o.map{|k,v| [Glyph.dump_one(k, resolve, inline, blobs), Glyph.dump_one(v, resolve, inline, blobs)]}.join};"
+      "O#{o.map{|k,v| [Hyperglyph.dump_one(k, resolve, inline, blobs), Hyperglyph.dump_one(v, resolve, inline, blobs)]}.join};"
     elsif TrueClass === o
       "T;"
     elsif FalseClass === o
@@ -433,12 +433,12 @@ module Glyph
       bid = blobs.length
       blobs.push o.fh
       o.instance_eval {
-        "B#{bid}:#{Glyph.dump_one(@attrs, resolve, inline, blobs)};"
+        "B#{bid}:#{Hyperglyph.dump_one(@attrs, resolve, inline, blobs)};"
       }
     elsif Extension === o
       o.instance_eval {
         @attrs['url'] = resolve.call(@attrs['url']) if not String === @attrs['url']
-        "X#{Glyph.dump_one(@name, resolve, inline, blobs)}#{Glyph.dump_one(@attrs, resolve, inline, blobs)}#{Glyph.dump_one(@content,resolve, inline, blobs)};"
+        "X#{Hyperglyph.dump_one(@name, resolve, inline, blobs)}#{Hyperglyph.dump_one(@attrs, resolve, inline, blobs)}#{Hyperglyph.dump_one(@content,resolve, inline, blobs)};"
       }
     else
       raise EncodeError, "unsupported #{o}"
@@ -556,7 +556,7 @@ module Glyph
       scanner.scan(/;/)
       blob(fd, attrs)
     else
-      raise Glyph::DecodeError, "baws #{s}"
+      raise Hyperglyph::DecodeError, "baws #{s}"
     end
   end
 
@@ -578,7 +578,7 @@ module Glyph
           scanner.pos+=len+1
         end
       else
-        raise Glyph::DecodeError, "baws #{s}"
+        raise Hyperglyph::DecodeError, "baws #{s}"
       end
     end
   end
