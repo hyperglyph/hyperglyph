@@ -17,6 +17,8 @@ to services on other hosts.
 a talk at src-fringe 2012 was given and is online: http://vimeo.com/45474360
 (before the project changed its name)
 
+we're on irc.freenode.net #hyperglyph
+
 
 license
 -------

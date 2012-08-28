@@ -13,4 +13,4 @@ script:
         make test
 
 notifications:
-  irc: "irc.freenode.org##glyph"
+  irc: "irc.freenode.org#hyperglyph"
