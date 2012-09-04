@@ -2,7 +2,7 @@
  hyperglyph: duck typed ipc
 ============================
 
-hyperglyph is ipc for dynamic, duck typed languages. unlike
+hyperglyph is ipc (inter process communication) for dynamic, duck typed languages. unlike
 other ipc libraries, the server can return different objects
 to the client, without the client breaking.
 
