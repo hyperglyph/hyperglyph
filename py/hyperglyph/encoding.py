@@ -171,7 +171,7 @@ class Encoder(object):
             if len(obj) > 0:
                 yield "%d" % len(obj)
                 yield LEN_SEP
-                yield obj
+                yield str(obj)
             yield END_ITEM
         
         elif isinstance(obj, unicode):
