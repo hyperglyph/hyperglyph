@@ -34,6 +34,8 @@ next commits:
 		done: form input support, names and values
 		todo: form envelope type, methods
 
+		todo: named argument defaults, optional named args
+
 	idea:
 		cgi-bin/file:// support ?
 
@@ -65,6 +67,8 @@ speculative commits:
 
 glyph 1.1:
 	url templates, collections
+
+	collections
 
 	xhtml serialization, json/hal serialization
 	form

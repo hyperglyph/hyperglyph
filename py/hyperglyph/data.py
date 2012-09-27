@@ -2,6 +2,7 @@ from urlparse import urljoin
 import datetime
 import io
 import requests
+import requests.exceptions
 import collections
 import socket
 from urlparse import urljoin
@@ -19,7 +20,7 @@ session = requests.session()
 # Todo: Replace requests exceptions with specific glyph exceptions
 
 if not issubclass(requests.exceptions.RequestException, RuntimeError):
-     requests.exceptions.RequestException.__bases__ = (RuntimeError,)
+    requests.exceptions.RequestException.__bases__ = (RuntimeError,)
 
 
 def utcnow():
