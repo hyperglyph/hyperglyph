@@ -3,6 +3,7 @@ import datetime
 import io
 import requests
 import collections
+import socket
 from urlparse import urljoin
 
 from pytz import utc
@@ -11,7 +12,15 @@ from .encoding import Encoder, CONTENT_TYPE, Blob
 
 HEADERS={'Accept': CONTENT_TYPE, 'Content-Type': CONTENT_TYPE}
 CHUNKED = False # wsgiref is terrible - enable by default when the default wsgi server works
+
 session = requests.session()
+
+# Fix for earlier versions of requests.
+# Todo: Replace requests exceptions with specific glyph exceptions
+
+if not issubclass(requests.exceptions.RequestException, RuntimeError):
+     requests.exceptions.RequestException.__bases__ = (RuntimeError,)
+
 
 def utcnow():
     return datetime.datetime.utcnow().replace(tzinfo=utc)
@@ -129,7 +138,7 @@ def fetch(method, url, args=None, data=None, headers=None):
             data = chunk_fh(data)
         else:
             data = dump(data)
-    result = session.request(method, url, params=args, data=data, headers=headers, allow_redirects=False)
+    result = session.request(method, url, params=args, data=data, headers=headers, allow_redirects=False, timeout=socket.getdefaulttimeout())
     def join(u):
         return urljoin(result.url, u)
     if result.status_code == 303: # See Other
