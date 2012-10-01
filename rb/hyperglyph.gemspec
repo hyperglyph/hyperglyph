@@ -7,5 +7,6 @@ Gem::Specification.new do |s|
   s.authors     = ["tef"]
   s.email       = 'tef@hyperglyph.twentygototen.org'
   s.homepage         = 'http://hyperglyph.net/'
-  s.files       = ["lib/hyperglyph.rb", "lib/hexfloat.rb"]
+  s.files         = `git ls-files`.split("\n")
+  s.test_files    = `git ls-files -- test/*`.split("\n")
 end
