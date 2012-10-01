@@ -5,193 +5,25 @@ require 'stringio'
 require 'net/http'
 require 'uri'
 
-# ruby1.9 or death!
+require 'hyperglyph/hexfloat'
+require 'hyperglyph/time_delta'
+require 'hyperglyph/resource'
+require 'hyperglyph/router'
+require 'hyperglyph/node'
+require 'hyperglyph/extension'
+require 'hyperglyph/blob'
+require 'hyperglyph/ext_resource'
+require 'hyperglyph/form'
+require 'hyperglyph/input'
+require 'hyperglyph/link'
 
-require 'hexfloat.rb'
-
-
-# node, extension
 module Hyperglyph
   CONTENT_TYPE = "application/vnd.hyperglyph"
 
-  class TimeDelta
-    def initialize(period)
-      @period = period
-    end
-  end
-
-  class FetchError < StandardError
-  end
-  class DecodeError < StandardError
-  end
-  class EncodeError < StandardError
-  end
-
-  class Resource
-    def GET
-        return self
-    end
-
-    def POST
-    end
-
-    def self.GET
-    end
-    
-    def self.POST(*args)
-      return new(*args)
-    end
-
-  end
-
-  class Router
-    def initialize()
-      @routes = {}
-      @paths = {}
-      self.class.constants.each do |c|
-        name= c.to_s
-        cls = self.class.const_get(c)
-        @routes[name] = cls
-        @paths[cls] = name
-      end
-    end
-    def to_s
-      "<#{self.class.to_s} #{@routes}>"
-    end
-
-    def dump_args(args)
-      return URI.escape(dump(args))
-    end
-
-    def parse_args(str)
-      return load(URI.unescape(str))
-    end
-    def load(str)
-      Hyperglyph::load(str)
-    end
-    def dump(obj)
-      Hyperglyph::dump(obj, self.method(:url), self.method(:inline))
-    end
-      
-    def call(env)
-      path = env['PATH_INFO'].split "/"
-      method = env['HTTP_METHOD'] || env['REQUEST_METHOD']
-      data = env['rack.input']
-
-      response = nil
-      path.shift
-
-      data = data ? data.read : nil
-  
-      args = data.empty? ? nil: load(data).map(&:last) 
-      if path.empty?
-        obj = self
-        methodname = method
-      else
-        cls = @routes[path.shift]
-        methodname = path.shift ||  method
-
-        query = env['QUERY_STRING']
-        if cls.nil?
-          raise StandardError, "unknown url"
-        elsif not query.empty?
-          query = parse_args(query)
-          obj = cls.new(*query)
-        else
-          obj = cls
-        end
-      end
-      #p "call #{obj} #{methodname} #{args}"
-      response = obj.method(methodname).call(*args)
-      #p "response #{response}"
-
-      if response.nil?
-        return [204, {}, []]
-      else
-        return [200, {'Content-Type'=>CONTENT_TYPE}, [dump(response)]]
-      end
-    end
-    
-    def url(resource)
-      if resource === String
-        return resource
-      elsif Method === resource
-        obj = resource.receiver
-        cls = obj.class
-        ins = []
-        method = resource.name
-        obj.instance_variables.each do |n|
-          ins.push(obj.instance_variable_get(n))
-        end
-        ins = dump_args(ins)
-      elsif Resource === resource
-        cls=resource.class
-        ins = []
-        resource.instance_variables.each do |n|
-          ins.push(resource.instance_variable_get(n))
-        end
-        method = ''
-        ins = dump_args(ins)
-      elsif resource.class == Class and resource <= Resource
-        cls = resource
-        ins = ''
-        method = ''
-      else
-        raise EncodingError,"cant find url for #{resource}"
-      end
-      
-      cls = @paths[cls]
-      ins = ins.empty? ? '' : "?#{ins}"
-      return "/#{cls}/#{method}#{ins}"
-    end
-
-
-    def inline(obj) 
-      if Method === obj
-        form(obj)
-      elsif Resource === obj
-        args = {}
-        methods = obj.class.instance_methods - Resource.instance_methods
-        methods.each do |m| 
-          args[m] = form(obj.method(m))
-        end
-        obj.instance_variables.each do |n|
-          args[n] = obj.instance_variable_get(n)
-        end
-        Extension.make('resource', {'url' => obj} , args)
-      elsif obj.class == Class and obj <= Resource
-        form(obj)
-      else
-        raise EncodingError,"cant inline #{obj}"
-      end
-    end
-
-    def form(obj) 
-      if obj.class == Class
-        args = obj.instance_method(:initialize).parameters
-      elsif obj.class == Method
-        args = obj.parameters
-      end
-
-      args=args.collect {|x| x[0] == :req and x[1]}
-      Extension.make('form',{'method'=>'POST', 'url'=>obj, 'values'=>args}, nil)
-    end
-
-
-    def GET
-      # default contents 
-      content = {}
-      @routes.each do |name, cls|
-        content[name] = form(cls)
-      end
-      return Extension.make('resource', {'url'=>"/"}, content)
-    end
-
-    def POST
-
-    end
-
-  end
+  FetchError = Class.new(StandardError)
+  DecodeError = Class.new(StandardError)
+  EncodeError = Class.new(StandardError)
+  ExtError = Class.new(Extension)
 
   def self.get(url) 
     fetch("GET", url, nil)
@@ -241,139 +73,6 @@ module Hyperglyph
     Blob.new  obj, {'content-type' => content_type}
   end
 
-  class Node
-    def initialize(name, attrs, content)
-      @name = name
-      @attrs = attrs
-      @content = content
-    end
-
-    def method_missing(method, *args, &block)
-        attr= @content[method.to_s]
-        if attr and attr.respond_to?(:call)
-          r =  attr.call(*args, &block)
-          return r
-        else
-          super(method, *args, &block)
-        end
-    end
-
-    def [](item)
-      return @content[item]
-    end
-  end
-
-  class Extension < Node
-    def self.make(name, attrs, content)
-      return case name
-        when "input"
-          return Input.new(name, attrs, content)
-        when "form"
-          return Form.new(name, attrs, content)
-        when "link"
-          return Link.new(name, attrs, content)
-        when "resource"
-          return ExtResource.new(name, attrs, content)
-        when "error"
-          return ExtError.new(name, attrs, content)
-          
-        else
-          return Extension.new(name,attrs, content)
-      end
-    end
-
-  
-    def resolve url
-      @attrs['url']=URI.join(url,@attrs['url']).to_s
-    end
-
-  end
-
-  class ExtError < Extension
-  end
-
-  class Blob 
-    def initialize(content, attrs)
-      @content = content
-      @attrs = attrs
-    end
-    
-    def fh
-      @content
-    end
-    def content_type
-      @attrs['content-type']
-    end
-  end
-
-  class ExtResource < Extension
-    def method_missing(method, *args, &block)
-        attr= @content[method.to_s]
-        if attr and attr.respond_to?(:call)
-          r =  attr.call(*args, &block)
-          return r
-        else
-          super(method, *args, &block)
-        end
-    end
-  end
-  class Form < Extension
-    def call(*args, &block)
-      names = @attrs['values'] ? @attrs['values'] : []
-      a = args.clone
-
-      data = names.map {|x|
-        name = if Input === x
-          x.name
-        else
-          x
-        end
-        val = if a.empty?
-          x.default
-        else
-          a.pop
-        end
-        [name,val] 
-      }
-        
-      data = Hash[data]
-      ret = Hyperglyph.fetch(@attrs['method'], @attrs['url'], data)
-      if block
-        block.call(ret)
-      else
-        ret
-      end
-    end
-  end
-
-  class Input < Extension
-    def name
-      @attrs['name']
-    end
-
-    def default
-      # should raise error
-      @attrs['default']
-    end
-  end
-  class Link < Extension
-    def call(*args, &block)
-      if @attrs['inline']
-        if block
-          block.call(@content)
-        else
-          @content
-        end
-      else
-        ret = Hyperglyph.fetch(@attrs['method'], @attrs['url'])
-        if block
-          block.call(ret)
-        else
-          ret
-        end
-      end
-    end
-  end
     
   def self.dump(o, resolve=nil, inline=nil)
     blobs = []
@@ -582,7 +281,4 @@ module Hyperglyph
       end
     end
   end
-
 end
-
-
