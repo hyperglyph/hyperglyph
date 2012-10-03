@@ -1,3 +1,6 @@
 [submodule "py"]
 	path = py
 	url = git@github.com:hyperglyph/hyperglyph-python.git
+[submodule "rb"]
+	path = rb
+	url = git@github.com:hyperglyph/hyperglyph-ruby.git
