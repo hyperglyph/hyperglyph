@@ -1,0 +1,3 @@
+[submodule "py"]
+	path = py
+	url = git@github.com:hyperglyph/hyperglyph-python.git

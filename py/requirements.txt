@@ -1,5 +1,0 @@
-unittest2
-werkzeug
-requests
-pytz
-isodate
