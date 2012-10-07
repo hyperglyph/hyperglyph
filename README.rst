@@ -67,16 +67,16 @@ example
 
 To show, rather than tell, let's begin with some server code::
 
-    import glyph
+    import hyperglyph
 
-    r = glyph.Router() # a wsgi application
+    r = hyperglyph.Router() # a wsgi application
 
     @r.add()
     def hello():
         return "Hello World"
 
     # and a http server running in a thread
-    s = glyph.Server(r) 
+    s = hyperglyph.Server(r) 
     s.start()
 
     print s.url
@@ -84,9 +84,9 @@ To show, rather than tell, let's begin with some server code::
 
 And some client code::
 
-    import glyph 
+    import hyperglyph 
 
-    server = glyph.get('http://server/')
+    server = hyperglyph.get('http://server/')
 
     print server.hello()
 
@@ -134,7 +134,7 @@ The client doesn't care::
     print greet()
     
 
-Glyph can map objects too::
+Hyperglyph can map objects too::
 
     @r.add()
     def find_user(name):
@@ -142,7 +142,7 @@ Glyph can map objects too::
         return User(user_id)
 
     @r.add()
-    class User(glyph.Resource):
+    class User(hyperglyph.Resource):
         def __init__(self, id):
             self.id = id
 
@@ -161,20 +161,20 @@ Like before, new methods can be added without breaking old clients.
 unlike before, we can change object internals::
 
     @r.add()
-    @glyph.redirect()
+    @hyperglyph.redirect()
     def find_user(name):
         user_id, shard = database.find_user(name)
         return User(user_id, shard)
 
     @r.add()
-    class User(glyph.Resource):
+    class User(hyperglyph.Resource):
         def __init__(self, id, shard):
             self.id = id
             self.shard = shard
 
         ...
 
-The glyph.redirect means that instead of returning the User object
+The hyperglyph.redirect means that instead of returning the User object
 directly, it should redirect to it's url. The client follows these
 redirects automatically.
 
@@ -184,12 +184,12 @@ works as ever::
     bob = server.find_user('bob')
     bob.messsage('lol', 'feels good man')
 
-Underneath all this - glyph maps all of this to http::
+Underneath all this - hyperglyph maps all of this to http::
 
     # by default, a server returns an object with a bunch
     # of methods that redirect to the mapped obejcts
 
-    server = glyph.get('http://server/')
+    server = hyperglyph.get('http://server/')
 
     # in this case, it will have an attribute 'find_user'
     # find user is a special sort of object - a form
@@ -213,7 +213,7 @@ Underneath all this - glyph maps all of this to http::
     bob.messsage('lol', 'feels good man')
 
 
-Although glyph maps urls to objects on the server side, these urls are
+Although hyperglyph maps urls to objects on the server side, these urls are
 opaque to the client - the server is free to change them to point to
 other objects, or to add new internal state without breaking the client.
 
@@ -224,14 +224,14 @@ the programmer.
 The server is stateless - the state of the objects is encapsulated
 in the links & forms. 
 
-glyph now has large file support. wrap a file handle in glyph.blob,
+hyperglyph now has large file support. wrap a file handle in hyperglyph.blob,
 and pass it around. on the server side, large blobs are written
 to temporary files
 
 internals
 =========
 
-glyph on the server end has four  major parts - a router, a mapper, a handler, and
+hyperglyph on the server end has four  major parts - a router, a mapper, a handler, and
 a resource.
 
 router - looks at url prefix, finds a resource class to use
