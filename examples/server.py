@@ -1,12 +1,12 @@
-import glyph
+import hyperglyph
 import collections
 
 queues = {}
 
-m = glyph.Router()
+m = hyperglyph.Router()
 
 @m.add()
-class Queue(glyph.r):
+class Queue(hyperglyph.r):
     def __init__(self, name):
         self.name = name
     def push(self, msg):
@@ -18,7 +18,7 @@ class Queue(glyph.r):
         if self.name in queues:
             return queues[self.name].popleft()
 
-s = glyph.Server(m, port=12344)
+s = hyperglyph.Server(m, port=12344)
 
 s.start()
 

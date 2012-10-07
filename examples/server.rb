@@ -1,10 +1,10 @@
-require "glyph"
+require "hyperglyph"
 require "rack"
 
 $queues = {}
 
-class Service < Glyph::Router
-  class Queue < Glyph::Resource
+class Service < Hyperglyph::Router
+  class Queue < Hyperglyph::Resource
     def initialize(name)
       @name = name
     end
